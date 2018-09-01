@@ -1,3 +1,7 @@
 from __future__ import absolute_import, print_function
 
-from . import async, sync
+import sys
+from . import sync
+
+if sys.version_info >= (3, 5):
+    from . import async

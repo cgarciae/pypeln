@@ -1,4 +1,6 @@
 
+TIMEOUT = 0.0001
+
 class Done(object):
     pass
 

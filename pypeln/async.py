@@ -2,20 +2,24 @@ from __future__ import absolute_import, print_function
 
 from collections import namedtuple
 import asyncio
+import threading
 import sys
-from .utils import DONE
-
+from . import utils
+import time
 
 class Stream(namedtuple("Stream", ["coroutine", "queue"])):
 
     def __await__(self):
         return self.coroutine.__await__()
 
+    def __iter__(self):
+        return to_iterable(self)
+
 
 class TaskPool(object):
 
-    def __init__(self, limit = 0):
-        self._limit = limit
+    def __init__(self, workers = 1):
+        self._limit = workers
         self._tasks = []
 
     def filter_tasks(self):
@@ -49,27 +53,41 @@ class TaskPool(object):
 
     def __aexit__(self, exc_type, exc, tb):
         return self.join()
+
+################
+# to_stream
+################
+
+def to_stream(obj):
+    if isinstance(obj, Stream):
+        return obj
+    else:
+        return from_iterable(obj)
     
+########################
+# from_iterable
+########################
 
+async def _from_iterable(iterable, qout):
+        
+    for x in iterable:
+        await qout.put(x)
+        
+    await qout.put(utils.DONE)
 
-
-
-
-def filter_wrapper(f, queue):
-    async def _filter_wrapper(x):
-
-        y = f(x)
-
-        if hasattr(y, "__await__"):
-            y = await y
-
-        if bool(y):
-            await queue.put(x)
+def from_iterable(iterable, queue_maxsize = 0):
     
-    return _filter_wrapper
+    qout = asyncio.Queue(maxsize=queue_maxsize)
+    coro_out = _from_iterable(iterable, qout)
 
-def map_wrapper(f, queue):
-    async def _map_wrapper(x):
+    return Stream(coro_out, qout)
+
+########################
+# map
+########################
+
+def _map_wrapper(f, queue):
+    async def _task(x):
 
         y = f(x)
 
@@ -78,151 +96,241 @@ def map_wrapper(f, queue):
 
         await queue.put(y)
     
-    return _map_wrapper
+    return _task
 
-def each_wrapper(f):
-    async def _each_wrapper(x):
+async def _map(f_task, coro_in, qin, qout, workers):
+    
+    coroin_task = asyncio.ensure_future(coro_in)
+
+    async with TaskPool(workers = workers) as tasks:
+
+        x = await qin.get()
+        while x is not utils.DONE:
+
+            fcoro = f_task(x)
+            await tasks.put(fcoro)
+
+            x = await qin.get()
+
+    # end async with: wait all tasks to finish
+    await qout.put(utils.DONE)
+    await coroin_task
+
+def map(f, stream, workers = 1, queue_maxsize = 0):
+
+    stream = to_stream(stream)
+
+    qin = stream.queue
+    qout = asyncio.Queue(maxsize = queue_maxsize)
+    f_task = _map_wrapper(f, queue = qout)
+    coro_in = stream.coroutine
+    coro_out = _map(f_task, coro_in, qin, qout, workers)
+
+    return Stream(coro_out, qout)
+
+
+
+########################
+# flat_map
+########################
+
+def _flat_map_wrapper(f, queue):
+    async def _task(x):
+
+        ys = f(x)
+
+        if hasattr(ys, "__aiter__"):
+            async for y in ys:
+                await queue.put(y)
+        elif hasattr(ys, "__iter__"):
+            for y in ys:
+                await queue.put(y)
+        else:
+            raise ValueError(f"{ys} is not an (async) iterable")
+    
+    return _task
+
+async def _flat_map(f_task, coro_in, qin, qout, workers):
+    
+    coroin_task = asyncio.ensure_future(coro_in)
+
+    async with TaskPool(workers = workers) as tasks:
+
+        x = await qin.get()
+        while x is not utils.DONE:
+
+            fcoro = f_task(x)
+            await tasks.put(fcoro)
+
+            x = await qin.get()
+
+    # end async with: wait all tasks to finish
+    await qout.put(utils.DONE)
+    await coroin_task
+
+def flat_map(f, stream, workers = 1, queue_maxsize = 0):
+
+    stream = to_stream(stream)
+
+    qin = stream.queue
+    qout = asyncio.Queue(maxsize = queue_maxsize)
+    f_task = _flat_map_wrapper(f, queue = qout)
+    coro_in = stream.coroutine
+    coro_out = _flat_map(f_task, coro_in, qin, qout, workers)
+
+    return Stream(coro_out, qout)
+
+
+########################
+# filter
+########################
+
+def _filter_wrapper(f, queue):
+    async def _task(x):
 
         y = f(x)
 
         if hasattr(y, "__await__"):
             y = await y
+
+        if y:
+            await queue.put(x)
     
-    return _each_wrapper
-        
-        
-def map(f, stream, limit = 0, queue_maxsize = 0):
+    return _task
 
-    qout = asyncio.Queue(maxsize = queue_maxsize)
+async def _filter(f_task, coro_in, qin, qout, workers):
     
-    async def _map():
-        coroin = stream.coroutine
-        qin = stream.queue
-        
-        coroin_task = asyncio.ensure_future(coroin)
-        f_wrapped = map_wrapper(f, queue = qout)
+    coroin_task = asyncio.ensure_future(coro_in)
 
-        async with TaskPool(limit = limit) as tasks:
+    async with TaskPool(workers = workers) as tasks:
 
-            x = await qin.get()
-            while x is not DONE:
-
-                fcoro = f_wrapped(x)
-                await tasks.put(fcoro)
-
-                x = await qin.get()
-
-        # end async with: wait all tasks to finish
-        await qout.put(DONE)
-        await coroin_task
-
-    return Stream(_map(), qout)
-
-
-def filter(f, stream, limit = 0, queue_maxsize = 0):
-    
-    async def _filter(f, qout):
-        coroin = stream.coroutine
-        qin = stream.queue
-        coroin_task = asyncio.ensure_future(coroin)
-        f = filter_wrapper(f, qout)
-
-        async with TaskPool(limit = limit) as tasks:
-
-            x = await qin.get()
-            
-            while x is not DONE:
-                
-                fcoro = f(x)
-                await tasks.put(fcoro)
-
-                x = await qin.get()
-
-        # end async with: wait all tasks to finish
-
-        await qout.put(DONE)
-        await coroin_task
-
-    qout = asyncio.Queue(maxsize = queue_maxsize)
-        
-    return Stream(_filter(f, qout), qout)
-
-
-def from_iterable(iterable, queue_maxsize = 0):
-    
-    async def _from_iterable(qout):
-        
-        for x in iterable:
-            await qout.put(x)
-            
-        await qout.put(DONE)
-    
-    qout = asyncio.Queue(maxsize=queue_maxsize)
-
-    return Stream(_from_iterable(qout), qout)
-
-async def each(f, stream, limit = 0):
-    
-
-    coroin = stream.coroutine
-    qin = stream.queue
-    
-    coroin_task = asyncio.ensure_future(coroin)
-    f = each_wrapper(f)
-
-    async with TaskPool(limit = limit) as tasks:
-        
         x = await qin.get()
-        while x is not DONE:
-            
-            fcoro = f(x)
+        while x is not utils.DONE:
+
+            fcoro = f_task(x)
             await tasks.put(fcoro)
 
             x = await qin.get()
 
+    # end async with: wait all tasks to finish
+    await qout.put(utils.DONE)
     await coroin_task
 
+def filter(f, stream, workers = 1, queue_maxsize = 0):
 
-def run(stream):
-    return stream.coroutine
+    stream = to_stream(stream)
+
+    qin = stream.queue
+    qout = asyncio.Queue(maxsize = queue_maxsize)
+    f_task = _filter_wrapper(f, queue = qout)
+    coro_in = stream.coroutine
+    coro_out = _filter(f_task, coro_in, qin, qout, workers)
+
+    return Stream(coro_out, qout)
+
+
+########################
+# each
+########################
+
+def _each_wrapper(f, queue):
+    async def _task(x):
+
+        y = f(x)
+
+        if hasattr(y, "__await__"):
+            y = await y
+
+    return _task
+
+async def _each(f_task, coro_in, qin, qout, workers):
+    
+    coroin_task = asyncio.ensure_future(coro_in)
+
+    async with TaskPool(workers = workers) as tasks:
+
+        x = await qin.get()
+        while x is not utils.DONE:
+
+            fcoro = f_task(x)
+            await tasks.put(fcoro)
+
+            x = await qin.get()
+
+    # end async with: wait all tasks to finish
+    await qout.put(utils.DONE)
+    await coroin_task
+
+def each(f, stream, workers = 1, queue_maxsize = 0):
+
+    stream = to_stream(stream)
+
+    qin = stream.queue
+    qout = asyncio.Queue(maxsize = queue_maxsize)
+    f_task = _each_wrapper(f, queue = qout)
+    coro_in = stream.coroutine
+    coro_out = _each(f_task, coro_in, qin, qout, workers)
+
+    return Stream(coro_out, qout)
+
+
+########################
+# to_iterable
+########################
+
+def _handle_async_exception(loop, ctx):
+    loop.stop()
+    raise Exception(f"Exception in async task: {ctx}")
+
+def _to_iterable(loop, stream):
+    
+    loop.run_until_complete(stream)
+
+def to_iterable(stream: Stream):
+
+    qin = stream.queue
+
+    loop = asyncio.get_event_loop()
+    loop.set_exception_handler(_handle_async_exception)
+
+    thread = threading.Thread(target=_to_iterable, args=(loop, stream))
+    thread.daemon = True
+    thread.start()
+
+
+    while True:
+
+        while qin.empty():
+            time.sleep(utils.TIMEOUT)
+
+        x = qin.get_nowait()
+
+        if not utils.is_done(x):
+            yield x
+        else:
+            break
+    
+    thread.join()
+
 
 
 
 if __name__ == '__main__':
-    import os
-    import aiohttp
-    import aiofiles
+    import random
+
+    async def slow_square(x):
+        await asyncio.sleep(random.uniform(0, 1))
+        return x**2
+
+    stream = range(10)
+
+    stream = flat_map(lambda x: [x, x + 1, x + 2], stream)
+
+    stream = map(slow_square, stream, workers = 4)
+
+    stream = filter(lambda x: x > 9, stream)
+
+    each(print, stream)
 
 
-    def download_file(path):
-        async def do_download_file(url):
-            
-            filename = os.path.basename(url)
-            filepath = os.path.join(path, filename)
-
-            async with aiohttp.request("GET", url) as resp:
-                context = await resp.read()
-
-            async with aiofiles.open(filepath, "wb") as f:
-                await f.write(context)
-        
-        return do_download_file
-
-    def handle_async_exception(loop, ctx):
-        loop.stop()
-        raise Exception(f"Exception in async task: {ctx}")
-
-    urls = [
-        "https://static.pexels.com/photos/67843/splashing-splash-aqua-water-67843.jpeg",
-        "https://cdn.pixabay.com/photo/2016/10/27/22/53/heart-1776746_960_720.jpg",
-        "http://www.qygjxz.com/data/out/240/4321276-wallpaper-images-download.jpg"
-    ] * 1000000
-
-    path = "/data/tmp/images"
-
-    stream = from_iterable(urls)
-    stream = map(download_file(path), stream, limit = 2)
-
-    loop = asyncio.get_event_loop()
-    loop.set_exception_handler(handle_async_exception)
-    loop.run_until_complete(stream)
+    

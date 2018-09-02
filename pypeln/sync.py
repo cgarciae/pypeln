@@ -4,9 +4,9 @@ import multiprocessing as mp
 from collections import namedtuple
 from . import utils
 
-TIMEOUT = 0.0001
 
-class Stream(namedtuple("Stream", ["num_processes", "tasks", "queue"])): 
+
+class Stream(namedtuple("Stream", ["workers", "tasks", "queue"])): 
     
     def __iter__(self):
         return to_iterable(self)
@@ -16,7 +16,7 @@ class Task(namedtuple("TaskInfo", ["f", "args", "kwargs"])):
     pass
 
 ################
-# from_iterable
+# to_stream
 ################
 def to_stream(obj):
     if isinstance(obj, Stream):
@@ -56,7 +56,7 @@ def _map(f, qin, qout, namespace):
     while not (namespace.remaining == 0 and qin.empty()):
 
         try:
-            x = qin.get(timeout = TIMEOUT)
+            x = qin.get(timeout = utils.TIMEOUT)
         except mp.queues.Empty:
             continue
 
@@ -71,7 +71,7 @@ def _map(f, qin, qout, namespace):
 
 
 
-def map(f, stream, num_processes = 1, queue_maxsize = 0):
+def map(f, stream, workers = 1, queue_maxsize = 0):
 
     stream = to_stream(stream)
 
@@ -79,7 +79,7 @@ def map(f, stream, num_processes = 1, queue_maxsize = 0):
     qout = mp.Queue(maxsize = queue_maxsize)
     namespace = mp.Manager().Namespace()
 
-    namespace.remaining = stream.num_processes
+    namespace.remaining = stream.workers
 
     tasks = [
         Task(
@@ -87,12 +87,12 @@ def map(f, stream, num_processes = 1, queue_maxsize = 0):
             args = (f, qin, qout, namespace),
             kwargs = dict(),
         )
-        for _ in range(num_processes)
+        for _ in range(workers)
     ]
 
     tasks += stream.tasks
 
-    return Stream(num_processes, tasks, qout)
+    return Stream(workers, tasks, qout)
 
 ###########
 # flat_map
@@ -103,7 +103,7 @@ def _flat_map(f, qin, qout, namespace):
     while not (namespace.remaining == 0 and qin.empty()):
 
         try:
-            x = qin.get(timeout = TIMEOUT)
+            x = qin.get(timeout = utils.TIMEOUT)
         except mp.queues.Empty:
             continue
 
@@ -118,7 +118,7 @@ def _flat_map(f, qin, qout, namespace):
 
 
 
-def flat_map(f, stream, num_processes = 1, queue_maxsize = 0):
+def flat_map(f, stream, workers = 1, queue_maxsize = 0):
 
     stream = to_stream(stream)
 
@@ -126,7 +126,7 @@ def flat_map(f, stream, num_processes = 1, queue_maxsize = 0):
     qout = mp.Queue(maxsize = queue_maxsize)
     namespace = mp.Manager().Namespace()
 
-    namespace.remaining = stream.num_processes
+    namespace.remaining = stream.workers
 
     tasks = [
         Task(
@@ -134,12 +134,12 @@ def flat_map(f, stream, num_processes = 1, queue_maxsize = 0):
             args = (f, qin, qout, namespace),
             kwargs = dict(),
         )
-        for _ in range(num_processes)
+        for _ in range(workers)
     ]
 
     tasks += stream.tasks
 
-    return Stream(num_processes, tasks, qout)
+    return Stream(workers, tasks, qout)
 
 
 ###########
@@ -151,7 +151,7 @@ def _filter(f, qin, qout, namespace):
     while not (namespace.remaining == 0 and qin.empty()):
 
         try:
-            x = qin.get(timeout = TIMEOUT)
+            x = qin.get(timeout = utils.TIMEOUT)
         except mp.queues.Empty:
             continue
 
@@ -166,7 +166,7 @@ def _filter(f, qin, qout, namespace):
 
 
 
-def filter(f, stream, num_processes = 1, queue_maxsize = 0):
+def filter(f, stream, workers = 1, queue_maxsize = 0):
 
     stream = to_stream(stream)
 
@@ -174,7 +174,7 @@ def filter(f, stream, num_processes = 1, queue_maxsize = 0):
     qout = mp.Queue(maxsize = queue_maxsize)
     namespace = mp.Manager().Namespace()
 
-    namespace.remaining = stream.num_processes
+    namespace.remaining = stream.workers
 
     tasks = [
         Task(
@@ -182,12 +182,12 @@ def filter(f, stream, num_processes = 1, queue_maxsize = 0):
             args = (f, qin, qout, namespace),
             kwargs = dict(),
         )
-        for _ in range(num_processes)
+        for _ in range(workers)
     ]
 
     tasks += stream.tasks
 
-    return Stream(num_processes, tasks, qout)
+    return Stream(workers, tasks, qout)
 
 
 ###########
@@ -198,13 +198,12 @@ def _each(f, qin, qout, namespace):
     while not (namespace.remaining == 0 and qin.empty()):
 
         try:
-            x = qin.get(timeout = TIMEOUT)
+            x = qin.get(timeout = utils.TIMEOUT)
         except mp.queues.Empty:
             continue
 
         if not utils.is_done(x):
-            y = f(x)
-            qout.put(y)
+            f(x)
         
         else:
             namespace.remaining -= 1
@@ -213,7 +212,7 @@ def _each(f, qin, qout, namespace):
 
 
 
-def each(f, stream, num_processes = 1, queue_maxsize = 0):
+def each(f, stream, workers = 1, queue_maxsize = 0):
 
     stream = to_stream(stream)
 
@@ -221,7 +220,7 @@ def each(f, stream, num_processes = 1, queue_maxsize = 0):
     qout = mp.Queue(maxsize = queue_maxsize)
     namespace = mp.Manager().Namespace()
 
-    namespace.remaining = stream.num_processes
+    namespace.remaining = stream.workers
 
     tasks = [
         Task(
@@ -229,12 +228,12 @@ def each(f, stream, num_processes = 1, queue_maxsize = 0):
             args = (f, qin, qout, namespace),
             kwargs = dict(),
         )
-        for _ in range(num_processes)
+        for _ in range(workers)
     ]
 
     tasks += stream.tasks
 
-    for _ in Stream(num_processes, tasks, qout):
+    for _ in Stream(workers, tasks, qout):
         pass
 
 
@@ -253,13 +252,13 @@ def to_iterable(stream):
         p.daemon = True
         p.start()
 
-    remaining = stream.num_processes
+    remaining = stream.workers
     qin = stream.queue
 
     while not (remaining == 0 and qin.empty()):
 
         try:
-            x = qin.get(timeout = TIMEOUT)
+            x = qin.get(timeout = utils.TIMEOUT)
         except mp.queues.Empty:
             continue
 
@@ -280,13 +279,13 @@ if __name__ == '__main__':
         time.sleep(random.uniform(0, 1))
         return x**2
 
-    stream = range(1, 11)
+    stream = range(10)
 
     stream = flat_map(lambda x: [x, x + 1, x + 2], stream)
 
-    stream = map(slow_square, stream, num_processes=4)
+    stream = map(slow_square, stream, workers=4)
 
-    stream = filter(lambda x: x != 0, stream)
+    stream = filter(lambda x: x > 9, stream)
 
     each(print, stream)
 

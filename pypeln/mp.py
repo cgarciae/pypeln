@@ -17,7 +17,7 @@ class Task(namedtuple("TaskInfo", ["f", "args", "kwargs"])):
 
 ################
 # to_stream
-################
+################ 
 def to_stream(obj):
     if isinstance(obj, Stream):
         return obj

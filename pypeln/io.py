@@ -271,7 +271,8 @@ def each(f, stream, workers = 1, queue_maxsize = 0):
     coro_in = stream.coroutine
     coro_out = _each(f_task, coro_in, qin, qout, workers)
 
-    return Stream(coro_out, qout)
+    for _ in Stream(coro_out, qout):
+        pass
 
 
 ########################

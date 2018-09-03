@@ -1,6 +1,9 @@
 
 TIMEOUT = 0.0001
 
+class Namespace(object):
+    pass
+
 class Done(object):
     pass
 

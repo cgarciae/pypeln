@@ -1,10 +1,38 @@
 from __future__ import absolute_import, print_function
 
-import multiprocessing as mp
+#############
+# imports pr
+#############
+
+# from multiprocessing import Process as WORKER
+# from multiprocessing import Manager, Queue, Lock
+# from multiprocessing.queues import Full, Empty
+
+# from collections import namedtuple
+# from . import utils
+
+# def _get_namespace():
+#     return Manager().Namespace()
+
+#############
+# imports th
+#############
+
+from threading import Thread as WORKER
+from.utils import Namespace
+from six.moves.queue import Queue, Empty, Full
+from threading import Lock
+
 from collections import namedtuple
 from . import utils
 
+def _get_namespace():
+    return Namespace()
 
+
+####################
+# classes
+####################
 
 class Stream(namedtuple("Stream", ["workers", "tasks", "queue"])): 
     
@@ -14,6 +42,8 @@ class Stream(namedtuple("Stream", ["workers", "tasks", "queue"])):
 
 class Task(namedtuple("TaskInfo", ["f", "args", "kwargs"])):
     pass
+
+
 
 ################
 # to_stream
@@ -37,7 +67,7 @@ def _from_iterable(iterable, qout):
 
 def from_iterable(iterable, queue_maxsize = 0):
     
-    qout = mp.Queue(maxsize = queue_maxsize)
+    qout = Queue(maxsize = queue_maxsize)
     task = Task(
         f = _from_iterable,
         args = (iterable, qout),
@@ -51,13 +81,13 @@ def from_iterable(iterable, queue_maxsize = 0):
 # map
 ###########
 
-def _map(f, qin, qout, namespace):
+def _map(f, qin, qout, namespace, lock):
 
     while not (namespace.remaining == 0 and qin.empty()):
 
         try:
             x = qin.get(timeout = utils.TIMEOUT)
-        except mp.queues.Empty:
+        except (Empty, Full):
             continue
 
         if not utils.is_done(x):
@@ -65,7 +95,8 @@ def _map(f, qin, qout, namespace):
             qout.put(y)
         
         else:
-            namespace.remaining -= 1
+            with lock:
+                namespace.remaining -= 1
 
     qout.put(utils.DONE)
 
@@ -76,15 +107,16 @@ def map(f, stream, workers = 1, queue_maxsize = 0):
     stream = to_stream(stream)
 
     qin = stream.queue
-    qout = mp.Queue(maxsize = queue_maxsize)
-    namespace = mp.Manager().Namespace()
+    qout = Queue(maxsize = queue_maxsize)
+    namespace = _get_namespace()
+    lock = Lock()
 
     namespace.remaining = stream.workers
 
     tasks = [
         Task(
             f = _map,
-            args = (f, qin, qout, namespace),
+            args = (f, qin, qout, namespace, lock),
             kwargs = dict(),
         )
         for _ in range(workers)
@@ -98,13 +130,13 @@ def map(f, stream, workers = 1, queue_maxsize = 0):
 # flat_map
 ###########
 
-def _flat_map(f, qin, qout, namespace):
+def _flat_map(f, qin, qout, namespace, lock):
 
     while not (namespace.remaining == 0 and qin.empty()):
 
         try:
             x = qin.get(timeout = utils.TIMEOUT)
-        except mp.queues.Empty:
+        except (Empty, Full):
             continue
 
         if not utils.is_done(x):
@@ -112,7 +144,8 @@ def _flat_map(f, qin, qout, namespace):
                 qout.put(y)
         
         else:
-            namespace.remaining -= 1
+            with lock:
+                namespace.remaining -= 1
 
     qout.put(utils.DONE)
 
@@ -123,15 +156,16 @@ def flat_map(f, stream, workers = 1, queue_maxsize = 0):
     stream = to_stream(stream)
 
     qin = stream.queue
-    qout = mp.Queue(maxsize = queue_maxsize)
-    namespace = mp.Manager().Namespace()
+    qout = Queue(maxsize = queue_maxsize)
+    namespace = _get_namespace()
+    lock = Lock()
 
     namespace.remaining = stream.workers
 
     tasks = [
         Task(
             f = _flat_map,
-            args = (f, qin, qout, namespace),
+            args = (f, qin, qout, namespace, lock),
             kwargs = dict(),
         )
         for _ in range(workers)
@@ -146,13 +180,13 @@ def flat_map(f, stream, workers = 1, queue_maxsize = 0):
 # filter
 ###########
 
-def _filter(f, qin, qout, namespace):
+def _filter(f, qin, qout, namespace, lock):
 
     while not (namespace.remaining == 0 and qin.empty()):
 
         try:
             x = qin.get(timeout = utils.TIMEOUT)
-        except mp.queues.Empty:
+        except (Empty, Full):
             continue
 
         if not utils.is_done(x):
@@ -160,7 +194,8 @@ def _filter(f, qin, qout, namespace):
                 qout.put(x)
         
         else:
-            namespace.remaining -= 1
+            with lock:
+                namespace.remaining -= 1
 
     qout.put(utils.DONE)
 
@@ -171,15 +206,16 @@ def filter(f, stream, workers = 1, queue_maxsize = 0):
     stream = to_stream(stream)
 
     qin = stream.queue
-    qout = mp.Queue(maxsize = queue_maxsize)
-    namespace = mp.Manager().Namespace()
+    qout = Queue(maxsize = queue_maxsize)
+    namespace = _get_namespace()
+    lock = Lock()
 
     namespace.remaining = stream.workers
 
     tasks = [
         Task(
             f = _filter,
-            args = (f, qin, qout, namespace),
+            args = (f, qin, qout, namespace, lock),
             kwargs = dict(),
         )
         for _ in range(workers)
@@ -193,20 +229,21 @@ def filter(f, stream, workers = 1, queue_maxsize = 0):
 ###########
 # each
 ###########
-def _each(f, qin, qout, namespace):
+def _each(f, qin, qout, namespace, lock):
 
     while not (namespace.remaining == 0 and qin.empty()):
 
         try:
             x = qin.get(timeout = utils.TIMEOUT)
-        except mp.queues.Empty:
+        except (Empty, Full):
             continue
 
         if not utils.is_done(x):
             f(x)
         
         else:
-            namespace.remaining -= 1
+            with lock:
+                namespace.remaining -= 1
 
     qout.put(utils.DONE)
 
@@ -217,15 +254,16 @@ def each(f, stream, workers = 1, queue_maxsize = 0):
     stream = to_stream(stream)
 
     qin = stream.queue
-    qout = mp.Queue(maxsize = queue_maxsize)
-    namespace = mp.Manager().Namespace()
+    qout = Queue(maxsize = queue_maxsize)
+    namespace = _get_namespace()
+    lock = Lock()
 
     namespace.remaining = stream.workers
 
     tasks = [
         Task(
             f = _each,
-            args = (f, qin, qout, namespace),
+            args = (f, qin, qout, namespace, lock),
             kwargs = dict(),
         )
         for _ in range(workers)
@@ -244,7 +282,7 @@ def each(f, stream, workers = 1, queue_maxsize = 0):
 def to_iterable(stream):
 
     processes = [
-        mp.Process(target = task.f, args = task.args, kwargs = task.kwargs)
+        WORKER(target = task.f, args = task.args, kwargs = task.kwargs)
         for task in stream.tasks
     ]
 
@@ -259,7 +297,7 @@ def to_iterable(stream):
 
         try:
             x = qin.get(timeout = utils.TIMEOUT)
-        except mp.queues.Empty:
+        except (Empty, Full):
             continue
 
         if not utils.is_done(x):

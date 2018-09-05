@@ -14,35 +14,8 @@ class Stream(namedtuple("Stream", ["coroutine", "queue"])):
         return self.coroutine.__await__()
 
     def __iter__(self):
-        return to_iterable(self)
+        return _to_iterable(self)
 
-################
-# to_stream
-################
-
-def to_stream(obj):
-    if isinstance(obj, Stream):
-        return obj
-    else:
-        return from_iterable(obj)
-    
-########################
-# from_iterable
-########################
-
-async def _from_iterable(iterable, qout):
-        
-    for x in iterable:
-        await qout.put(x)
-        
-    await qout.put(utils.DONE)
-
-def from_iterable(iterable, queue_maxsize = 0):
-    
-    qout = asyncio.Queue(maxsize=queue_maxsize)
-    coro_out = _from_iterable(iterable, qout)
-
-    return Stream(coro_out, qout)
 
 ########################
 # map
@@ -80,7 +53,7 @@ async def _map(f_task, coro_in, qin, qout, workers):
 
 def map(f, stream, workers = 1, queue_maxsize = 0):
 
-    stream = to_stream(stream)
+    stream = _to_stream(stream)
 
     qin = stream.queue
     qout = asyncio.Queue(maxsize = queue_maxsize)
@@ -132,7 +105,7 @@ async def _flat_map(f_task, coro_in, qin, qout, workers):
 
 def flat_map(f, stream, workers = 1, queue_maxsize = 0):
 
-    stream = to_stream(stream)
+    stream = _to_stream(stream)
 
     qin = stream.queue
     qout = asyncio.Queue(maxsize = queue_maxsize)
@@ -180,7 +153,7 @@ async def _filter(f_task, coro_in, qin, qout, workers):
 
 def filter(f, stream, workers = 1, queue_maxsize = 0):
 
-    stream = to_stream(stream)
+    stream = _to_stream(stream)
 
     qin = stream.queue
     qout = asyncio.Queue(maxsize = queue_maxsize)
@@ -225,7 +198,7 @@ async def _each(f_task, coro_in, qin, qout, workers):
 
 def each(f, stream, workers = 1, queue_maxsize = 0):
 
-    stream = to_stream(stream)
+    stream = _to_stream(stream)
 
     qin = stream.queue
     qout = asyncio.Queue(maxsize = queue_maxsize)
@@ -237,26 +210,56 @@ def each(f, stream, workers = 1, queue_maxsize = 0):
         pass
 
 
+
+################
+# _to_stream
+################
+def _to_stream(obj):
+    if isinstance(obj, Stream):
+        return obj
+    elif hasattr(obj, "__iter__"):
+        return _from_iterable(obj)
+    else:
+        raise ValueError("Object {obj} is not iterable".format(obj = obj))
+    
 ########################
-# to_iterable
+# _from_iterable
+########################
+
+async def _from_iterable_fn(iterable, qout):
+        
+    for x in iterable:
+        await qout.put(x)
+        
+    await qout.put(utils.DONE)
+
+def _from_iterable(iterable, queue_maxsize = 0):
+    
+    qout = asyncio.Queue(maxsize=queue_maxsize)
+    coro_out = _from_iterable_fn(iterable, qout)
+
+    return Stream(coro_out, qout)
+
+########################
+# _to_iterable
 ########################
 
 def _handle_async_exception(loop, ctx):
     loop.stop()
     raise Exception(f"Exception in async task: {ctx}")
 
-def _to_iterable(loop, stream):
+def _to_iterable_fn(loop, stream):
     
     loop.run_until_complete(stream)
 
-def to_iterable(stream: Stream):
+def _to_iterable(stream: Stream):
 
     qin = stream.queue
 
     loop = asyncio.get_event_loop()
     loop.set_exception_handler(_handle_async_exception)
 
-    thread = threading.Thread(target=_to_iterable, args=(loop, stream))
+    thread = threading.Thread(target=_to_iterable_fn, args=(loop, stream))
     thread.daemon = True
     thread.start()
 

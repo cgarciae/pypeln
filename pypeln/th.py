@@ -37,44 +37,19 @@ def _get_namespace():
 class Stream(namedtuple("Stream", ["workers", "tasks", "queue"])): 
     
     def __iter__(self):
-        return to_iterable(self)
+        return _to_iterable(self)
+
+    def __repr__(self):
+        return "Stream(workers = {workers}, tasks = {tasks}, queue = {queue})".format(
+            workers = self.workers,
+            tasks = len(self.tasks),
+            queue = self.queue,
+        )
 
 
-class Task(namedtuple("TaskInfo", ["f", "args", "kwargs"])):
+class _Task(namedtuple("_Task", ["f", "args", "kwargs"])):
     pass
 
-
-
-################
-# to_stream
-################ 
-def to_stream(obj):
-    if isinstance(obj, Stream):
-        return obj
-    else:
-        return from_iterable(obj)
-
-################
-# from_iterable
-################
-
-def _from_iterable(iterable, qout):
-
-    for x in iterable:
-        qout.put(x)
-        
-    qout.put(utils.DONE)
-
-def from_iterable(iterable, queue_maxsize = 0):
-    
-    qout = Queue(maxsize = queue_maxsize)
-    task = Task(
-        f = _from_iterable,
-        args = (iterable, qout),
-        kwargs = dict(),
-    )
-
-    return Stream(1, [task], qout)
 
 
 ###########
@@ -104,7 +79,7 @@ def _map(f, qin, qout, namespace, lock):
 
 def map(f, stream, workers = 1, queue_maxsize = 0):
 
-    stream = to_stream(stream)
+    stream = _to_stream(stream)
 
     qin = stream.queue
     qout = Queue(maxsize = queue_maxsize)
@@ -114,7 +89,7 @@ def map(f, stream, workers = 1, queue_maxsize = 0):
     namespace.remaining = stream.workers
 
     tasks = [
-        Task(
+        _Task(
             f = _map,
             args = (f, qin, qout, namespace, lock),
             kwargs = dict(),
@@ -153,7 +128,7 @@ def _flat_map(f, qin, qout, namespace, lock):
 
 def flat_map(f, stream, workers = 1, queue_maxsize = 0):
 
-    stream = to_stream(stream)
+    stream = _to_stream(stream)
 
     qin = stream.queue
     qout = Queue(maxsize = queue_maxsize)
@@ -163,7 +138,7 @@ def flat_map(f, stream, workers = 1, queue_maxsize = 0):
     namespace.remaining = stream.workers
 
     tasks = [
-        Task(
+        _Task(
             f = _flat_map,
             args = (f, qin, qout, namespace, lock),
             kwargs = dict(),
@@ -203,7 +178,7 @@ def _filter(f, qin, qout, namespace, lock):
 
 def filter(f, stream, workers = 1, queue_maxsize = 0):
 
-    stream = to_stream(stream)
+    stream = _to_stream(stream)
 
     qin = stream.queue
     qout = Queue(maxsize = queue_maxsize)
@@ -213,7 +188,7 @@ def filter(f, stream, workers = 1, queue_maxsize = 0):
     namespace.remaining = stream.workers
 
     tasks = [
-        Task(
+        _Task(
             f = _filter,
             args = (f, qin, qout, namespace, lock),
             kwargs = dict(),
@@ -251,7 +226,7 @@ def _each(f, qin, qout, namespace, lock):
 
 def each(f, stream, workers = 1, queue_maxsize = 0):
 
-    stream = to_stream(stream)
+    stream = _to_stream(stream)
 
     qin = stream.queue
     qout = Queue(maxsize = queue_maxsize)
@@ -261,7 +236,7 @@ def each(f, stream, workers = 1, queue_maxsize = 0):
     namespace.remaining = stream.workers
 
     tasks = [
-        Task(
+        _Task(
             f = _each,
             args = (f, qin, qout, namespace, lock),
             kwargs = dict(),
@@ -275,11 +250,45 @@ def each(f, stream, workers = 1, queue_maxsize = 0):
         pass
 
 
+
+################
+# _to_stream
+################ 
+def _to_stream(obj):
+    if isinstance(obj, Stream):
+        return obj
+    elif hasattr(obj, "__iter__"):
+        return _from_iterable(obj)
+    else:
+        raise ValueError("Object {obj} is not iterable".format(obj = obj))
+
+################
+# _from_iterable
+################
+
+def _from_iterable_fn(iterable, qout):
+
+    for x in iterable:
+        qout.put(x)
+        
+    qout.put(utils.DONE)
+
+def _from_iterable(iterable, queue_maxsize = 0):
+    
+    qout = Queue(maxsize = queue_maxsize)
+    task = _Task(
+        f = _from_iterable_fn,
+        args = (iterable, qout),
+        kwargs = dict(),
+    )
+
+    return Stream(1, [task], qout)
+
 ##############
-# to_iterable
+# _to_iterable
 ##############
 
-def to_iterable(stream):
+def _to_iterable(stream):
 
     processes = [
         WORKER(target = task.f, args = task.args, kwargs = task.kwargs)
@@ -325,6 +334,6 @@ if __name__ == '__main__':
 
     stream = filter(lambda x: x > 9, stream)
 
-    each(print, stream)
+    print(stream)
 
     

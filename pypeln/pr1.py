@@ -10,32 +10,38 @@ from multiprocessing.queues import Full, Empty
 
 from collections import namedtuple
 from . import utils
+import random
 
 def _get_namespace():
     return Manager().Namespace()
 
+####################
+# strategies
+####################
 
-
+RANDOM = "random"
+ROUND_ROBIN = "round_robin"
+LEAST_SIZE = "least_size"
 
 
 ####################
 # classes
 ####################
 
-class Stream(namedtuple("Stream", ["workers", "tasks", "queue"])): 
+class Stream(namedtuple("Stream", ["tasks"])): 
     
     def __iter__(self):
         return _to_iterable(self)
 
     def __repr__(self):
-        return "Stream(workers = {workers}, tasks = {tasks}, queue = {queue})".format(
+        return "Stream(workers = {workers}, tasks = {tasks}, strategy = {strategy})".format(
             workers = self.workers,
             tasks = len(self.tasks),
-            queue = self.queue,
+            strategy = self.strategy,
         )
 
 
-class _Task(namedtuple("_Task", ["f", "args", "kwargs"])):
+class _Task(namedtuple("_Task", ["workers", "queue_maxsize", "f", "args", "kwargs"])):
     pass
 
 
@@ -254,23 +260,33 @@ def _to_stream(obj):
 # _from_iterable
 ################
 
-def _from_iterable_fn(iterable, qout):
+def _from_iterable_fn(iterable, strategy, queues_queues = None):
+
+    queues_out = []
+
+    for queue_queue in queues_queues:
+        queues_out.append(queue_queue.get())
 
     for x in iterable:
-        qout.put(x)
+        _put(x, queues_out, strategy)
         
-    qout.put(utils.DONE)
+    for qout in queues_out:
+        qout.put(utils.DONE)
 
-def _from_iterable(iterable, queue_maxsize = 0):
-    
-    qout = Queue(maxsize = queue_maxsize)
+def _from_iterable(iterable, queue_maxsize = 0, strategy = "random"):
+
     task = _Task(
+        workers = 1,
+        queue_maxsize = queue_maxsize,
         f = _from_iterable_fn,
-        args = (iterable, qout),
+        args = (iterable, strategy),
         kwargs = dict(),
     )
 
-    return Stream(1, [task], qout)
+    return Stream([task])
+
+
+
 
 ##############
 # _to_iterable
@@ -278,10 +294,16 @@ def _from_iterable(iterable, queue_maxsize = 0):
 
 def _to_iterable(stream):
 
-    processes = [
-        WORKER(target = task.f, args = task.args, kwargs = task.kwargs)
-        for task in stream.tasks
-    ]
+    processes = []
+    tasks = list(reversed(stream.tasks))
+
+    last_task = tasks[0]
+    queue_queue = Queue()
+    qin = Queue()
+
+    for
+    
+
 
     for p in processes:
         p.daemon = True
@@ -305,6 +327,24 @@ def _to_iterable(stream):
     
     for p in processes:
         p.join()
+
+##############
+# _put
+##############
+
+def _put(x, queues_out, strategy):
+
+    if strategy == RANDOM:
+        qout = random.choice(queues_out)
+        qout.put(x)
+
+    elif strategy == ROUND_ROBIN:
+        raise NotImplementedError()
+
+    elif strategy == LEAST_SIZE:
+        raise NotImplementedError()
+    else:
+        raise ValueError("Invalid stragegy '{}'".format(strategy))
 
 if __name__ == '__main__':
     import time

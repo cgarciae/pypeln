@@ -271,6 +271,60 @@ def each(f, stream, workers = 1, queue_maxsize = 0):
     return Stream(workers, tasks, queues_out)
 
 
+###########
+# concat
+###########
+#NOTE: NOT FINISED
+
+def _concat(f, qin, queues_out, namespace, lock):
+
+    while not (namespace.remaining == 0 and qin.empty()):
+
+        try:
+            x = qin.get(timeout = utils.TIMEOUT)
+        except (Empty, Full):
+            continue
+
+        if not utils.is_done(x):
+            y = f(x)
+            for qout in queues_out:
+                qout.put(y)
+        
+        else:
+            with lock:
+                namespace.remaining -= 1
+
+    for qout in queues_out:
+        qout.put(utils.DONE)
+
+
+
+def concat(streams, workers = 1, queue_maxsize = 0):
+
+    streams = [ _to_stream(stream) for stream in streams ]
+
+    qin = Queue(maxsize = queue_maxsize)
+    queues_out = []
+    namespace = _get_namespace()
+    lock = Lock()
+
+    for stream in streams:
+        stream.queues.append(qin)
+
+    namespace.remaining = stream.workers
+
+    tasks = set([
+        _Task(
+            f = _map,
+            args = (f, qin, queues_out, namespace, lock),
+            kwargs = dict(),
+        )
+        for _ in range(workers)
+    ])
+
+    tasks = tasks.union(stream.tasks)
+
+    return Stream(workers, tasks, queues_out)
 
 ################
 # _to_stream

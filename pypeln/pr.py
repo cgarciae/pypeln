@@ -11,32 +11,50 @@ from multiprocessing.queues import Full, Empty
 from collections import namedtuple
 from . import utils
 
+MANAGER = Manager()
+
 def _get_namespace():
-    return Manager().Namespace()
+    return MANAGER.Namespace()
 
+#############
+# imports th
+#############
 
+# from threading import Thread as WORKER
+# from.utils import Namespace
+# from six.moves.queue import Queue, Empty, Full
+# from threading import Lock
 
+# from collections import namedtuple
+# from . import utils
+
+# def _get_namespace():
+#     return Namespace()
 
 
 ####################
 # classes
 ####################
 
-class Stream(namedtuple("Stream", ["workers", "tasks", "queue"])): 
+class Stream(namedtuple("Stream", ["workers", "tasks", "queues"])): 
     
     def __iter__(self):
         return _to_iterable(self)
 
     def __repr__(self):
-        return "Stream(workers = {workers}, tasks = {tasks}, queue = {queue})".format(
+        return "Stream(workers = {workers}, tasks = {tasks}, queues = {queues})".format(
             workers = self.workers,
             tasks = len(self.tasks),
-            queue = self.queue,
+            queues = len(self.queues),
         )
 
 
-class _Task(namedtuple("_Task", ["f", "args", "kwargs"])):
-    pass
+class _Task(object):
+    
+    def __init__(self, f, args, kwargs):
+        self.f = f
+        self.args = args
+        self.kwargs = kwargs
 
 
 
@@ -44,7 +62,7 @@ class _Task(namedtuple("_Task", ["f", "args", "kwargs"])):
 # map
 ###########
 
-def _map(f, qin, qout, namespace, lock):
+def _map(f, qin, queues_out, namespace, lock):
 
     while not (namespace.remaining == 0 and qin.empty()):
 
@@ -55,13 +73,15 @@ def _map(f, qin, qout, namespace, lock):
 
         if not utils.is_done(x):
             y = f(x)
-            qout.put(y)
+            for qout in queues_out:
+                qout.put(y)
         
         else:
             with lock:
                 namespace.remaining -= 1
 
-    qout.put(utils.DONE)
+    for qout in queues_out:
+        qout.put(utils.DONE)
 
 
 
@@ -69,31 +89,33 @@ def map(f, stream, workers = 1, queue_maxsize = 0):
 
     stream = _to_stream(stream)
 
-    qin = stream.queue
-    qout = Queue(maxsize = queue_maxsize)
+    qin = Queue(maxsize = queue_maxsize)
+    queues_out = []
     namespace = _get_namespace()
     lock = Lock()
 
+    stream.queues.append(qin)
+
     namespace.remaining = stream.workers
 
-    tasks = [
+    tasks = set([
         _Task(
             f = _map,
-            args = (f, qin, qout, namespace, lock),
+            args = (f, qin, queues_out, namespace, lock),
             kwargs = dict(),
         )
         for _ in range(workers)
-    ]
+    ])
 
-    tasks += stream.tasks
+    tasks = tasks.union(stream.tasks)
 
-    return Stream(workers, tasks, qout)
+    return Stream(workers, tasks, queues_out)
 
 ###########
 # flat_map
 ###########
 
-def _flat_map(f, qin, qout, namespace, lock):
+def _flat_map(f, qin, queues_out, namespace, lock):
 
     while not (namespace.remaining == 0 and qin.empty()):
 
@@ -104,13 +126,15 @@ def _flat_map(f, qin, qout, namespace, lock):
 
         if not utils.is_done(x):
             for y in f(x):
-                qout.put(y)
+                for qout in queues_out:
+                    qout.put(y)
         
         else:
             with lock:
                 namespace.remaining -= 1
 
-    qout.put(utils.DONE)
+    for qout in queues_out:
+        qout.put(utils.DONE)
 
 
 
@@ -118,32 +142,34 @@ def flat_map(f, stream, workers = 1, queue_maxsize = 0):
 
     stream = _to_stream(stream)
 
-    qin = stream.queue
-    qout = Queue(maxsize = queue_maxsize)
+    qin = Queue(maxsize = queue_maxsize)
+    queues_out = []
     namespace = _get_namespace()
     lock = Lock()
 
+    stream.queues.append(qin)
+
     namespace.remaining = stream.workers
 
-    tasks = [
+    tasks = set([
         _Task(
             f = _flat_map,
-            args = (f, qin, qout, namespace, lock),
+            args = (f, qin, queues_out, namespace, lock),
             kwargs = dict(),
         )
         for _ in range(workers)
-    ]
+    ])
 
-    tasks += stream.tasks
+    tasks = tasks.union(stream.tasks)
 
-    return Stream(workers, tasks, qout)
+    return Stream(workers, tasks, queues_out)
 
 
 ###########
 # filter
 ###########
 
-def _filter(f, qin, qout, namespace, lock):
+def _filter(f, qin, queues_out, namespace, lock):
 
     while not (namespace.remaining == 0 and qin.empty()):
 
@@ -154,13 +180,15 @@ def _filter(f, qin, qout, namespace, lock):
 
         if not utils.is_done(x):
             if f(x):
-                qout.put(x)
+                for qout in queues_out:
+                    qout.put(x)
         
         else:
             with lock:
                 namespace.remaining -= 1
 
-    qout.put(utils.DONE)
+    for qout in queues_out:
+        qout.put(utils.DONE)
 
 
 
@@ -168,31 +196,34 @@ def filter(f, stream, workers = 1, queue_maxsize = 0):
 
     stream = _to_stream(stream)
 
-    qin = stream.queue
-    qout = Queue(maxsize = queue_maxsize)
+    qin = Queue(maxsize = queue_maxsize)
+    queues_out = []
     namespace = _get_namespace()
     lock = Lock()
 
+    stream.queues.append(qin)
+
     namespace.remaining = stream.workers
 
-    tasks = [
+    tasks = set([
         _Task(
             f = _filter,
-            args = (f, qin, qout, namespace, lock),
+            args = (f, qin, queues_out, namespace, lock),
             kwargs = dict(),
         )
         for _ in range(workers)
-    ]
+    ])
 
-    tasks += stream.tasks
+    tasks = tasks.union(stream.tasks)
 
-    return Stream(workers, tasks, qout)
+    return Stream(workers, tasks, queues_out)
 
 
 ###########
 # each
 ###########
-def _each(f, qin, qout, namespace, lock):
+
+def _each(f, qin, queues_out, namespace, lock):
 
     while not (namespace.remaining == 0 and qin.empty()):
 
@@ -208,7 +239,8 @@ def _each(f, qin, qout, namespace, lock):
             with lock:
                 namespace.remaining -= 1
 
-    qout.put(utils.DONE)
+    for qout in queues_out:
+        qout.put(utils.DONE)
 
 
 
@@ -216,26 +248,27 @@ def each(f, stream, workers = 1, queue_maxsize = 0):
 
     stream = _to_stream(stream)
 
-    qin = stream.queue
-    qout = Queue(maxsize = queue_maxsize)
+    qin = Queue(maxsize = queue_maxsize)
+    queues_out = []
     namespace = _get_namespace()
     lock = Lock()
 
+    stream.queues.append(qin)
+
     namespace.remaining = stream.workers
 
-    tasks = [
+    tasks = set([
         _Task(
             f = _each,
-            args = (f, qin, qout, namespace, lock),
+            args = (f, qin, queues_out, namespace, lock),
             kwargs = dict(),
         )
         for _ in range(workers)
-    ]
+    ])
 
-    tasks += stream.tasks
+    tasks = tasks.union(stream.tasks)
 
-    for _ in Stream(workers, tasks, qout):
-        pass
+    return Stream(workers, tasks, queues_out)
 
 
 
@@ -254,29 +287,37 @@ def _to_stream(obj):
 # _from_iterable
 ################
 
-def _from_iterable_fn(iterable, qout):
+def _from_iterable_fn(iterable, queues_out):
 
     for x in iterable:
-        qout.put(x)
-        
-    qout.put(utils.DONE)
-
-def _from_iterable(iterable, queue_maxsize = 0):
+        for qout in queues_out:
+            qout.put(x)
     
-    qout = Queue(maxsize = queue_maxsize)
+    for qout in queues_out:
+        qout.put(utils.DONE)
+
+def _from_iterable(iterable):
+    
+    queues_out = []
+
     task = _Task(
         f = _from_iterable_fn,
-        args = (iterable, qout),
+        args = (iterable, queues_out),
         kwargs = dict(),
     )
 
-    return Stream(1, [task], qout)
+    return Stream(1, {task}, queues_out)
 
 ##############
 # _to_iterable
 ##############
 
-def _to_iterable(stream):
+def _to_iterable(stream, queue_maxsize = 0):
+
+    remaining = stream.workers
+    qin = Queue(maxsize = queue_maxsize)
+
+    stream.queues.append(qin)
 
     processes = [
         WORKER(target = task.f, args = task.args, kwargs = task.kwargs)
@@ -286,9 +327,6 @@ def _to_iterable(stream):
     for p in processes:
         p.daemon = True
         p.start()
-
-    remaining = stream.workers
-    qin = stream.queue
 
     while not (remaining == 0 and qin.empty()):
 

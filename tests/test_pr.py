@@ -6,13 +6,27 @@ import cytoolz as cz
 from pypeln import pr
 
 ############
+# trivial
+############
+
+@hp.given(numbers = st.lists(st.integers()))
+@hp.settings(max_examples=10)
+def test_from_to_iterable(numbers):
+
+    numbers_py = numbers
+
+    numbers_pl = pr._from_iterable(numbers)
+    numbers_pl = list(numbers_pl)
+
+    assert numbers_pl == numbers_py
+
+############
 # map
 ############
 
 @hp.given(numbers = st.lists(st.integers()))
 def test_map_id(numbers):
 
-    
     numbers_py = numbers
 
     numbers_pl = pr.map(lambda x: x, numbers)
@@ -37,7 +51,6 @@ def test_map_square(numbers):
 @hp.given(numbers = st.lists(st.integers()))
 def test_map_square_workers(numbers):
 
-    
     numbers_py = map(lambda x: x ** 2, numbers)
     numbers_py = list(numbers_py)
 
@@ -78,12 +91,12 @@ def test_flat_map_square_workers(numbers):
         yield x + 1
         yield x + 2
     
-    numbers_py = map(lambda x: x ** 2, numbers)
-    numbers_py = cz.mapcat(_generator, numbers_py)
+    # numbers_py = map(lambda x: x ** 2, numbers)
+    numbers_py = cz.mapcat(_generator, numbers)
     numbers_py = list(numbers_py)
 
-    numbers_pl = pr.map(lambda x: x ** 2, numbers)
-    numbers_pl = pr.flat_map(_generator, numbers_pl, workers=3)
+    # numbers_pl = pr.map(lambda x: x ** 2, numbers)
+    numbers_pl = pr.flat_map(_generator, numbers, workers=3)
     numbers_pl = list(numbers_pl)
 
     assert sorted(numbers_pl) == sorted(numbers_py)

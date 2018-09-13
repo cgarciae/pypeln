@@ -8,7 +8,7 @@ from . import utils
 from .utils_async import TaskPool
 import time
 
-class Stream(namedtuple("Stream", ["coroutine", "queue"])):
+class Stream(namedtuple("Stream", ["coroutine", "queues"])):
 
     def __await__(self):
         return self.coroutine.__await__()
@@ -17,29 +17,14 @@ class Stream(namedtuple("Stream", ["coroutine", "queue"])):
         return _to_iterable(self)
 
 
-########################
-# map
-########################
-
-def _map_wrapper(f, queue):
-    async def _task(x):
-
-        y = f(x)
-
-        if hasattr(y, "__await__"):
-            y = await y
-
-        await queue.put(y)
-    
-    return _task
-
-async def _map(f_task, coro_in, qin, qout, workers):
+async def _task_runner(f_task, coro_in, qin, queues_out, workers):
     
     coroin_task = asyncio.ensure_future(coro_in)
 
     async with TaskPool(workers = workers) as tasks:
 
         x = await qin.get()
+
         while x is not utils.DONE:
 
             fcoro = f_task(x)
@@ -47,21 +32,43 @@ async def _map(f_task, coro_in, qin, qout, workers):
 
             x = await qin.get()
 
-    # end async with: wait all tasks to finish
-    await qout.put(utils.DONE)
+    # wait all tasks to finish
+    for qout in queues_out:
+        await qout.put(utils.DONE)
+
     await coroin_task
+
+########################
+# map
+########################
+
+def _map(f, queues):
+    async def _task(x):
+
+        y = f(x)
+
+        if hasattr(y, "__await__"):
+            y = await y
+
+        for queue in queues:
+            await queue.put(y)
+    
+    return _task
+
 
 def map(f, stream, workers = 1, queue_maxsize = 0):
 
     stream = _to_stream(stream)
 
-    qin = stream.queue
-    qout = asyncio.Queue(maxsize = queue_maxsize)
-    f_task = _map_wrapper(f, queue = qout)
+    queues_out = []
+    qin = asyncio.Queue(maxsize = queue_maxsize)
+    stream.queues.append(qin)
+    
+    f_task = _map(f, queues = queues_out)
     coro_in = stream.coroutine
-    coro_out = _map(f_task, coro_in, qin, qout, workers)
+    coro_out = _task_runner(f_task, coro_in, qin, queues_out, workers)
 
-    return Stream(coro_out, qout)
+    return Stream(coro_out, queues_out)
 
 
 
@@ -85,42 +92,47 @@ def _flat_map_wrapper(f, queue):
     
     return _task
 
-async def _flat_map(f_task, coro_in, qin, qout, workers):
+def _flat_map(f, queues):
+    async def _task(x):
+
+        ys = f(x)
+
+        if hasattr(ys, "__aiter__"):
+            async for y in ys:
+                for queue in queues:
+                    await queue.put(y)
+        elif hasattr(ys, "__iter__"):
+            for y in ys:
+                for queue in queues:
+                    await queue.put(y)
+        else:
+            raise ValueError(f"{ys} is not an (async) iterable")
+
+        
     
-    coroin_task = asyncio.ensure_future(coro_in)
+    return _task
 
-    async with TaskPool(workers = workers) as tasks:
-
-        x = await qin.get()
-        while x is not utils.DONE:
-
-            fcoro = f_task(x)
-            await tasks.put(fcoro)
-
-            x = await qin.get()
-
-    # end async with: wait all tasks to finish
-    await qout.put(utils.DONE)
-    await coroin_task
 
 def flat_map(f, stream, workers = 1, queue_maxsize = 0):
 
     stream = _to_stream(stream)
 
-    qin = stream.queue
-    qout = asyncio.Queue(maxsize = queue_maxsize)
-    f_task = _flat_map_wrapper(f, queue = qout)
+    queues_out = []
+    qin = asyncio.Queue(maxsize = queue_maxsize)
+    stream.queues.append(qin)
+    
+    f_task = _flat_map(f, queues = queues_out)
     coro_in = stream.coroutine
-    coro_out = _flat_map(f_task, coro_in, qin, qout, workers)
+    coro_out = _task_runner(f_task, coro_in, qin, queues_out, workers)
 
-    return Stream(coro_out, qout)
+    return Stream(coro_out, queues_out)
 
 
 ########################
 # filter
 ########################
 
-def _filter_wrapper(f, queue):
+def _filter(f, queues):
     async def _task(x):
 
         y = f(x)
@@ -129,84 +141,55 @@ def _filter_wrapper(f, queue):
             y = await y
 
         if y:
-            await queue.put(x)
+            for queue in queues:
+                await queue.put(x)
     
     return _task
 
-async def _filter(f_task, coro_in, qin, qout, workers):
-    
-    coroin_task = asyncio.ensure_future(coro_in)
-
-    async with TaskPool(workers = workers) as tasks:
-
-        x = await qin.get()
-        while x is not utils.DONE:
-
-            fcoro = f_task(x)
-            await tasks.put(fcoro)
-
-            x = await qin.get()
-
-    # end async with: wait all tasks to finish
-    await qout.put(utils.DONE)
-    await coroin_task
 
 def filter(f, stream, workers = 1, queue_maxsize = 0):
 
     stream = _to_stream(stream)
 
-    qin = stream.queue
-    qout = asyncio.Queue(maxsize = queue_maxsize)
-    f_task = _filter_wrapper(f, queue = qout)
+    queues_out = []
+    qin = asyncio.Queue(maxsize = queue_maxsize)
+    stream.queues.append(qin)
+    
+    f_task = _filter(f, queues = queues_out)
     coro_in = stream.coroutine
-    coro_out = _filter(f_task, coro_in, qin, qout, workers)
+    coro_out = _task_runner(f_task, coro_in, qin, queues_out, workers)
 
-    return Stream(coro_out, qout)
+    return Stream(coro_out, queues_out)
 
 
 ########################
 # each
 ########################
 
-def _each_wrapper(f, queue):
+def _each(f, queues):
     async def _task(x):
 
         y = f(x)
 
         if hasattr(y, "__await__"):
             y = await y
-
+    
     return _task
 
-async def _each(f_task, coro_in, qin, qout, workers):
-    
-    coroin_task = asyncio.ensure_future(coro_in)
-
-    async with TaskPool(workers = workers) as tasks:
-
-        x = await qin.get()
-        while x is not utils.DONE:
-
-            fcoro = f_task(x)
-            await tasks.put(fcoro)
-
-            x = await qin.get()
-
-    # end async with: wait all tasks to finish
-    await qout.put(utils.DONE)
-    await coroin_task
 
 def each(f, stream, workers = 1, queue_maxsize = 0):
 
     stream = _to_stream(stream)
 
-    qin = stream.queue
-    qout = asyncio.Queue(maxsize = queue_maxsize)
-    f_task = _each_wrapper(f, queue = qout)
+    queues_out = []
+    qin = asyncio.Queue(maxsize = queue_maxsize)
+    stream.queues.append(qin)
+    
+    f_task = _each(f, queues = queues_out)
     coro_in = stream.coroutine
-    coro_out = _each(f_task, coro_in, qin, qout, workers)
+    coro_out = _task_runner(f_task, coro_in, qin, queues_out, workers)
 
-    for _ in Stream(coro_out, qout):
+    for _ in Stream(coro_out, queues_out):
         pass
 
 
@@ -226,19 +209,21 @@ def _to_stream(obj):
 # _from_iterable
 ########################
 
-async def _from_iterable_fn(iterable, qout):
+async def _from_iterable_fn(iterable, queues_out):
         
     for x in iterable:
-        await qout.put(x)
+        for qout in queues_out:
+            await qout.put(x)
         
-    await qout.put(utils.DONE)
+    for qout in queues_out:
+        await qout.put(utils.DONE)
 
-def _from_iterable(iterable, queue_maxsize = 0):
+def _from_iterable(iterable):
     
-    qout = asyncio.Queue(maxsize=queue_maxsize)
-    coro_out = _from_iterable_fn(iterable, qout)
+    queues_out = []
+    coro_out = _from_iterable_fn(iterable, queues_out)
 
-    return Stream(coro_out, qout)
+    return Stream(coro_out, queues_out)
 
 ########################
 # _to_iterable
@@ -252,9 +237,11 @@ def _to_iterable_fn(loop, stream):
     
     loop.run_until_complete(stream)
 
-def _to_iterable(stream: Stream):
+def _to_iterable(stream: Stream, queue_maxsize = 0):
 
-    qin = stream.queue
+    qin = asyncio.Queue(maxsize = queue_maxsize)
+
+    stream.queues.append(qin)
 
     loop = asyncio.get_event_loop()
     loop.set_exception_handler(_handle_async_exception)

@@ -5,12 +5,14 @@ import cytoolz as cz
 
 from pypeln import th
 
+MAX_EXAMPLES = 15
+
 ############
 # trivial
 ############
 
 @hp.given(numbers = st.lists(st.integers()))
-@hp.settings(max_examples=10)
+@hp.settings(max_examples=MAX_EXAMPLES)
 def test_from_to_iterable(numbers):
 
     numbers_py = numbers
@@ -25,6 +27,7 @@ def test_from_to_iterable(numbers):
 ############
 
 @hp.given(numbers = st.lists(st.integers()))
+@hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_id(numbers):
 
     numbers_py = numbers
@@ -36,6 +39,7 @@ def test_map_id(numbers):
 
 
 @hp.given(numbers = st.lists(st.integers()))
+@hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_square(numbers):
 
     
@@ -49,6 +53,7 @@ def test_map_square(numbers):
 
 
 @hp.given(numbers = st.lists(st.integers()))
+@hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_square_workers(numbers):
 
     numbers_py = map(lambda x: x ** 2, numbers)
@@ -65,6 +70,7 @@ def test_map_square_workers(numbers):
 ############
 
 @hp.given(numbers = st.lists(st.integers()))
+@hp.settings(max_examples=MAX_EXAMPLES)
 def test_flat_map_square(numbers):
 
     def _generator(x):
@@ -84,6 +90,7 @@ def test_flat_map_square(numbers):
 
 
 @hp.given(numbers = st.lists(st.integers()))
+@hp.settings(max_examples=MAX_EXAMPLES)
 def test_flat_map_square_workers(numbers):
 
     def _generator(x):
@@ -91,12 +98,38 @@ def test_flat_map_square_workers(numbers):
         yield x + 1
         yield x + 2
     
-    # numbers_py = map(lambda x: x ** 2, numbers)
+    numbers_py = map(lambda x: x ** 2, numbers)
     numbers_py = cz.mapcat(_generator, numbers)
     numbers_py = list(numbers_py)
 
-    # numbers_pl = th.map(lambda x: x ** 2, numbers)
+    numbers_pl = th.map(lambda x: x ** 2, numbers)
     numbers_pl = th.flat_map(_generator, numbers, workers=3)
     numbers_pl = list(numbers_pl)
 
     assert sorted(numbers_pl) == sorted(numbers_py)
+
+############
+# filter
+############
+
+@hp.given(numbers = st.lists(st.integers()))
+@hp.settings(max_examples=MAX_EXAMPLES)
+def test_flat_map_square_filter_workers(numbers):
+
+    def _generator(x):
+        yield x
+        yield x + 1
+        yield x + 2
+    
+    numbers_py = map(lambda x: x ** 2, numbers)
+    numbers_py = cz.mapcat(_generator, numbers)
+    numbers_py = cz.filter(lambda x: x > 1, numbers_py)
+    numbers_py = list(numbers_py)
+
+    numbers_pl = th.map(lambda x: x ** 2, numbers)
+    numbers_pl = th.flat_map(_generator, numbers, workers=3)
+    numbers_pl = th.filter(lambda x: x > 1, numbers_pl)
+    numbers_pl = list(numbers_pl)
+
+    assert sorted(numbers_pl) == sorted(numbers_py)
+

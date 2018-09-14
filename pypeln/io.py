@@ -193,6 +193,51 @@ def each(f, stream, workers = 1, queue_maxsize = 0):
         pass
 
 
+########################
+# concat
+########################
+
+async def _concat(coro_in, qin, remaining, queues_out):
+
+    coroin_task = asyncio.ensure_future(coro_in)
+
+    while remaining > 0:
+
+        x = await qin.get()
+
+        if x is not utils.DONE:
+            for queue in queues_out:
+                await queue.put(x)
+    
+        else:
+            remaining -= 1
+        
+    # wait all tasks to finish
+    for qout in queues_out:
+        await qout.put(utils.DONE)
+
+    await coroin_task
+    
+
+
+def concat(streams, workers = 1, queue_maxsize = 0):
+
+    streams = [ _to_stream(s) for s in streams ]
+    remaining = len(streams)
+    queues_out = []
+
+    qin = asyncio.Queue(maxsize = queue_maxsize)
+
+    for stream in streams:
+        stream.queues.append(qin)
+    
+
+    coro_in = asyncio.gather(*[ s.coroutine for s in streams ])
+    coro_out = _concat(coro_in, qin, remaining, queues_out)
+
+    return Stream(coro_out, queues_out)
+
+
 
 ################
 # _to_stream

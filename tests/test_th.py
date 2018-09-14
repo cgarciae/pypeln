@@ -11,125 +11,145 @@ MAX_EXAMPLES = 15
 # trivial
 ############
 
-@hp.given(numbers = st.lists(st.integers()))
+@hp.given(nums = st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-def test_from_to_iterable(numbers):
+def test_from_to_iterable(nums):
 
-    numbers_py = numbers
+    nums_py = nums
 
-    numbers_pl = th._from_iterable(numbers)
-    numbers_pl = list(numbers_pl)
+    nums_pl = th._from_iterable(nums)
+    nums_pl = list(nums_pl)
 
-    assert numbers_pl == numbers_py
+    assert nums_pl == nums_py
 
 ############
 # map
 ############
 
-@hp.given(numbers = st.lists(st.integers()))
+@hp.given(nums = st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-def test_map_id(numbers):
+def test_map_id(nums):
 
-    numbers_py = numbers
+    nums_py = nums
 
-    numbers_pl = th.map(lambda x: x, numbers)
-    numbers_pl = list(numbers_pl)
+    nums_pl = th.map(lambda x: x, nums)
+    nums_pl = list(nums_pl)
 
-    assert numbers_pl == numbers_py
+    assert nums_pl == nums_py
 
 
-@hp.given(numbers = st.lists(st.integers()))
+@hp.given(nums = st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-def test_map_square(numbers):
+def test_map_square(nums):
 
     
-    numbers_py = map(lambda x: x ** 2, numbers)
-    numbers_py = list(numbers_py)
+    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = list(nums_py)
 
-    numbers_pl = th.map(lambda x: x ** 2, numbers)
-    numbers_pl = list(numbers_pl)
+    nums_pl = th.map(lambda x: x ** 2, nums)
+    nums_pl = list(nums_pl)
 
-    assert numbers_pl == numbers_py
+    assert nums_pl == nums_py
 
 
-@hp.given(numbers = st.lists(st.integers()))
+@hp.given(nums = st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-def test_map_square_workers(numbers):
+def test_map_square_workers(nums):
 
-    numbers_py = map(lambda x: x ** 2, numbers)
-    numbers_py = list(numbers_py)
+    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = list(nums_py)
 
-    numbers_pl = th.map(lambda x: x ** 2, numbers, workers=2)
-    numbers_pl = list(numbers_pl)
+    nums_pl = th.map(lambda x: x ** 2, nums, workers=2)
+    nums_pl = list(nums_pl)
 
-    assert sorted(numbers_pl) == sorted(numbers_py)
+    assert sorted(nums_pl) == sorted(nums_py)
 
 
 ############
 # flat_map
 ############
 
-@hp.given(numbers = st.lists(st.integers()))
+@hp.given(nums = st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-def test_flat_map_square(numbers):
+def test_flat_map_square(nums):
+
+    def _generator(x):
+        yield x
+        yield x + 1
+        yield x + 2
+
+    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = cz.mapcat(_generator, nums_py)
+    nums_py = list(nums_py)
+
+    nums_pl = th.map(lambda x: x ** 2, nums)
+    nums_pl = th.flat_map(_generator, nums_pl)
+    nums_pl = list(nums_pl)
+
+    assert nums_pl == nums_py
+
+
+@hp.given(nums = st.lists(st.integers()))
+@hp.settings(max_examples=MAX_EXAMPLES)
+def test_flat_map_square_workers(nums):
 
     def _generator(x):
         yield x
         yield x + 1
         yield x + 2
     
-    numbers_py = map(lambda x: x ** 2, numbers)
-    numbers_py = cz.mapcat(_generator, numbers_py)
-    numbers_py = list(numbers_py)
+    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = cz.mapcat(_generator, nums)
+    nums_py = list(nums_py)
 
-    numbers_pl = th.map(lambda x: x ** 2, numbers)
-    numbers_pl = th.flat_map(_generator, numbers_pl)
-    numbers_pl = list(numbers_pl)
+    nums_pl = th.map(lambda x: x ** 2, nums)
+    nums_pl = th.flat_map(_generator, nums, workers=3)
+    nums_pl = list(nums_pl)
 
-    assert numbers_pl == numbers_py
-
-
-@hp.given(numbers = st.lists(st.integers()))
-@hp.settings(max_examples=MAX_EXAMPLES)
-def test_flat_map_square_workers(numbers):
-
-    def _generator(x):
-        yield x
-        yield x + 1
-        yield x + 2
-    
-    numbers_py = map(lambda x: x ** 2, numbers)
-    numbers_py = cz.mapcat(_generator, numbers)
-    numbers_py = list(numbers_py)
-
-    numbers_pl = th.map(lambda x: x ** 2, numbers)
-    numbers_pl = th.flat_map(_generator, numbers, workers=3)
-    numbers_pl = list(numbers_pl)
-
-    assert sorted(numbers_pl) == sorted(numbers_py)
+    assert sorted(nums_pl) == sorted(nums_py)
 
 ############
 # filter
 ############
 
-@hp.given(numbers = st.lists(st.integers()))
+@hp.given(nums = st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-def test_flat_map_square_filter_workers(numbers):
+def test_flat_map_square_filter_workers(nums):
 
     def _generator(x):
         yield x
         yield x + 1
         yield x + 2
     
-    numbers_py = map(lambda x: x ** 2, numbers)
-    numbers_py = cz.mapcat(_generator, numbers)
-    numbers_py = cz.filter(lambda x: x > 1, numbers_py)
-    numbers_py = list(numbers_py)
+    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = cz.mapcat(_generator, nums_py)
+    nums_py = cz.filter(lambda x: x > 1, nums_py)
+    nums_py = list(nums_py)
 
-    numbers_pl = th.map(lambda x: x ** 2, numbers)
-    numbers_pl = th.flat_map(_generator, numbers, workers=3)
-    numbers_pl = th.filter(lambda x: x > 1, numbers_pl)
-    numbers_pl = list(numbers_pl)
+    nums_pl = th.map(lambda x: x ** 2, nums)
+    nums_pl = th.flat_map(_generator, nums_pl, workers=3)
+    nums_pl = th.filter(lambda x: x > 1, nums_pl)
+    nums_pl = list(nums_pl)
 
-    assert sorted(numbers_pl) == sorted(numbers_py)
+    assert sorted(nums_pl) == sorted(nums_py)
+
+
+############
+# concat
+############
+
+@hp.given(nums = st.lists(st.integers()))
+@hp.settings(max_examples=MAX_EXAMPLES)
+def test_concat_basic(nums):
+
+    
+    nums_py1 = map(lambda x: x ** 2, nums)
+    nums_py2 = map(lambda x: -x, nums)
+    nums_py = list(nums_py1) + list(nums_py2)
+
+    nums_pl1 = th.map(lambda x: x ** 2, nums)
+    nums_pl2 = th.map(lambda x: -x, nums)
+    nums_pl = th.concat([nums_pl1, nums_pl2])
+
+    assert sorted(nums_pl) == sorted(nums_py)
 

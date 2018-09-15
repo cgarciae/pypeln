@@ -9,8 +9,9 @@ from . import utils
 #############
 
 from multiprocessing import Process as WORKER
-from multiprocessing import Manager, Queue, Lock
+from multiprocessing import Manager, Lock, Queue
 from multiprocessing.queues import Full, Empty
+from multiprocessing.context import DefaultContext
 
 from collections import namedtuple
 from . import utils
@@ -37,22 +38,22 @@ def _get_namespace():
 # classes
 ####################
 
-class Stream(namedtuple("Stream", ["workers", "tasks", "queues"])): 
+class Stream(namedtuple("Stream", ["workers", "tasks", "output_queues"])): 
     
     def __iter__(self):
-        return _to_iterable(self)
+        return to_iterable(self)
 
     def __repr__(self):
-        return "Stream(workers = {workers}, tasks = {tasks}, queues = {queues})".format(
+        return "Stream(workers = {workers}, tasks = {tasks}, output_queues = {output_queues})".format(
             workers = self.workers,
             tasks = len(self.tasks),
-            queues = len(self.queues),
+            output_queues = len(self.output_queues),
         )
 
     def create_queue(self, maxsize):
-        queue = Queue(maxsize = maxsize)
-        self.queues.append(queue)
-        return InputQueue(queue, self.workers)
+        queue = InputQueue(maxsize, self.workers)
+        self.output_queues.append(queue)
+        return queue
 
 class _Task(object):
     
@@ -61,11 +62,11 @@ class _Task(object):
         self.args = args
         self.kwargs = kwargs
 
-
 class InputQueue(object):
 
-    def __init__(self, queue, remaining):
-        self.queue = queue
+    def __init__(self, maxsize, remaining, **kwargs):
+        
+        self.queue = Queue(maxsize = maxsize, **kwargs)
         self.lock = Lock()
         self.namespace = _get_namespace()
         self.namespace.remaining = remaining
@@ -88,184 +89,175 @@ class InputQueue(object):
     def is_done(self):
         return self.namespace.remaining == 0 and self.queue.empty()
 
+    def put(self, x):
+        self.queue.put(x)
 
-class OutputQueues(object):
 
-    def __init__(self, queues = None):
-        self.queues = queues or []
+class OutputQueues(list):
 
     def put(self, x):
-        for queue in self.queues:
+        for queue in self:
             queue.put(x)
 
     def done(self):
-        for queue in self.queues:
+        for queue in self:
             queue.put(utils.DONE)
-
-    def append(self, x):
-        self.queues.append(x)
-
-    def __iter__(self):
-        return self.queues
-
-    def __str__(self):
-        return str(self.queues)
 
 ###########
 # map
 ###########
 
-def _map(f, qin, queues_out):
+def _map(f, input_queue, output_queues):
 
-    while not qin.is_done():
+    while not input_queue.is_done():
         
-        x = qin.get()
+        x = input_queue.get()
 
         if not utils.is_continue(x):
             y = f(x)
-            queues_out.put(y)
+            output_queues.put(y)
 
 
-    queues_out.done()
+    output_queues.done()
 
 
 
-def map(f, stream, workers = 1, queue_maxsize = 0):
+def map(f, stream, workers = 1, maxsize = 0):
 
     stream = _to_stream(stream)
 
-    qin = stream.create_queue(queue_maxsize)
-    queues_out = OutputQueues()
+    input_queue = stream.create_queue(maxsize)
+    output_queues = OutputQueues()
 
     tasks = set([
         _Task(
             f = _map,
-            args = (f, qin, queues_out),
+            args = (f, input_queue, output_queues),
             kwargs = dict(),
         )
         for _ in range(workers)
     ])
 
-    tasks = tasks.union(stream.tasks)
+    tasks = tasks | stream.tasks
 
-    return Stream(workers, tasks, queues_out)
+    return Stream(workers, tasks, output_queues)
 
 ###########
 # flat_map
 ###########
 
-def _flat_map(f, qin, queues_out):
+def _flat_map(f, input_queue, output_queues):
 
-    while not qin.is_done():
+    while not input_queue.is_done():
 
-        x = qin.get()
+        x = input_queue.get()
 
         if not utils.is_continue(x):
             for y in f(x):
-                queues_out.put(y)
+                output_queues.put(y)
 
-    queues_out.done()
+    output_queues.done()
 
 
 
-def flat_map(f, stream, workers = 1, queue_maxsize = 0):
+def flat_map(f, stream, workers = 1, maxsize = 0):
 
     stream = _to_stream(stream)
 
-    qin = stream.create_queue(queue_maxsize)
-    queues_out = OutputQueues()
+    input_queue = stream.create_queue(maxsize)
+    output_queues = OutputQueues()
 
     tasks = set([
         _Task(
             f = _flat_map,
-            args = (f, qin, queues_out),
+            args = (f, input_queue, output_queues),
             kwargs = dict(),
         )
         for _ in range(workers)
     ])
 
-    tasks = tasks.union(stream.tasks)
+    tasks = tasks | stream.tasks
 
-    return Stream(workers, tasks, queues_out)
+    return Stream(workers, tasks, output_queues)
 
 
 ###########
 # filter
 ###########
 
-def _filter(f, qin, queues_out):
+def _filter(f, input_queue, output_queues):
 
-    while not qin.is_done():
+    while not input_queue.is_done():
         
-        x = qin.get()
+        x = input_queue.get()
 
         if not utils.is_continue(x):
             if f(x):
-                queues_out.put(x)
+                output_queues.put(x)
 
 
-    queues_out.done()
+    output_queues.done()
 
 
 
-def filter(f, stream, workers = 1, queue_maxsize = 0):
+def filter(f, stream, workers = 1, maxsize = 0):
 
     stream = _to_stream(stream)
 
-    qin = stream.create_queue(queue_maxsize)
-    queues_out = OutputQueues()
+    input_queue = stream.create_queue(maxsize)
+    output_queues = OutputQueues()
 
     tasks = set([
         _Task(
             f = _filter,
-            args = (f, qin, queues_out),
+            args = (f, input_queue, output_queues),
             kwargs = dict(),
         )
         for _ in range(workers)
     ])
 
-    tasks = tasks.union(stream.tasks)
+    tasks = tasks | stream.tasks
 
-    return Stream(workers, tasks, queues_out)
+    return Stream(workers, tasks, output_queues)
 
 
 ###########
 # each
 ###########
 
-def _each(f, qin, queues_out):
+def _each(f, input_queue, output_queues):
 
-    while not qin.is_done():
+    while not input_queue.is_done():
         
-        x = qin.get()
+        x = input_queue.get()
 
         if not utils.is_continue(x):
             f(x)
 
 
-    queues_out.done()
+    output_queues.done()
 
 
 
-def each(f, stream, workers = 1, queue_maxsize = 0):
+def each(f, stream, workers = 1, maxsize = 0):
 
     stream = _to_stream(stream)
 
-    qin = stream.create_queue(queue_maxsize)
-    queues_out = OutputQueues()
+    input_queue = stream.create_queue(maxsize)
+    output_queues = OutputQueues()
 
     tasks = set([
         _Task(
             f = _each,
-            args = (f, qin, queues_out),
+            args = (f, input_queue, output_queues),
             kwargs = dict(),
         )
         for _ in range(workers)
     ])
 
-    tasks = tasks.union(stream.tasks)
+    tasks = tasks | stream.tasks
 
-    for _ in Stream(workers, tasks, queues_out):
+    for _ in Stream(workers, tasks, output_queues):
         pass
 
 
@@ -274,45 +266,43 @@ def each(f, stream, workers = 1, queue_maxsize = 0):
 ###########
 #NOTE: NOT FINISED
 
-def _concat(qin, queues_out):
+def _concat(input_queue, output_queues):
 
-    while not qin.is_done():
+    while not input_queue.is_done():
         
-        x = qin.get()
+        x = input_queue.get()
 
         if not utils.is_continue(x):
-            queues_out.put(x)
+            output_queues.put(x)
 
 
-    queues_out.done()
+    output_queues.done()
 
 
 
-def concat(streams, queue_maxsize = 0):
+def concat(streams, maxsize = 0):
 
     streams = [ _to_stream(s) for s in streams ]
-    
-    qin = Queue(maxsize = queue_maxsize)
-    queues_out = OutputQueues()
     workers = sum([ stream.workers for stream in streams ])
 
-    for stream in streams:
-        stream.queues.append(qin)
+    input_queue = InputQueue(maxsize, workers)
+    output_queues = OutputQueues()
 
-    qin = InputQueue(qin, workers)
+    for stream in streams:
+        stream.output_queues.append(input_queue)
 
     tasks = {
         _Task(
             f = _concat,
-            args = (qin, queues_out),
+            args = (input_queue, output_queues),
             kwargs = dict(),
         )
     }
 
-    tasks = reduce(lambda tasks, stream: tasks.union(stream.tasks), streams, tasks)
-    
+    stream_tasks = (s.tasks for s in streams)
+    tasks = reduce(set.__or__, stream_tasks, tasks)
 
-    return Stream(1, tasks, queues_out)
+    return Stream(1, tasks, output_queues)
 
 ################
 # _to_stream
@@ -329,32 +319,32 @@ def _to_stream(obj):
 # _from_iterable
 ################
 
-def _from_iterable_fn(iterable, queues_out):
+def _from_iterable_fn(iterable, output_queues):
 
     for x in iterable:
-        queues_out.put(x)
+        output_queues.put(x)
     
-    queues_out.done()
+    output_queues.done()
 
 def _from_iterable(iterable):
     
-    queues_out = OutputQueues()
+    output_queues = OutputQueues()
 
     task = _Task(
         f = _from_iterable_fn,
-        args = (iterable, queues_out),
+        args = (iterable, output_queues),
         kwargs = dict(),
     )
 
-    return Stream(1, {task}, queues_out)
+    return Stream(1, {task}, output_queues)
 
 ##############
-# _to_iterable
+# to_iterable
 ##############
 
-def _to_iterable(stream, queue_maxsize = 0):
+def to_iterable(stream, maxsize = 0):
 
-    qin = stream.create_queue(queue_maxsize)
+    input_queue = stream.create_queue(maxsize)
 
     processes = [
         WORKER(target = task.f, args = task.args, kwargs = task.kwargs)
@@ -365,9 +355,9 @@ def _to_iterable(stream, queue_maxsize = 0):
         p.daemon = True
         p.start()
 
-    while not qin.is_done():
+    while not input_queue.is_done():
 
-        x = qin.get()
+        x = input_queue.get()
 
         if utils.is_continue(x):
             continue

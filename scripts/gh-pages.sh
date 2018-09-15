@@ -1,1 +1,1 @@
-git subtree push --prefix docs/pypeln origin gh-pages
+git subtree push --prefix docs/api/pypeln origin gh-pages

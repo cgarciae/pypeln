@@ -7,42 +7,94 @@ import sys
 from . import utils
 from .utils_async import TaskPool
 import time
+from functools import reduce
 
-class Stream(namedtuple("Stream", ["coroutine", "queues"])):
+
+class Stream(namedtuple("Stream", ["workers", "tasks", "queues"])): 
 
     def __await__(self):
-        return self.coroutine.__await__()
-
+        return asyncio.gather(*self.tasks).__await__()
+    
     def __iter__(self):
         return _to_iterable(self)
 
+    def __repr__(self):
+        return "Stream(workers = {workers}, tasks = {tasks}, queues = {queues})".format(
+            workers = self.workers,
+            tasks = len(self.tasks),
+            queues = len(self.queues),
+        )
 
-async def _task_runner(f_task, coro_in, qin, queues_out, workers):
+    def create_queue(self, maxsize, remaining = 1):
+        queue = InputQueue(maxsize = maxsize, remaining = 1)
+        self.queues.append(queue)
+        return queue
+
+
+
+class InputQueue(asyncio.Queue):
+
+    def __init__(self, maxsize = 0, remaining = 1, **kwargs):
+        super(InputQueue, self).__init__(maxsize = maxsize, **kwargs)
+
+        self.remaining = remaining
+
+    async def get(self):
+        
+        x = await super(InputQueue, self).get()
+
+        if utils.is_done(x):
+            self.remaining -= 1    
+            return utils.CONTINUE
+
+        return x
+
+    def get_nowait(self):
+        
+        x = super(InputQueue, self).get_nowait()
+
+        if utils.is_done(x):
+            self.remaining -= 1    
+            return utils.CONTINUE
+
+        return x
+            
+
+    def is_done(self):
+        return self.remaining == 0 #and self.queue.empty()
+
+
+class OutputQueues(list):
+
+    async def put(self, x):
+        for queue in self:
+            await queue.put(x)
+
+    async def done(self):
+        for queue in self:
+            await queue.put(utils.DONE)
+
+
+async def _runner_task(f_task, qin, queues_out, workers):
     
-    coroin_task = asyncio.ensure_future(coro_in)
-
     async with TaskPool(workers = workers) as tasks:
 
-        x = await qin.get()
-
-        while x is not utils.DONE:
-
-            fcoro = f_task(x)
-            await tasks.put(fcoro)
+        while not qin.is_done():
 
             x = await qin.get()
 
-    # wait all tasks to finish
-    for qout in queues_out:
-        await qout.put(utils.DONE)
+            if not utils.is_continue(x):
+                task = f_task(x)
+                await tasks.put(task)
 
-    await coroin_task
+    # wait all tasks to finish
+    await queues_out.done()
 
 ########################
 # map
 ########################
 
-def _map(f, queues):
+def _map(f, queues_out):
     async def _task(x):
 
         y = f(x)
@@ -50,8 +102,7 @@ def _map(f, queues):
         if hasattr(y, "__await__"):
             y = await y
 
-        for queue in queues:
-            await queue.put(y)
+        await queues_out.put(y)
     
     return _task
 
@@ -60,15 +111,15 @@ def map(f, stream, workers = 1, queue_maxsize = 0):
 
     stream = _to_stream(stream)
 
-    queues_out = []
-    qin = asyncio.Queue(maxsize = queue_maxsize)
-    stream.queues.append(qin)
+    queues_out = OutputQueues()
+    qin = stream.create_queue(queue_maxsize)
     
-    f_task = _map(f, queues = queues_out)
-    coro_in = stream.coroutine
-    coro_out = _task_runner(f_task, coro_in, qin, queues_out, workers)
+    f_task = _map(f, queues_out)
+    task = _runner_task(f_task, qin, queues_out, workers)
 
-    return Stream(coro_out, queues_out)
+    tasks = stream.tasks | {task}
+
+    return Stream(workers, tasks, queues_out)
 
 
 
@@ -76,39 +127,18 @@ def map(f, stream, workers = 1, queue_maxsize = 0):
 # flat_map
 ########################
 
-def _flat_map_wrapper(f, queue):
+def _flat_map(f, queues_out):
     async def _task(x):
 
         ys = f(x)
 
         if hasattr(ys, "__aiter__"):
             async for y in ys:
-                await queue.put(y)
+                await queues_out.put(y)
+            
         elif hasattr(ys, "__iter__"):
             for y in ys:
-                await queue.put(y)
-        else:
-            raise ValueError(f"{ys} is not an (async) iterable")
-    
-    return _task
-
-def _flat_map(f, queues):
-    async def _task(x):
-
-        ys = f(x)
-
-        if hasattr(ys, "__aiter__"):
-            async for y in ys:
-                for queue in queues:
-                    await queue.put(y)
-        elif hasattr(ys, "__iter__"):
-            for y in ys:
-                for queue in queues:
-                    await queue.put(y)
-        else:
-            raise ValueError(f"{ys} is not an (async) iterable")
-
-        
+                await queues_out.put(y)
     
     return _task
 
@@ -117,22 +147,22 @@ def flat_map(f, stream, workers = 1, queue_maxsize = 0):
 
     stream = _to_stream(stream)
 
-    queues_out = []
-    qin = asyncio.Queue(maxsize = queue_maxsize)
-    stream.queues.append(qin)
+    queues_out = OutputQueues()
+    qin = stream.create_queue(queue_maxsize)
     
-    f_task = _flat_map(f, queues = queues_out)
-    coro_in = stream.coroutine
-    coro_out = _task_runner(f_task, coro_in, qin, queues_out, workers)
+    f_task = _flat_map(f, queues_out)
+    task = _runner_task(f_task, qin, queues_out, workers)
 
-    return Stream(coro_out, queues_out)
+    tasks = stream.tasks | {task}
+
+    return Stream(workers, tasks, queues_out)
 
 
 ########################
 # filter
 ########################
 
-def _filter(f, queues):
+def _filter(f, queues_out):
     async def _task(x):
 
         y = f(x)
@@ -141,8 +171,7 @@ def _filter(f, queues):
             y = await y
 
         if y:
-            for queue in queues:
-                await queue.put(x)
+            await queues_out.put(x)
     
     return _task
 
@@ -151,22 +180,22 @@ def filter(f, stream, workers = 1, queue_maxsize = 0):
 
     stream = _to_stream(stream)
 
-    queues_out = []
-    qin = asyncio.Queue(maxsize = queue_maxsize)
-    stream.queues.append(qin)
+    queues_out = OutputQueues()
+    qin = stream.create_queue(queue_maxsize)
     
-    f_task = _filter(f, queues = queues_out)
-    coro_in = stream.coroutine
-    coro_out = _task_runner(f_task, coro_in, qin, queues_out, workers)
+    f_task = _filter(f, queues_out)
+    task = _runner_task(f_task, qin, queues_out, workers)
 
-    return Stream(coro_out, queues_out)
+    tasks = stream.tasks | {task}
+
+    return Stream(workers, tasks, queues_out)
 
 
 ########################
 # each
 ########################
 
-def _each(f, queues):
+def _each(f, queues_out):
     async def _task(x):
 
         y = f(x)
@@ -181,15 +210,15 @@ def each(f, stream, workers = 1, queue_maxsize = 0):
 
     stream = _to_stream(stream)
 
-    queues_out = []
-    qin = asyncio.Queue(maxsize = queue_maxsize)
-    stream.queues.append(qin)
+    queues_out = OutputQueues()
+    qin = stream.create_queue(queue_maxsize)
     
-    f_task = _each(f, queues = queues_out)
-    coro_in = stream.coroutine
-    coro_out = _task_runner(f_task, coro_in, qin, queues_out, workers)
+    f_task = _each(f, queues_out)
+    task = _runner_task(f_task, qin, queues_out, workers)
 
-    for _ in Stream(coro_out, queues_out):
+    tasks = stream.tasks | {task}
+
+    for _ in Stream(workers, tasks, queues_out):
         pass
 
 
@@ -197,45 +226,39 @@ def each(f, stream, workers = 1, queue_maxsize = 0):
 # concat
 ########################
 
-async def _concat(coro_in, qin, remaining, queues_out):
+async def _concat(qin, queues_out):
 
-    coroin_task = asyncio.ensure_future(coro_in)
-
-    while remaining > 0:
+    while not qin.is_done():
 
         x = await qin.get()
 
-        if x is not utils.DONE:
-            for queue in queues_out:
-                await queue.put(x)
-    
-        else:
-            remaining -= 1
+        if not utils.is_continue(x):
+            await queues_out.put(x)
         
     # wait all tasks to finish
-    for qout in queues_out:
-        await qout.put(utils.DONE)
-
-    await coroin_task
+    await queues_out.done()
     
 
 
 def concat(streams, workers = 1, queue_maxsize = 0):
 
     streams = [ _to_stream(s) for s in streams ]
-    remaining = len(streams)
-    queues_out = []
+    queues_out = OutputQueues()
 
-    qin = asyncio.Queue(maxsize = queue_maxsize)
+    qin = InputQueue(maxsize = queue_maxsize, remaining = len(streams))
 
     for stream in streams:
         stream.queues.append(qin)
     
+    task = _concat(qin, queues_out)
 
-    coro_in = asyncio.gather(*[ s.coroutine for s in streams ])
-    coro_out = _concat(coro_in, qin, remaining, queues_out)
+    tasks = reduce(
+        lambda tasks, stream: tasks | stream.tasks, 
+        streams, 
+        {task},
+    )
 
-    return Stream(coro_out, queues_out)
+    return Stream(1, tasks, queues_out)
 
 
 
@@ -255,20 +278,18 @@ def _to_stream(obj):
 ########################
 
 async def _from_iterable_fn(iterable, queues_out):
-        
+
     for x in iterable:
-        for qout in queues_out:
-            await qout.put(x)
+        await queues_out.put(x)
         
-    for qout in queues_out:
-        await qout.put(utils.DONE)
+    await queues_out.done()
 
 def _from_iterable(iterable):
     
-    queues_out = []
-    coro_out = _from_iterable_fn(iterable, queues_out)
+    queues_out = OutputQueues()
+    task = _from_iterable_fn(iterable, queues_out)
 
-    return Stream(coro_out, queues_out)
+    return Stream(1, {task}, queues_out)
 
 ########################
 # _to_iterable
@@ -279,14 +300,11 @@ def _handle_async_exception(loop, ctx):
     raise Exception(f"Exception in async task: {ctx}")
 
 def _to_iterable_fn(loop, stream):
-    
     loop.run_until_complete(stream)
 
 def _to_iterable(stream: Stream, queue_maxsize = 0):
 
-    qin = asyncio.Queue(maxsize = queue_maxsize)
-
-    stream.queues.append(qin)
+    qin = stream.create_queue(queue_maxsize)
 
     loop = asyncio.get_event_loop()
     loop.set_exception_handler(_handle_async_exception)
@@ -296,17 +314,15 @@ def _to_iterable(stream: Stream, queue_maxsize = 0):
     thread.start()
 
 
-    while True:
+    while not qin.is_done():
 
         while qin.empty():
             time.sleep(utils.TIMEOUT)
 
         x = qin.get_nowait()
 
-        if not utils.is_done(x):
+        if not utils.is_continue(x):
             yield x
-        else:
-            break
     
     thread.join()
 

@@ -159,31 +159,12 @@ def test_concat_basic(nums):
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_concat_multiple(nums):
 
-    
     nums_py1 = nums + nums
     nums_py2 = nums_py1 + nums
 
     nums_pl1 = pr.concat([nums, nums])
     nums_pl2 = pr.concat([nums_pl1, nums])
-    # nums_pl2 = list(nums_pl2)
-
-    # print("nums_pl1", nums_pl1)
-    # print("nums_pl2", nums_pl2)
-
-    # print([ input_queue.namespace.remaining for input_queue in nums_pl2.input_queues])
-
-    # print(list(nums_pl1))
-    # print(1, [ input_queue.namespace.remaining for input_queue in nums_pl2.input_queues])
-    # print(list(nums_pl2))
-    # print(2, [ input_queue.namespace.remaining for input_queue in nums_pl2.input_queues])
-    # print(list(nums_pl2))
-    # print(3, [ input_queue.namespace.remaining for input_queue in nums_pl2.input_queues])
-    # print(list(nums_pl2))
-    # print(4, [ input_queue.namespace.remaining for input_queue in nums_pl2.input_queues])
-    # print(list(nums_pl2))
 
     assert sorted(nums_py1) == sorted(list(nums_pl1))
-    # print("A")
     assert sorted(nums_py2) == sorted(list(nums_pl2))
-    # print("B")
 

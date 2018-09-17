@@ -59,39 +59,6 @@ class Stream(object):
             dependencies = len(self.dependencies),
         )
 
-    def _build_queues(self, stream_input_queue, stream_output_queues, visited):
-
-        if self in visited:
-            return stream_input_queue, stream_output_queues
-        else:
-            visited.add(self)
-
-        if len(self.dependencies) > 0:
-            total_done = sum([ stream.workers for stream in self.dependencies ])
-            input_queue = InputQueue(self.maxsize, total_done)
-            stream_input_queue[self] = input_queue
-
-            for stream in self.dependencies:
-                if stream not in stream_output_queues:
-                    stream_output_queues[stream] = OutputQueues([input_queue])
-                else:
-                    stream_output_queues[stream].append(input_queue)
-
-                stream_input_queue, stream_output_queues = stream._build_queues(
-                    stream_input_queue,
-                    stream_output_queues,
-                    visited
-                )
-
-        return stream_input_queue, stream_output_queues
-
-    def get_queues(self):
-        return self._build_queues(
-            stream_input_queue = dict(), 
-            stream_output_queues = dict(), 
-            visited = set(),
-        )
-
 
 class InputQueue(object):
 
@@ -245,8 +212,7 @@ def _each(f, input_queue, output_queues):
     output_queues.done()
 
 
-
-def each(f, stream, workers = 1, maxsize = 0):
+def each(f, stream, workers = 1, maxsize = 0, run = True):
 
     stream = _to_stream(stream)
 
@@ -258,6 +224,9 @@ def each(f, stream, workers = 1, maxsize = 0):
         dependencies = [stream],
     )
 
+    if not run:
+        return stream
+
     for _ in stream:
         pass
 
@@ -265,7 +234,6 @@ def each(f, stream, workers = 1, maxsize = 0):
 ###########
 # concat
 ###########
-#NOTE: NOT FINISED
 
 def _concat(input_queue, output_queues):
 
@@ -278,7 +246,6 @@ def _concat(input_queue, output_queues):
 
 
     output_queues.done()
-
 
 
 def concat(streams, maxsize = 0):
@@ -294,13 +261,39 @@ def concat(streams, maxsize = 0):
     )
 
 ################
+# run
+################
+
+def run(streams, maxsize = 0):
+    
+    if isinstance(streams, list) and len(streams) == 0:
+        raise ValueError("Expected atleast stream to run")
+
+    elif isinstance(streams, list):
+        stream = concat(streams, maxsize = maxsize)
+    
+    else:
+        stream = streams
+
+    stream = to_iterable(stream, maxsize = maxsize)
+    
+    for _ in streams:
+        pass
+
+    
+
+################
 # _to_stream
 ################ 
+
 def _to_stream(obj):
+
     if isinstance(obj, Stream):
         return obj
+
     elif hasattr(obj, "__iter__"):
         return _from_iterable(obj)
+    
     else:
         raise ValueError("Object {obj} is not iterable".format(obj = obj))
 
@@ -328,6 +321,34 @@ def _from_iterable(iterable):
 ##############
 # to_iterable
 ##############
+
+def _build_queues(stream, stream_input_queue, stream_output_queues, visited):
+
+    if stream in visited:
+        return stream_input_queue, stream_output_queues
+    else:
+        visited.add(stream)
+
+    if len(stream.dependencies) > 0:
+        total_done = sum([ stream.workers for stream in stream.dependencies ])
+        input_queue = InputQueue(stream.maxsize, total_done)
+        stream_input_queue[stream] = input_queue
+
+        for stream in stream.dependencies:
+            if stream not in stream_output_queues:
+                stream_output_queues[stream] = OutputQueues([input_queue])
+            else:
+                stream_output_queues[stream].append(input_queue)
+
+            stream_input_queue, stream_output_queues = _build_queues(
+                stream,
+                stream_input_queue,
+                stream_output_queues,
+                visited
+            )
+
+    return stream_input_queue, stream_output_queues
+
 def _create_worker(f, args, output_queues, input_queue):
 
     kwargs = dict(
@@ -342,7 +363,12 @@ def to_iterable(stream, maxsize = 0):
 
     input_queue = InputQueue(maxsize, stream.workers)
 
-    stream_input_queue, stream_output_queues = stream.get_queues()
+    stream_input_queue, stream_output_queues = _build_queues(
+        stream = stream,
+        stream_input_queue = dict(),
+        stream_output_queues = dict(),
+        visited = set(),
+    )
 
     stream_output_queues[stream] = OutputQueues([ input_queue ])
 

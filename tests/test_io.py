@@ -138,18 +138,36 @@ def test_flat_map_square_filter_workers(nums):
 # concat
 ############
 
+
 @hp.given(nums = st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_concat_basic(nums):
 
-    
-    nums_py1 = map(lambda x: x ** 2, nums)
-    nums_py2 = map(lambda x: -x, nums)
-    nums_py = list(nums_py1) + list(nums_py2)
+    nums_py = list(map(lambda x: x + 1, nums))
+    nums_py1 = list(map(lambda x: x ** 2, nums_py))
+    nums_py2 = list(map(lambda x: -x, nums_py))
+    nums_py = nums_py1 + nums_py2
 
-    nums_pl1 = io.map(lambda x: x ** 2, nums)
-    nums_pl2 = io.map(lambda x: -x, nums)
+    nums_pl = io.map(lambda x: x + 1, nums)
+    nums_pl1 = io.map(lambda x: x ** 2, nums_pl)
+    nums_pl2 = io.map(lambda x: -x, nums_pl)
     nums_pl = io.concat([nums_pl1, nums_pl2])
 
     assert sorted(nums_pl) == sorted(nums_py)
+
+
+@hp.given(nums = st.lists(st.integers()))
+@hp.settings(max_examples=MAX_EXAMPLES)
+def test_concat_multiple(nums):
+
+    nums_py = [ x + 1 for x in nums ]
+    nums_py1 = nums_py + nums_py
+    nums_py2 = nums_py1 + nums_py
+
+    nums_pl = io.map(lambda x: x + 1, nums)
+    nums_pl1 = io.concat([nums_pl, nums_pl])
+    nums_pl2 = io.concat([nums_pl1, nums_pl])
+
+    assert sorted(nums_py1) == sorted(list(nums_pl1))
+    assert sorted(nums_py2) == sorted(list(nums_pl2))
 

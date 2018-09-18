@@ -14,7 +14,8 @@ def WORKER(target, args, kwargs):
 
 class Stage(object):
 
-    def __init__(self, workers, maxsize, target, args, dependencies):
+    def __init__(self, worker_constructor, workers, maxsize, target, args, dependencies):
+        self.worker_constructor = worker_constructor
         self.workers = workers
         self.maxsize = maxsize
         self.target = target
@@ -29,7 +30,8 @@ class Stage(object):
         return to_iterable(self)
 
     def __repr__(self):
-        return "Stage(workers = {workers}, maxsize = {maxsize}, target = {target}, args = {args}, dependencies = {dependencies})".format(
+        return "Stage(worker_constructor = {worker_constructor}, workers = {workers}, maxsize = {maxsize}, target = {target}, args = {args}, dependencies = {dependencies})".format(
+            worker_constructor = self.worker_constructor,
             workers = self.workers,
             maxsize = self.maxsize,
             target = self.target,
@@ -118,6 +120,7 @@ def map(f, stage, workers = 1, maxsize = 0):
     stage = _to_stage(stage)
 
     return Stage(
+        worker_constructor = WORKER,
         workers = workers,
         maxsize = maxsize,
         target = _map,
@@ -153,6 +156,7 @@ def flat_map(f, stage, workers = 1, maxsize = 0):
     stage = _to_stage(stage)
 
     return Stage(
+        worker_constructor = WORKER,
         workers = workers,
         maxsize = maxsize,
         target = _flat_map,
@@ -183,6 +187,7 @@ def filter(f, stage, workers = 1, maxsize = 0):
     stage = _to_stage(stage)
 
     return Stage(
+        worker_constructor = WORKER,
         workers = workers,
         maxsize = maxsize,
         target = _filter,
@@ -213,6 +218,7 @@ def each(f, stage, workers = 1, maxsize = 0, run = True):
     stage = _to_stage(stage)
 
     stage = Stage(
+        worker_constructor = WORKER,
         workers = workers,
         maxsize = maxsize,
         target = _each,
@@ -249,6 +255,7 @@ def concat(stages, maxsize = 0):
     stages = [ _to_stage(s) for s in stages ]
 
     return Stage(
+        worker_constructor = WORKER,
         workers = 1,
         maxsize = maxsize,
         target = _concat,
@@ -276,7 +283,7 @@ def _to_task(stage, maxsize):
     stage_output_queues[stage] = OutputQueues([ input_queue ])
 
     tasks = [
-        WORKER(
+        _stage.worker_constructor(
             target = _stage.target,
             args = _stage.args,
             kwargs = dict(
@@ -302,28 +309,29 @@ def _to_stage(obj):
         return obj
 
     elif hasattr(obj, "__iter__"):
-        return _from_iterable(obj)
+        return from_iterable(obj)
 
     else:
         raise ValueError("Object {obj} is not iterable".format(obj = obj))
     
 ########################
-# _from_iterable
+# from_iterable
 ########################
 
-async def _from_iterable_fn(iterable, workers, input_queue, output_queues):
+async def _from_iterable(iterable, workers, input_queue, output_queues):
 
     for x in iterable:
         await output_queues.put(x)
         
     await output_queues.done()
 
-def _from_iterable(iterable):
+def from_iterable(iterable, worker_constructor = None):
     
     return Stage(
+        worker_constructor = WORKER,
         workers = 1,
         maxsize = None,
-        target = _from_iterable_fn,
+        target = _from_iterable,
         args = (iterable,),
         dependencies = [],
     )

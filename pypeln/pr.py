@@ -12,6 +12,7 @@ from multiprocessing import Process as WORKER
 from multiprocessing import Manager, Lock, Queue
 from multiprocessing.queues import Full, Empty
 from multiprocessing.context import DefaultContext
+from threading import Thread
 
 from collections import namedtuple
 from . import utils
@@ -26,6 +27,7 @@ def _get_namespace():
 #############
 
 # from threading import Thread as WORKER
+# from threading import Thread
 # from.utils import Namespace
 # from six.moves.queue import Queue, Empty, Full
 # from threading import Lock
@@ -40,7 +42,8 @@ def _get_namespace():
 
 class Stage(object):
 
-    def __init__(self, workers, maxsize, target, args, dependencies):
+    def __init__(self, worker_constructor, workers, maxsize, target, args, dependencies):
+        self.worker_constructor = worker_constructor
         self.workers = workers
         self.maxsize = maxsize
         self.target = target
@@ -51,7 +54,8 @@ class Stage(object):
         return to_iterable(self)
 
     def __repr__(self):
-        return "Stage(workers = {workers}, maxsize = {maxsize}, target = {target}, args = {args}, dependencies = {dependencies})".format(
+        return "Stage(worker_constructor = {worker_constructor}, workers = {workers}, maxsize = {maxsize}, target = {target}, args = {args}, dependencies = {dependencies})".format(
+            worker_constructor = self.worker_constructor,
             workers = self.workers,
             maxsize = self.maxsize,
             target = self.target,
@@ -125,6 +129,7 @@ def map(f, stage, workers = 1, maxsize = 0):
     stage = _to_stage(stage)
 
     return Stage(
+        worker_constructor = WORKER,
         workers = workers,
         maxsize = maxsize,
         target = _map,
@@ -155,6 +160,7 @@ def flat_map(f, stage, workers = 1, maxsize = 0):
     stage = _to_stage(stage)
 
     return Stage(
+        worker_constructor = WORKER,
         workers = workers,
         maxsize = maxsize,
         target = _flat_map,
@@ -187,6 +193,7 @@ def filter(f, stage, workers = 1, maxsize = 0):
     stage = _to_stage(stage)
 
     return Stage(
+        worker_constructor = WORKER,
         workers = workers,
         maxsize = maxsize,
         target = _filter,
@@ -217,6 +224,7 @@ def each(f, stage, workers = 1, maxsize = 0, run = True):
     stage = _to_stage(stage)
 
     stage = Stage(
+        worker_constructor = WORKER,
         workers = workers,
         maxsize = maxsize,
         target = _each,
@@ -253,6 +261,7 @@ def concat(stages, maxsize = 0):
     stages = [ _to_stage(s) for s in stages ]
 
     return Stage(
+        worker_constructor = WORKER,
         workers = 1,
         maxsize = maxsize,
         target = _concat,
@@ -292,28 +301,29 @@ def _to_stage(obj):
         return obj
 
     elif hasattr(obj, "__iter__"):
-        return _from_iterable(obj)
+        return from_iterable(obj)
     
     else:
         raise ValueError("Object {obj} is not iterable".format(obj = obj))
 
 ################
-# _from_iterable
+# from_iterable
 ################
 
-def _from_iterable_fn(iterable, input_queue, output_queues):
+def _from_iterable(iterable, input_queue, output_queues):
 
     for x in iterable:
         output_queues.put(x)
     
     output_queues.done()
 
-def _from_iterable(iterable):
+def from_iterable(iterable, worker_constructor = Thread):
 
     return Stage(
+        worker_constructor = worker_constructor,
         workers = 1,
         maxsize = None,
-        target = _from_iterable_fn,
+        target = _from_iterable,
         args = (iterable,),
         dependencies = [],
     )
@@ -373,7 +383,7 @@ def to_iterable(stage, maxsize = 0):
     stage_output_queues[stage] = OutputQueues([ input_queue ])
 
     processes = [
-        WORKER(
+        _stage.worker_constructor(
             target = _stage.target,
             args = _stage.args,
             kwargs = dict(

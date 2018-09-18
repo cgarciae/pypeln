@@ -1056,6 +1056,7 @@ table {
     <li class="mono"><a href="#pypeln.pr.filter">filter</a></li>
     <li class="mono"><a href="#pypeln.pr.flat_map">flat_map</a></li>
     <li class="mono"><a href="#pypeln.pr.map">map</a></li>
+    <li class="mono"><a href="#pypeln.pr.run">run</a></li>
     <li class="mono"><a href="#pypeln.pr.to_iterable">to_iterable</a></li>
   </ul>
 
@@ -1090,7 +1091,7 @@ table {
         
           
   <ul>
-    <li class="mono"><a href="#pypeln.pr.Stream.create_queue">create_queue</a></li>
+    <li class="mono"><a href="#pypeln.pr.Stream.__init__">__init__</a></li>
   </ul>
 
         </li>
@@ -1153,38 +1154,36 @@ table {
 <span class="c1"># classes</span>
 <span class="c1">####################</span>
 
-<span class="k">class</span> <span class="nc">Stream</span><span class="p">(</span><span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;Stream&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;workers&quot;</span><span class="p">,</span> <span class="s2">&quot;tasks&quot;</span><span class="p">,</span> <span class="s2">&quot;output_queues&quot;</span><span class="p">])):</span> 
+<span class="k">class</span> <span class="nc">Stream</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">dependencies</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="n">target</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span> <span class="o">=</span> <span class="n">dependencies</span>
     
     <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">to_iterable</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;Stream(workers = {workers}, tasks = {tasks}, output_queues = {output_queues})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="k">return</span> <span class="s2">&quot;Stream(workers = {workers}, maxsize = {maxsize}, target = {target}, args = {args}, dependencies = {dependencies})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="n">workers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">workers</span><span class="p">,</span>
-            <span class="n">tasks</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tasks</span><span class="p">),</span>
-            <span class="n">output_queues</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_queues</span><span class="p">),</span>
+            <span class="n">maxsize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxsize</span><span class="p">,</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">,</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span>
+            <span class="n">dependencies</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">),</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">create_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">):</span>
-        <span class="n">queue</span> <span class="o">=</span> <span class="n">InputQueue</span><span class="p">(</span><span class="n">maxsize</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">workers</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">output_queues</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">queue</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">queue</span>
-
-<span class="k">class</span> <span class="nc">_Task</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="n">f</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span> <span class="o">=</span> <span class="n">kwargs</span>
 
 <span class="k">class</span> <span class="nc">InputQueue</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">remaining</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">total_done</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="n">Queue</span><span class="p">(</span><span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lock</span> <span class="o">=</span> <span class="n">Lock</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">namespace</span> <span class="o">=</span> <span class="n">_get_namespace</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">namespace</span><span class="o">.</span><span class="n">remaining</span> <span class="o">=</span> <span class="n">remaining</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">namespace</span><span class="o">.</span><span class="n">remaining</span> <span class="o">=</span> <span class="n">total_done</span>
 
     <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         
@@ -1241,21 +1240,13 @@ table {
 
     <span class="n">stream</span> <span class="o">=</span> <span class="n">_to_stream</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
 
-    <span class="n">input_queue</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">create_queue</span><span class="p">(</span><span class="n">maxsize</span><span class="p">)</span>
-    <span class="n">output_queues</span> <span class="o">=</span> <span class="n">OutputQueues</span><span class="p">()</span>
-
-    <span class="n">tasks</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span>
-        <span class="n">_Task</span><span class="p">(</span>
-            <span class="n">f</span> <span class="o">=</span> <span class="n">_map</span><span class="p">,</span>
-            <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">),</span>
-            <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
-        <span class="p">)</span>
-        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">workers</span><span class="p">)</span>
-    <span class="p">])</span>
-
-    <span class="n">tasks</span> <span class="o">=</span> <span class="n">tasks</span> <span class="o">|</span> <span class="n">stream</span><span class="o">.</span><span class="n">tasks</span>
-
-    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span><span class="n">workers</span><span class="p">,</span> <span class="n">tasks</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span>
+        <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
+        <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">_map</span><span class="p">,</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,),</span>
+        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stream</span><span class="p">],</span>
+    <span class="p">)</span>
 
 <span class="c1">###########</span>
 <span class="c1"># flat_map</span>
@@ -1279,21 +1270,13 @@ table {
 
     <span class="n">stream</span> <span class="o">=</span> <span class="n">_to_stream</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
 
-    <span class="n">input_queue</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">create_queue</span><span class="p">(</span><span class="n">maxsize</span><span class="p">)</span>
-    <span class="n">output_queues</span> <span class="o">=</span> <span class="n">OutputQueues</span><span class="p">()</span>
-
-    <span class="n">tasks</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span>
-        <span class="n">_Task</span><span class="p">(</span>
-            <span class="n">f</span> <span class="o">=</span> <span class="n">_flat_map</span><span class="p">,</span>
-            <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">),</span>
-            <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
-        <span class="p">)</span>
-        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">workers</span><span class="p">)</span>
-    <span class="p">])</span>
-
-    <span class="n">tasks</span> <span class="o">=</span> <span class="n">tasks</span> <span class="o">|</span> <span class="n">stream</span><span class="o">.</span><span class="n">tasks</span>
-
-    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span><span class="n">workers</span><span class="p">,</span> <span class="n">tasks</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span>
+        <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
+        <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">_flat_map</span><span class="p">,</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,),</span>
+        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stream</span><span class="p">],</span>
+    <span class="p">)</span>
 
 
 <span class="c1">###########</span>
@@ -1319,21 +1302,13 @@ table {
 
     <span class="n">stream</span> <span class="o">=</span> <span class="n">_to_stream</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
 
-    <span class="n">input_queue</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">create_queue</span><span class="p">(</span><span class="n">maxsize</span><span class="p">)</span>
-    <span class="n">output_queues</span> <span class="o">=</span> <span class="n">OutputQueues</span><span class="p">()</span>
-
-    <span class="n">tasks</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span>
-        <span class="n">_Task</span><span class="p">(</span>
-            <span class="n">f</span> <span class="o">=</span> <span class="n">_filter</span><span class="p">,</span>
-            <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">),</span>
-            <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
-        <span class="p">)</span>
-        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">workers</span><span class="p">)</span>
-    <span class="p">])</span>
-
-    <span class="n">tasks</span> <span class="o">=</span> <span class="n">tasks</span> <span class="o">|</span> <span class="n">stream</span><span class="o">.</span><span class="n">tasks</span>
-
-    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span><span class="n">workers</span><span class="p">,</span> <span class="n">tasks</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span>
+        <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
+        <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">_filter</span><span class="p">,</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,),</span>
+        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stream</span><span class="p">],</span>
+    <span class="p">)</span>
 
 
 <span class="c1">###########</span>
@@ -1353,33 +1328,28 @@ table {
     <span class="n">output_queues</span><span class="o">.</span><span class="n">done</span><span class="p">()</span>
 
 
-
-<span class="k">def</span> <span class="nf">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">run</span> <span class="o">=</span> <span class="bp">True</span><span class="p">):</span>
 
     <span class="n">stream</span> <span class="o">=</span> <span class="n">_to_stream</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
 
-    <span class="n">input_queue</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">create_queue</span><span class="p">(</span><span class="n">maxsize</span><span class="p">)</span>
-    <span class="n">output_queues</span> <span class="o">=</span> <span class="n">OutputQueues</span><span class="p">()</span>
+    <span class="n">stream</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">(</span>
+        <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
+        <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">_each</span><span class="p">,</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,),</span>
+        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stream</span><span class="p">],</span>
+    <span class="p">)</span>
 
-    <span class="n">tasks</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span>
-        <span class="n">_Task</span><span class="p">(</span>
-            <span class="n">f</span> <span class="o">=</span> <span class="n">_each</span><span class="p">,</span>
-            <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">),</span>
-            <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
-        <span class="p">)</span>
-        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">workers</span><span class="p">)</span>
-    <span class="p">])</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">run</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">stream</span>
 
-    <span class="n">tasks</span> <span class="o">=</span> <span class="n">tasks</span> <span class="o">|</span> <span class="n">stream</span><span class="o">.</span><span class="n">tasks</span>
-
-    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">Stream</span><span class="p">(</span><span class="n">workers</span><span class="p">,</span> <span class="n">tasks</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">stream</span><span class="p">:</span>
         <span class="k">pass</span>
 
 
 <span class="c1">###########</span>
 <span class="c1"># concat</span>
 <span class="c1">###########</span>
-<span class="c1">#NOTE: NOT FINISED</span>
 
 <span class="k">def</span> <span class="nf">_concat</span><span class="p">(</span><span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">):</span>
 
@@ -1394,39 +1364,52 @@ table {
     <span class="n">output_queues</span><span class="o">.</span><span class="n">done</span><span class="p">()</span>
 
 
-
 <span class="k">def</span> <span class="nf">concat</span><span class="p">(</span><span class="n">streams</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
     <span class="n">streams</span> <span class="o">=</span> <span class="p">[</span> <span class="n">_to_stream</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">streams</span> <span class="p">]</span>
-    <span class="n">workers</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span> <span class="n">stream</span><span class="o">.</span><span class="n">workers</span> <span class="k">for</span> <span class="n">stream</span> <span class="ow">in</span> <span class="n">streams</span> <span class="p">])</span>
 
-    <span class="n">input_queue</span> <span class="o">=</span> <span class="n">InputQueue</span><span class="p">(</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">workers</span><span class="p">)</span>
-    <span class="n">output_queues</span> <span class="o">=</span> <span class="n">OutputQueues</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span>
+        <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">_concat</span><span class="p">,</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(),</span>
+        <span class="n">dependencies</span> <span class="o">=</span> <span class="n">streams</span><span class="p">,</span>
+    <span class="p">)</span>
 
-    <span class="k">for</span> <span class="n">stream</span> <span class="ow">in</span> <span class="n">streams</span><span class="p">:</span>
-        <span class="n">stream</span><span class="o">.</span><span class="n">output_queues</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">input_queue</span><span class="p">)</span>
+<span class="c1">################</span>
+<span class="c1"># run</span>
+<span class="c1">################</span>
 
-    <span class="n">tasks</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="n">_Task</span><span class="p">(</span>
-            <span class="n">f</span> <span class="o">=</span> <span class="n">_concat</span><span class="p">,</span>
-            <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">),</span>
-            <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
-        <span class="p">)</span>
-    <span class="p">}</span>
+<span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">streams</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+    
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">streams</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">streams</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Expected atleast stream to run&quot;</span><span class="p">)</span>
 
-    <span class="n">stream_tasks</span> <span class="o">=</span> <span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">tasks</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">streams</span><span class="p">)</span>
-    <span class="n">tasks</span> <span class="o">=</span> <span class="nb">reduce</span><span class="p">(</span><span class="nb">set</span><span class="o">.</span><span class="fm">__or__</span><span class="p">,</span> <span class="n">stream_tasks</span><span class="p">,</span> <span class="n">tasks</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">streams</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">stream</span> <span class="o">=</span> <span class="n">concat</span><span class="p">(</span><span class="n">streams</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">)</span>
+    
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">stream</span> <span class="o">=</span> <span class="n">streams</span>
 
-    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">tasks</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">)</span>
+    <span class="n">stream</span> <span class="o">=</span> <span class="n">to_iterable</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">streams</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    
 
 <span class="c1">################</span>
 <span class="c1"># _to_stream</span>
 <span class="c1">################ </span>
+
 <span class="k">def</span> <span class="nf">_to_stream</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">Stream</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">obj</span>
+
     <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">_from_iterable</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+    
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Object {obj} is not iterable&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">obj</span> <span class="o">=</span> <span class="n">obj</span><span class="p">))</span>
 
@@ -1434,7 +1417,7 @@ table {
 <span class="c1"># _from_iterable</span>
 <span class="c1">################</span>
 
-<span class="k">def</span> <span class="nf">_from_iterable_fn</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_from_iterable_fn</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">):</span>
 
     <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">:</span>
         <span class="n">output_queues</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -1442,28 +1425,80 @@ table {
     <span class="n">output_queues</span><span class="o">.</span><span class="n">done</span><span class="p">()</span>
 
 <span class="k">def</span> <span class="nf">_from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
-    
-    <span class="n">output_queues</span> <span class="o">=</span> <span class="n">OutputQueues</span><span class="p">()</span>
 
-    <span class="n">task</span> <span class="o">=</span> <span class="n">_Task</span><span class="p">(</span>
-        <span class="n">f</span> <span class="o">=</span> <span class="n">_from_iterable_fn</span><span class="p">,</span>
-        <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">),</span>
-        <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
+    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span>
+        <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">maxsize</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">_from_iterable_fn</span><span class="p">,</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">iterable</span><span class="p">,),</span>
+        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[],</span>
     <span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">{</span><span class="n">task</span><span class="p">},</span> <span class="n">output_queues</span><span class="p">)</span>
 
 <span class="c1">##############</span>
 <span class="c1"># to_iterable</span>
 <span class="c1">##############</span>
 
+<span class="k">def</span> <span class="nf">_build_queues</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">stream_input_queue</span><span class="p">,</span> <span class="n">stream_output_queues</span><span class="p">,</span> <span class="n">visited</span><span class="p">):</span>
+
+    <span class="k">if</span> <span class="n">stream</span> <span class="ow">in</span> <span class="n">visited</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">stream_input_queue</span><span class="p">,</span> <span class="n">stream_output_queues</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">visited</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">dependencies</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">total_done</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span> <span class="n">stream</span><span class="o">.</span><span class="n">workers</span> <span class="k">for</span> <span class="n">stream</span> <span class="ow">in</span> <span class="n">stream</span><span class="o">.</span><span class="n">dependencies</span> <span class="p">])</span>
+        <span class="n">input_queue</span> <span class="o">=</span> <span class="n">InputQueue</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">total_done</span><span class="p">)</span>
+        <span class="n">stream_input_queue</span><span class="p">[</span><span class="n">stream</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_queue</span>
+
+        <span class="k">for</span> <span class="n">stream</span> <span class="ow">in</span> <span class="n">stream</span><span class="o">.</span><span class="n">dependencies</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">stream</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stream_output_queues</span><span class="p">:</span>
+                <span class="n">stream_output_queues</span><span class="p">[</span><span class="n">stream</span><span class="p">]</span> <span class="o">=</span> <span class="n">OutputQueues</span><span class="p">([</span><span class="n">input_queue</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">stream_output_queues</span><span class="p">[</span><span class="n">stream</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">input_queue</span><span class="p">)</span>
+
+            <span class="n">stream_input_queue</span><span class="p">,</span> <span class="n">stream_output_queues</span> <span class="o">=</span> <span class="n">_build_queues</span><span class="p">(</span>
+                <span class="n">stream</span><span class="p">,</span>
+                <span class="n">stream_input_queue</span><span class="p">,</span>
+                <span class="n">stream_output_queues</span><span class="p">,</span>
+                <span class="n">visited</span>
+            <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">stream_input_queue</span><span class="p">,</span> <span class="n">stream_output_queues</span>
+
+<span class="k">def</span> <span class="nf">_create_worker</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">):</span>
+
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">output_queues</span> <span class="o">=</span> <span class="n">output_queues</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">input_queue</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">input_queue</span> <span class="o">=</span> <span class="n">input_queue</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">WORKER</span><span class="p">(</span><span class="n">target</span> <span class="o">=</span> <span class="n">f</span><span class="p">,</span> <span class="n">args</span> <span class="o">=</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">)</span>
+
 <span class="k">def</span> <span class="nf">to_iterable</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
-    <span class="n">input_queue</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">create_queue</span><span class="p">(</span><span class="n">maxsize</span><span class="p">)</span>
+    <span class="n">input_queue</span> <span class="o">=</span> <span class="n">InputQueue</span><span class="p">(</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">stream</span><span class="o">.</span><span class="n">workers</span><span class="p">)</span>
+
+    <span class="n">stream_input_queue</span><span class="p">,</span> <span class="n">stream_output_queues</span> <span class="o">=</span> <span class="n">_build_queues</span><span class="p">(</span>
+        <span class="n">stream</span> <span class="o">=</span> <span class="n">stream</span><span class="p">,</span>
+        <span class="n">stream_input_queue</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
+        <span class="n">stream_output_queues</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
+        <span class="n">visited</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(),</span>
+    <span class="p">)</span>
+
+    <span class="n">stream_output_queues</span><span class="p">[</span><span class="n">stream</span><span class="p">]</span> <span class="o">=</span> <span class="n">OutputQueues</span><span class="p">([</span> <span class="n">input_queue</span> <span class="p">])</span>
 
     <span class="n">processes</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">WORKER</span><span class="p">(</span><span class="n">target</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">f</span><span class="p">,</span> <span class="n">args</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="n">stream</span><span class="o">.</span><span class="n">tasks</span>
+        <span class="n">WORKER</span><span class="p">(</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="n">_stream</span><span class="o">.</span><span class="n">target</span><span class="p">,</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="n">_stream</span><span class="o">.</span><span class="n">args</span><span class="p">,</span>
+            <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+                <span class="n">output_queues</span> <span class="o">=</span> <span class="n">stream_output_queues</span><span class="p">[</span><span class="n">_stream</span><span class="p">],</span>
+                <span class="n">input_queue</span> <span class="o">=</span> <span class="n">stream_input_queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_stream</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">_stream</span> <span class="ow">in</span> <span class="n">stream_output_queues</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">_stream</span><span class="o">.</span><span class="n">workers</span><span class="p">)</span>
     <span class="p">]</span>
 
     <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">processes</span><span class="p">:</span>
@@ -1536,26 +1571,14 @@ table {
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">concat</span><span class="p">(</span><span class="n">streams</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
     <span class="n">streams</span> <span class="o">=</span> <span class="p">[</span> <span class="n">_to_stream</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">streams</span> <span class="p">]</span>
-    <span class="n">workers</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span> <span class="n">stream</span><span class="o">.</span><span class="n">workers</span> <span class="k">for</span> <span class="n">stream</span> <span class="ow">in</span> <span class="n">streams</span> <span class="p">])</span>
 
-    <span class="n">input_queue</span> <span class="o">=</span> <span class="n">InputQueue</span><span class="p">(</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">workers</span><span class="p">)</span>
-    <span class="n">output_queues</span> <span class="o">=</span> <span class="n">OutputQueues</span><span class="p">()</span>
-
-    <span class="k">for</span> <span class="n">stream</span> <span class="ow">in</span> <span class="n">streams</span><span class="p">:</span>
-        <span class="n">stream</span><span class="o">.</span><span class="n">output_queues</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">input_queue</span><span class="p">)</span>
-
-    <span class="n">tasks</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="n">_Task</span><span class="p">(</span>
-            <span class="n">f</span> <span class="o">=</span> <span class="n">_concat</span><span class="p">,</span>
-            <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">),</span>
-            <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
-        <span class="p">)</span>
-    <span class="p">}</span>
-
-    <span class="n">stream_tasks</span> <span class="o">=</span> <span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">tasks</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">streams</span><span class="p">)</span>
-    <span class="n">tasks</span> <span class="o">=</span> <span class="nb">reduce</span><span class="p">(</span><span class="nb">set</span><span class="o">.</span><span class="fm">__or__</span><span class="p">,</span> <span class="n">stream_tasks</span><span class="p">,</span> <span class="n">tasks</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">tasks</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span>
+        <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">_concat</span><span class="p">,</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(),</span>
+        <span class="n">dependencies</span> <span class="o">=</span> <span class="n">streams</span><span class="p">,</span>
+    <span class="p">)</span>
 </pre></div>
 
   </div>
@@ -1566,7 +1589,7 @@ table {
       
   <div class="item">
     <div class="name def" id="pypeln.pr.each">
-    <p>def <span class="ident">each</span>(</p><p>f, stream, workers=1, maxsize=0)</p>
+    <p>def <span class="ident">each</span>(</p><p>f, stream, workers=1, maxsize=0, run=True)</p>
     </div>
     
 
@@ -1575,25 +1598,22 @@ table {
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.pr.each', this);">Show source &equiv;</a></p>
   <div id="source-pypeln.pr.each" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">run</span> <span class="o">=</span> <span class="bp">True</span><span class="p">):</span>
 
     <span class="n">stream</span> <span class="o">=</span> <span class="n">_to_stream</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
 
-    <span class="n">input_queue</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">create_queue</span><span class="p">(</span><span class="n">maxsize</span><span class="p">)</span>
-    <span class="n">output_queues</span> <span class="o">=</span> <span class="n">OutputQueues</span><span class="p">()</span>
+    <span class="n">stream</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">(</span>
+        <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
+        <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">_each</span><span class="p">,</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,),</span>
+        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stream</span><span class="p">],</span>
+    <span class="p">)</span>
 
-    <span class="n">tasks</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span>
-        <span class="n">_Task</span><span class="p">(</span>
-            <span class="n">f</span> <span class="o">=</span> <span class="n">_each</span><span class="p">,</span>
-            <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">),</span>
-            <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
-        <span class="p">)</span>
-        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">workers</span><span class="p">)</span>
-    <span class="p">])</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">run</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">stream</span>
 
-    <span class="n">tasks</span> <span class="o">=</span> <span class="n">tasks</span> <span class="o">|</span> <span class="n">stream</span><span class="o">.</span><span class="n">tasks</span>
-
-    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">Stream</span><span class="p">(</span><span class="n">workers</span><span class="p">,</span> <span class="n">tasks</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">stream</span><span class="p">:</span>
         <span class="k">pass</span>
 </pre></div>
 
@@ -1618,21 +1638,13 @@ table {
 
     <span class="n">stream</span> <span class="o">=</span> <span class="n">_to_stream</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
 
-    <span class="n">input_queue</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">create_queue</span><span class="p">(</span><span class="n">maxsize</span><span class="p">)</span>
-    <span class="n">output_queues</span> <span class="o">=</span> <span class="n">OutputQueues</span><span class="p">()</span>
-
-    <span class="n">tasks</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span>
-        <span class="n">_Task</span><span class="p">(</span>
-            <span class="n">f</span> <span class="o">=</span> <span class="n">_filter</span><span class="p">,</span>
-            <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">),</span>
-            <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
-        <span class="p">)</span>
-        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">workers</span><span class="p">)</span>
-    <span class="p">])</span>
-
-    <span class="n">tasks</span> <span class="o">=</span> <span class="n">tasks</span> <span class="o">|</span> <span class="n">stream</span><span class="o">.</span><span class="n">tasks</span>
-
-    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span><span class="n">workers</span><span class="p">,</span> <span class="n">tasks</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span>
+        <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
+        <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">_filter</span><span class="p">,</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,),</span>
+        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stream</span><span class="p">],</span>
+    <span class="p">)</span>
 </pre></div>
 
   </div>
@@ -1656,21 +1668,13 @@ table {
 
     <span class="n">stream</span> <span class="o">=</span> <span class="n">_to_stream</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
 
-    <span class="n">input_queue</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">create_queue</span><span class="p">(</span><span class="n">maxsize</span><span class="p">)</span>
-    <span class="n">output_queues</span> <span class="o">=</span> <span class="n">OutputQueues</span><span class="p">()</span>
-
-    <span class="n">tasks</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span>
-        <span class="n">_Task</span><span class="p">(</span>
-            <span class="n">f</span> <span class="o">=</span> <span class="n">_flat_map</span><span class="p">,</span>
-            <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">),</span>
-            <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
-        <span class="p">)</span>
-        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">workers</span><span class="p">)</span>
-    <span class="p">])</span>
-
-    <span class="n">tasks</span> <span class="o">=</span> <span class="n">tasks</span> <span class="o">|</span> <span class="n">stream</span><span class="o">.</span><span class="n">tasks</span>
-
-    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span><span class="n">workers</span><span class="p">,</span> <span class="n">tasks</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span>
+        <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
+        <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">_flat_map</span><span class="p">,</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,),</span>
+        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stream</span><span class="p">],</span>
+    <span class="p">)</span>
 </pre></div>
 
   </div>
@@ -1694,21 +1698,47 @@ table {
 
     <span class="n">stream</span> <span class="o">=</span> <span class="n">_to_stream</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
 
-    <span class="n">input_queue</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">create_queue</span><span class="p">(</span><span class="n">maxsize</span><span class="p">)</span>
-    <span class="n">output_queues</span> <span class="o">=</span> <span class="n">OutputQueues</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span>
+        <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
+        <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">_map</span><span class="p">,</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,),</span>
+        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stream</span><span class="p">],</span>
+    <span class="p">)</span>
+</pre></div>
 
-    <span class="n">tasks</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span>
-        <span class="n">_Task</span><span class="p">(</span>
-            <span class="n">f</span> <span class="o">=</span> <span class="n">_map</span><span class="p">,</span>
-            <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">),</span>
-            <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
-        <span class="p">)</span>
-        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">workers</span><span class="p">)</span>
-    <span class="p">])</span>
+  </div>
+</div>
 
-    <span class="n">tasks</span> <span class="o">=</span> <span class="n">tasks</span> <span class="o">|</span> <span class="n">stream</span><span class="o">.</span><span class="n">tasks</span>
+  </div>
+  
+      
+  <div class="item">
+    <div class="name def" id="pypeln.pr.run">
+    <p>def <span class="ident">run</span>(</p><p>streams, maxsize=0)</p>
+    </div>
+    
 
-    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span><span class="n">workers</span><span class="p">,</span> <span class="n">tasks</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">)</span>
+    
+  
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.pr.run', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.pr.run" class="source">
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">streams</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+    
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">streams</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">streams</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Expected atleast stream to run&quot;</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">streams</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">stream</span> <span class="o">=</span> <span class="n">concat</span><span class="p">(</span><span class="n">streams</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">)</span>
+    
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">stream</span> <span class="o">=</span> <span class="n">streams</span>
+
+    <span class="n">stream</span> <span class="o">=</span> <span class="n">to_iterable</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">streams</span><span class="p">:</span>
+        <span class="k">pass</span>
 </pre></div>
 
   </div>
@@ -1730,11 +1760,28 @@ table {
   <div id="source-pypeln.pr.to_iterable" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">to_iterable</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
-    <span class="n">input_queue</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">create_queue</span><span class="p">(</span><span class="n">maxsize</span><span class="p">)</span>
+    <span class="n">input_queue</span> <span class="o">=</span> <span class="n">InputQueue</span><span class="p">(</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">stream</span><span class="o">.</span><span class="n">workers</span><span class="p">)</span>
+
+    <span class="n">stream_input_queue</span><span class="p">,</span> <span class="n">stream_output_queues</span> <span class="o">=</span> <span class="n">_build_queues</span><span class="p">(</span>
+        <span class="n">stream</span> <span class="o">=</span> <span class="n">stream</span><span class="p">,</span>
+        <span class="n">stream_input_queue</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
+        <span class="n">stream_output_queues</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
+        <span class="n">visited</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(),</span>
+    <span class="p">)</span>
+
+    <span class="n">stream_output_queues</span><span class="p">[</span><span class="n">stream</span><span class="p">]</span> <span class="o">=</span> <span class="n">OutputQueues</span><span class="p">([</span> <span class="n">input_queue</span> <span class="p">])</span>
 
     <span class="n">processes</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">WORKER</span><span class="p">(</span><span class="n">target</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">f</span><span class="p">,</span> <span class="n">args</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="n">stream</span><span class="o">.</span><span class="n">tasks</span>
+        <span class="n">WORKER</span><span class="p">(</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="n">_stream</span><span class="o">.</span><span class="n">target</span><span class="p">,</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="n">_stream</span><span class="o">.</span><span class="n">args</span><span class="p">,</span>
+            <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+                <span class="n">output_queues</span> <span class="o">=</span> <span class="n">stream_output_queues</span><span class="p">[</span><span class="n">_stream</span><span class="p">],</span>
+                <span class="n">input_queue</span> <span class="o">=</span> <span class="n">stream_input_queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_stream</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">_stream</span> <span class="ow">in</span> <span class="n">stream_output_queues</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">_stream</span><span class="o">.</span><span class="n">workers</span><span class="p">)</span>
     <span class="p">]</span>
 
     <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">processes</span><span class="p">:</span>
@@ -1772,12 +1819,12 @@ table {
   <div id="source-pypeln.pr.InputQueue" class="source">
     <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">InputQueue</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">remaining</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">total_done</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="n">Queue</span><span class="p">(</span><span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lock</span> <span class="o">=</span> <span class="n">Lock</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">namespace</span> <span class="o">=</span> <span class="n">_get_namespace</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">namespace</span><span class="o">.</span><span class="n">remaining</span> <span class="o">=</span> <span class="n">remaining</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">namespace</span><span class="o">.</span><span class="n">remaining</span> <span class="o">=</span> <span class="n">total_done</span>
 
     <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         
@@ -1815,7 +1862,7 @@ table {
             
   <div class="item">
     <div class="name def" id="pypeln.pr.InputQueue.__init__">
-    <p>def <span class="ident">__init__</span>(</p><p>self, maxsize, remaining, **kwargs)</p>
+    <p>def <span class="ident">__init__</span>(</p><p>self, maxsize, total_done, **kwargs)</p>
     </div>
     
 
@@ -1825,12 +1872,12 @@ table {
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.pr.InputQueue.__init__', this);">Show source &equiv;</a></p>
   <div id="source-pypeln.pr.InputQueue.__init__" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">remaining</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">total_done</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     
     <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="n">Queue</span><span class="p">(</span><span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">lock</span> <span class="o">=</span> <span class="n">Lock</span><span class="p">()</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">namespace</span> <span class="o">=</span> <span class="n">_get_namespace</span><span class="p">()</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">namespace</span><span class="o">.</span><span class="n">remaining</span> <span class="o">=</span> <span class="n">remaining</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">namespace</span><span class="o">.</span><span class="n">remaining</span> <span class="o">=</span> <span class="n">total_done</span>
 </pre></div>
 
   </div>
@@ -2030,26 +2077,29 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
       <p id="pypeln.pr.Stream" class="name">class <span class="ident">Stream</span></p>
       
   
-    <div class="desc"><p>Stream(workers, tasks, output_queues)</p></div>
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.pr.Stream', this);">Show source &equiv;</a></p>
   <div id="source-pypeln.pr.Stream" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">Stream</span><span class="p">(</span><span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;Stream&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;workers&quot;</span><span class="p">,</span> <span class="s2">&quot;tasks&quot;</span><span class="p">,</span> <span class="s2">&quot;output_queues&quot;</span><span class="p">])):</span> 
+    <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">Stream</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">dependencies</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="n">target</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span> <span class="o">=</span> <span class="n">dependencies</span>
     
     <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">to_iterable</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;Stream(workers = {workers}, tasks = {tasks}, output_queues = {output_queues})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="k">return</span> <span class="s2">&quot;Stream(workers = {workers}, maxsize = {maxsize}, target = {target}, args = {args}, dependencies = {dependencies})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="n">workers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">workers</span><span class="p">,</span>
-            <span class="n">tasks</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tasks</span><span class="p">),</span>
-            <span class="n">output_queues</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_queues</span><span class="p">),</span>
+            <span class="n">maxsize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxsize</span><span class="p">,</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">,</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span>
+            <span class="n">dependencies</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">),</span>
         <span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">create_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">):</span>
-        <span class="n">queue</span> <span class="o">=</span> <span class="n">InputQueue</span><span class="p">(</span><span class="n">maxsize</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">workers</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">output_queues</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">queue</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">queue</span>
 </pre></div>
 
   </div>
@@ -2060,27 +2110,28 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
           <h3>Ancestors (in MRO)</h3>
           <ul class="class_list">
           <li><a href="#pypeln.pr.Stream">Stream</a></li>
-          <li>__pdoc_file_module__.pr.Stream</li>
-          <li>builtins.tuple</li>
           <li>builtins.object</li>
           </ul>
           <h3>Static methods</h3>
             
   <div class="item">
-    <div class="name def" id="pypeln.pr.Stream.create_queue">
-    <p>def <span class="ident">create_queue</span>(</p><p>self, maxsize)</p>
+    <div class="name def" id="pypeln.pr.Stream.__init__">
+    <p>def <span class="ident">__init__</span>(</p><p>self, workers, maxsize, target, args, dependencies)</p>
     </div>
     
 
     
   
+    <div class="desc"><p>Initialize self.  See help(type(self)) for accurate signature.</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.pr.Stream.create_queue', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.pr.Stream.create_queue" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">create_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">):</span>
-    <span class="n">queue</span> <span class="o">=</span> <span class="n">InputQueue</span><span class="p">(</span><span class="n">maxsize</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">workers</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">output_queues</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">queue</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">queue</span>
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.pr.Stream.__init__', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.pr.Stream.__init__" class="source">
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">dependencies</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="n">target</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span> <span class="o">=</span> <span class="n">dependencies</span>
 </pre></div>
 
   </div>
@@ -2090,23 +2141,41 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
   
           <h3>Instance variables</h3>
             <div class="item">
-            <p id="pypeln.pr.Stream.output_queues" class="name">var <span class="ident">output_queues</span></p>
+            <p id="pypeln.pr.Stream.args" class="name">var <span class="ident">args</span></p>
             
 
             
   
-    <div class="desc"><p>Alias for field number 2</p></div>
   <div class="source_cont">
 </div>
 
             </div>
             <div class="item">
-            <p id="pypeln.pr.Stream.tasks" class="name">var <span class="ident">tasks</span></p>
+            <p id="pypeln.pr.Stream.dependencies" class="name">var <span class="ident">dependencies</span></p>
             
 
             
   
-    <div class="desc"><p>Alias for field number 1</p></div>
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="pypeln.pr.Stream.maxsize" class="name">var <span class="ident">maxsize</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="pypeln.pr.Stream.target" class="name">var <span class="ident">target</span></p>
+            
+
+            
+  
   <div class="source_cont">
 </div>
 
@@ -2117,7 +2186,6 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
 
             
   
-    <div class="desc"><p>Alias for field number 0</p></div>
   <div class="source_cont">
 </div>
 

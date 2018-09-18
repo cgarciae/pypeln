@@ -17,7 +17,7 @@ def test_from_to_iterable(nums):
 
     nums_py = nums
 
-    nums_pl = io._from_iterable(nums)
+    nums_pl = io.from_iterable(nums)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums_py

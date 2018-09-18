@@ -59,7 +59,7 @@ def test_map_square_workers(nums):
     nums_py = map(lambda x: x ** 2, nums)
     nums_py = list(nums_py)
 
-    nums_pl = io.map(lambda x: x ** 2, nums, workers=2)
+    nums_pl = io.map(lambda x: x ** 2, nums, workers = 2)
     nums_pl = list(nums_pl)
 
     assert sorted(nums_pl) == sorted(nums_py)

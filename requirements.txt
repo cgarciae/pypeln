@@ -1,3 +1,4 @@
 pytest
 hypothesis
 cytoolz
+pytest-asyncio

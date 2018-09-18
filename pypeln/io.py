@@ -9,35 +9,40 @@ from .utils_async import TaskPool
 import time
 from functools import reduce
 
+def WORKER(target, args, kwargs):
+    return target(*args, **kwargs)
 
-class Stream(namedtuple("Stream", ["workers", "tasks", "output_queues"])): 
+class Stream(object):
+
+    def __init__(self, workers, maxsize, target, args, dependencies):
+        self.workers = workers
+        self.maxsize = maxsize
+        self.target = target
+        self.args = args
+        self.dependencies = dependencies
 
     def __await__(self):
-        return asyncio.gather(*self.tasks).__await__()
+        task, _input_queue = _to_task(self, maxsize = 0)
+        return task.__await__()
     
     def __iter__(self):
         return to_iterable(self)
 
     def __repr__(self):
-        return "Stream(workers = {workers}, tasks = {tasks}, output_queues = {output_queues})".format(
+        return "Stream(workers = {workers}, maxsize = {maxsize}, target = {target}, args = {args}, dependencies = {dependencies})".format(
             workers = self.workers,
-            tasks = len(self.tasks),
-            output_queues = len(self.output_queues),
+            maxsize = self.maxsize,
+            target = self.target,
+            args = self.args,
+            dependencies = len(self.dependencies),
         )
-
-    def create_queue(self, maxsize, remaining = 1):
-        queue = InputQueue(maxsize = maxsize, remaining = 1)
-        self.output_queues.append(queue)
-        return queue
-
-
 
 class InputQueue(asyncio.Queue):
 
-    def __init__(self, maxsize = 0, remaining = 1, **kwargs):
+    def __init__(self, maxsize = 0, total_done = 1, **kwargs):
         super(InputQueue, self).__init__(maxsize = maxsize, **kwargs)
 
-        self.remaining = remaining
+        self.remaining = total_done
 
     async def get(self):
         
@@ -75,8 +80,8 @@ class OutputQueues(list):
             await queue.put(utils.DONE)
 
 
-async def _runner_task(f_task, input_queue, output_queues, workers):
-    
+async def _runner_task(f_task, workers, input_queue, output_queues):
+
     async with TaskPool(workers = workers) as tasks:
 
         while not input_queue.is_done():
@@ -94,8 +99,9 @@ async def _runner_task(f_task, input_queue, output_queues, workers):
 # map
 ########################
 
-def _map(f, output_queues):
-    async def _task(x):
+async def _map(f, workers, input_queue, output_queues):
+
+    async def f_task(x):
 
         y = f(x)
 
@@ -103,23 +109,21 @@ def _map(f, output_queues):
             y = await y
 
         await output_queues.put(y)
-    
-    return _task
+
+    await _runner_task(f_task, workers, input_queue, output_queues)
 
 
 def map(f, stream, workers = 1, maxsize = 0):
 
     stream = _to_stream(stream)
 
-    output_queues = OutputQueues()
-    input_queue = stream.create_queue(maxsize)
-    
-    f_task = _map(f, output_queues)
-    task = _runner_task(f_task, input_queue, output_queues, workers)
-
-    tasks = stream.tasks | {task}
-
-    return Stream(workers, tasks, output_queues)
+    return Stream(
+        workers = workers,
+        maxsize = maxsize,
+        target = _map,
+        args = (f,),
+        dependencies = [stream],
+    )
 
 
 
@@ -127,8 +131,9 @@ def map(f, stream, workers = 1, maxsize = 0):
 # flat_map
 ########################
 
-def _flat_map(f, output_queues):
-    async def _task(x):
+async def _flat_map(f, workers, input_queue, output_queues):
+    
+    async def f_task(x):
 
         ys = f(x)
 
@@ -139,31 +144,28 @@ def _flat_map(f, output_queues):
         elif hasattr(ys, "__iter__"):
             for y in ys:
                 await output_queues.put(y)
-    
-    return _task
+
+    await _runner_task(f_task, workers, input_queue, output_queues)
 
 
 def flat_map(f, stream, workers = 1, maxsize = 0):
 
     stream = _to_stream(stream)
 
-    output_queues = OutputQueues()
-    input_queue = stream.create_queue(maxsize)
-    
-    f_task = _flat_map(f, output_queues)
-    task = _runner_task(f_task, input_queue, output_queues, workers)
-
-    tasks = stream.tasks | {task}
-
-    return Stream(workers, tasks, output_queues)
-
+    return Stream(
+        workers = workers,
+        maxsize = maxsize,
+        target = _flat_map,
+        args = (f,),
+        dependencies = [stream],
+    )
 
 ########################
 # filter
 ########################
 
-def _filter(f, output_queues):
-    async def _task(x):
+async def _filter(f, workers, input_queue, output_queues):
+    async def f_task(x):
 
         y = f(x)
 
@@ -172,61 +174,63 @@ def _filter(f, output_queues):
 
         if y:
             await output_queues.put(x)
-    
-    return _task
+
+    await _runner_task(f_task, workers, input_queue, output_queues)
 
 
 def filter(f, stream, workers = 1, maxsize = 0):
 
     stream = _to_stream(stream)
 
-    output_queues = OutputQueues()
-    input_queue = stream.create_queue(maxsize)
-    
-    f_task = _filter(f, output_queues)
-    task = _runner_task(f_task, input_queue, output_queues, workers)
-
-    tasks = stream.tasks | {task}
-
-    return Stream(workers, tasks, output_queues)
+    return Stream(
+        workers = workers,
+        maxsize = maxsize,
+        target = _filter,
+        args = (f,),
+        dependencies = [stream],
+    )
 
 
 ########################
 # each
 ########################
 
-def _each(f, output_queues):
-    async def _task(x):
+
+async def _each(f, workers, input_queue, output_queues):
+    
+    async def f_task(x):
 
         y = f(x)
 
         if hasattr(y, "__await__"):
             y = await y
-    
-    return _task
+
+    await _runner_task(f_task, workers, input_queue, output_queues)
 
 
-def each(f, stream, workers = 1, maxsize = 0):
+def each(f, stream, workers = 1, maxsize = 0, run = True):
 
     stream = _to_stream(stream)
 
-    output_queues = OutputQueues()
-    input_queue = stream.create_queue(maxsize)
-    
-    f_task = _each(f, output_queues)
-    task = _runner_task(f_task, input_queue, output_queues, workers)
+    stream = Stream(
+        workers = workers,
+        maxsize = maxsize,
+        target = _each,
+        args = (f,),
+        dependencies = [stream],
+    )
 
-    tasks = stream.tasks | {task}
+    if not run:
+        return stream
 
-    for _ in Stream(workers, tasks, output_queues):
+    for _ in stream:
         pass
-
 
 ########################
 # concat
 ########################
 
-async def _concat(input_queue, output_queues):
+async def _concat(workers, input_queue, output_queues):
 
     while not input_queue.is_done():
 
@@ -240,36 +244,66 @@ async def _concat(input_queue, output_queues):
     
 
 
-def concat(streams, workers = 1, maxsize = 0):
+def concat(streams, maxsize = 0):
 
     streams = [ _to_stream(s) for s in streams ]
-    output_queues = OutputQueues()
 
-    input_queue = InputQueue(maxsize = maxsize, remaining = len(streams))
-
-    for stream in streams:
-        stream.output_queues.append(input_queue)
-    
-    task = _concat(input_queue, output_queues)
-
-    tasks = reduce(
-        lambda tasks, stream: tasks | stream.tasks, 
-        streams, 
-        {task},
+    return Stream(
+        workers = 1,
+        maxsize = maxsize,
+        target = _concat,
+        args = tuple(),
+        dependencies = streams,
     )
 
-    return Stream(1, tasks, output_queues)
 
+################
+# _to_task
+################
 
+def _to_task(stream, maxsize):
+
+    total_done = 1
+    input_queue = InputQueue(maxsize, total_done)
+
+    stream_input_queue, stream_output_queues = _build_queues(
+        stream = stream,
+        stream_input_queue = dict(),
+        stream_output_queues = dict(),
+        visited = set(),
+    )
+
+    stream_output_queues[stream] = OutputQueues([ input_queue ])
+
+    tasks = [
+        WORKER(
+            target = _stream.target,
+            args = _stream.args,
+            kwargs = dict(
+                workers = _stream.workers,
+                output_queues = stream_output_queues[_stream],
+                input_queue = stream_input_queue.get(_stream, None),
+            ),
+        )
+        for _stream in stream_output_queues
+    ]
+
+    task = asyncio.gather(*tasks)
+
+    return task, input_queue
 
 ################
 # _to_stream
 ################
+
 def _to_stream(obj):
+
     if isinstance(obj, Stream):
         return obj
+
     elif hasattr(obj, "__iter__"):
         return _from_iterable(obj)
+
     else:
         raise ValueError("Object {obj} is not iterable".format(obj = obj))
     
@@ -277,7 +311,7 @@ def _to_stream(obj):
 # _from_iterable
 ########################
 
-async def _from_iterable_fn(iterable, output_queues):
+async def _from_iterable_fn(iterable, workers, input_queue, output_queues):
 
     for x in iterable:
         await output_queues.put(x)
@@ -286,45 +320,87 @@ async def _from_iterable_fn(iterable, output_queues):
 
 def _from_iterable(iterable):
     
-    output_queues = OutputQueues()
-    task = _from_iterable_fn(iterable, output_queues)
+    return Stream(
+        workers = 1,
+        maxsize = None,
+        target = _from_iterable_fn,
+        args = (iterable,),
+        dependencies = [],
+    )
 
-    return Stream(1, {task}, output_queues)
+
 
 ########################
 # to_iterable
 ########################
 
+
+def _build_queues(stream, stream_input_queue, stream_output_queues, visited):
+
+    if stream in visited:
+        return stream_input_queue, stream_output_queues
+    else:
+        visited.add(stream)
+
+    if len(stream.dependencies) > 0:
+        total_done = len(stream.dependencies)
+        input_queue = InputQueue(stream.maxsize, total_done)
+        stream_input_queue[stream] = input_queue
+
+        for stream in stream.dependencies:
+            if stream not in stream_output_queues:
+                stream_output_queues[stream] = OutputQueues([input_queue])
+            else:
+                stream_output_queues[stream].append(input_queue)
+
+            stream_input_queue, stream_output_queues = _build_queues(
+                stream,
+                stream_input_queue,
+                stream_output_queues,
+                visited
+            )
+
+    return stream_input_queue, stream_output_queues
+
 def _handle_async_exception(loop, ctx):
     loop.stop()
     raise Exception(f"Exception in async task: {ctx}")
 
-def _to_iterable_fn(loop, stream):
-    loop.run_until_complete(stream)
+def _to_iterable_fn(loop, task):
+    
+    loop.run_until_complete(task)
+
+
 
 def to_iterable(stream: Stream, maxsize = 0):
 
-    input_queue = stream.create_queue(maxsize)
-
-    loop = asyncio.get_event_loop()
+    old_loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     loop.set_exception_handler(_handle_async_exception)
 
-    thread = threading.Thread(target=_to_iterable_fn, args=(loop, stream))
-    thread.daemon = True
-    thread.start()
+    task, input_queue = _to_task(stream, maxsize = maxsize)
+
+    try:
+        thread = threading.Thread(target=_to_iterable_fn, args=(loop, task))
+        thread.daemon = True
+        thread.start()
 
 
-    while not input_queue.is_done():
+        while not input_queue.is_done():
 
-        while input_queue.empty():
-            time.sleep(utils.TIMEOUT)
+            while input_queue.empty():
+                time.sleep(utils.TIMEOUT)
 
-        x = input_queue.get_nowait()
+            x = input_queue.get_nowait()
 
-        if not utils.is_continue(x):
-            yield x
-    
-    thread.join()
+            if not utils.is_continue(x):
+                yield x
+        
+        thread.join()
+
+    finally:
+        asyncio.set_event_loop(old_loop)
 
 
 

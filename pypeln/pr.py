@@ -38,38 +38,36 @@ def _get_namespace():
 # classes
 ####################
 
-class Stream(namedtuple("Stream", ["workers", "tasks", "output_queues"])): 
+class Stream(object):
+
+    def __init__(self, workers, maxsize, target, args, dependencies):
+        self.workers = workers
+        self.maxsize = maxsize
+        self.target = target
+        self.args = args
+        self.dependencies = dependencies
     
     def __iter__(self):
         return to_iterable(self)
 
     def __repr__(self):
-        return "Stream(workers = {workers}, tasks = {tasks}, output_queues = {output_queues})".format(
+        return "Stream(workers = {workers}, maxsize = {maxsize}, target = {target}, args = {args}, dependencies = {dependencies})".format(
             workers = self.workers,
-            tasks = len(self.tasks),
-            output_queues = len(self.output_queues),
+            maxsize = self.maxsize,
+            target = self.target,
+            args = self.args,
+            dependencies = len(self.dependencies),
         )
 
-    def create_queue(self, maxsize):
-        queue = InputQueue(maxsize, self.workers)
-        self.output_queues.append(queue)
-        return queue
-
-class _Task(object):
-    
-    def __init__(self, f, args, kwargs):
-        self.f = f
-        self.args = args
-        self.kwargs = kwargs
 
 class InputQueue(object):
 
-    def __init__(self, maxsize, remaining, **kwargs):
+    def __init__(self, maxsize, total_done, **kwargs):
         
         self.queue = Queue(maxsize = maxsize, **kwargs)
         self.lock = Lock()
         self.namespace = _get_namespace()
-        self.namespace.remaining = remaining
+        self.namespace.remaining = total_done
 
     def get(self):
         
@@ -126,21 +124,13 @@ def map(f, stream, workers = 1, maxsize = 0):
 
     stream = _to_stream(stream)
 
-    input_queue = stream.create_queue(maxsize)
-    output_queues = OutputQueues()
-
-    tasks = set([
-        _Task(
-            f = _map,
-            args = (f, input_queue, output_queues),
-            kwargs = dict(),
-        )
-        for _ in range(workers)
-    ])
-
-    tasks = tasks | stream.tasks
-
-    return Stream(workers, tasks, output_queues)
+    return Stream(
+        workers = workers,
+        maxsize = maxsize,
+        target = _map,
+        args = (f,),
+        dependencies = [stream],
+    )
 
 ###########
 # flat_map
@@ -164,21 +154,13 @@ def flat_map(f, stream, workers = 1, maxsize = 0):
 
     stream = _to_stream(stream)
 
-    input_queue = stream.create_queue(maxsize)
-    output_queues = OutputQueues()
-
-    tasks = set([
-        _Task(
-            f = _flat_map,
-            args = (f, input_queue, output_queues),
-            kwargs = dict(),
-        )
-        for _ in range(workers)
-    ])
-
-    tasks = tasks | stream.tasks
-
-    return Stream(workers, tasks, output_queues)
+    return Stream(
+        workers = workers,
+        maxsize = maxsize,
+        target = _flat_map,
+        args = (f,),
+        dependencies = [stream],
+    )
 
 
 ###########
@@ -204,21 +186,13 @@ def filter(f, stream, workers = 1, maxsize = 0):
 
     stream = _to_stream(stream)
 
-    input_queue = stream.create_queue(maxsize)
-    output_queues = OutputQueues()
-
-    tasks = set([
-        _Task(
-            f = _filter,
-            args = (f, input_queue, output_queues),
-            kwargs = dict(),
-        )
-        for _ in range(workers)
-    ])
-
-    tasks = tasks | stream.tasks
-
-    return Stream(workers, tasks, output_queues)
+    return Stream(
+        workers = workers,
+        maxsize = maxsize,
+        target = _filter,
+        args = (f,),
+        dependencies = [stream],
+    )
 
 
 ###########
@@ -238,33 +212,28 @@ def _each(f, input_queue, output_queues):
     output_queues.done()
 
 
-
-def each(f, stream, workers = 1, maxsize = 0):
+def each(f, stream, workers = 1, maxsize = 0, run = True):
 
     stream = _to_stream(stream)
 
-    input_queue = stream.create_queue(maxsize)
-    output_queues = OutputQueues()
+    stream = Stream(
+        workers = workers,
+        maxsize = maxsize,
+        target = _each,
+        args = (f,),
+        dependencies = [stream],
+    )
 
-    tasks = set([
-        _Task(
-            f = _each,
-            args = (f, input_queue, output_queues),
-            kwargs = dict(),
-        )
-        for _ in range(workers)
-    ])
+    if not run:
+        return stream
 
-    tasks = tasks | stream.tasks
-
-    for _ in Stream(workers, tasks, output_queues):
+    for _ in stream:
         pass
 
 
 ###########
 # concat
 ###########
-#NOTE: NOT FINISED
 
 def _concat(input_queue, output_queues):
 
@@ -279,39 +248,52 @@ def _concat(input_queue, output_queues):
     output_queues.done()
 
 
-
 def concat(streams, maxsize = 0):
 
     streams = [ _to_stream(s) for s in streams ]
-    workers = sum([ stream.workers for stream in streams ])
 
-    input_queue = InputQueue(maxsize, workers)
-    output_queues = OutputQueues()
+    return Stream(
+        workers = 1,
+        maxsize = maxsize,
+        target = _concat,
+        args = tuple(),
+        dependencies = streams,
+    )
 
-    for stream in streams:
-        stream.output_queues.append(input_queue)
+################
+# run
+################
 
-    tasks = {
-        _Task(
-            f = _concat,
-            args = (input_queue, output_queues),
-            kwargs = dict(),
-        )
-    }
+def run(streams, maxsize = 0):
+    
+    if isinstance(streams, list) and len(streams) == 0:
+        raise ValueError("Expected atleast stream to run")
 
-    stream_tasks = (s.tasks for s in streams)
-    tasks = reduce(set.__or__, stream_tasks, tasks)
+    elif isinstance(streams, list):
+        stream = concat(streams, maxsize = maxsize)
+    
+    else:
+        stream = streams
 
-    return Stream(1, tasks, output_queues)
+    stream = to_iterable(stream, maxsize = maxsize)
+    
+    for _ in streams:
+        pass
+
+    
 
 ################
 # _to_stream
 ################ 
+
 def _to_stream(obj):
+
     if isinstance(obj, Stream):
         return obj
+
     elif hasattr(obj, "__iter__"):
         return _from_iterable(obj)
+    
     else:
         raise ValueError("Object {obj} is not iterable".format(obj = obj))
 
@@ -319,7 +301,7 @@ def _to_stream(obj):
 # _from_iterable
 ################
 
-def _from_iterable_fn(iterable, output_queues):
+def _from_iterable_fn(iterable, input_queue, output_queues):
 
     for x in iterable:
         output_queues.put(x)
@@ -327,28 +309,80 @@ def _from_iterable_fn(iterable, output_queues):
     output_queues.done()
 
 def _from_iterable(iterable):
-    
-    output_queues = OutputQueues()
 
-    task = _Task(
-        f = _from_iterable_fn,
-        args = (iterable, output_queues),
-        kwargs = dict(),
+    return Stream(
+        workers = 1,
+        maxsize = None,
+        target = _from_iterable_fn,
+        args = (iterable,),
+        dependencies = [],
     )
-
-    return Stream(1, {task}, output_queues)
 
 ##############
 # to_iterable
 ##############
 
+def _build_queues(stream, stream_input_queue, stream_output_queues, visited):
+
+    if stream in visited:
+        return stream_input_queue, stream_output_queues
+    else:
+        visited.add(stream)
+
+    if len(stream.dependencies) > 0:
+        total_done = sum([ stream.workers for stream in stream.dependencies ])
+        input_queue = InputQueue(stream.maxsize, total_done)
+        stream_input_queue[stream] = input_queue
+
+        for stream in stream.dependencies:
+            if stream not in stream_output_queues:
+                stream_output_queues[stream] = OutputQueues([input_queue])
+            else:
+                stream_output_queues[stream].append(input_queue)
+
+            stream_input_queue, stream_output_queues = _build_queues(
+                stream,
+                stream_input_queue,
+                stream_output_queues,
+                visited
+            )
+
+    return stream_input_queue, stream_output_queues
+
+def _create_worker(f, args, output_queues, input_queue):
+
+    kwargs = dict(
+        output_queues = output_queues)
+
+    if input_queue is not None:
+        kwargs.update(input_queue = input_queue)
+
+    return WORKER(target = f, args = args, kwargs = kwargs)
+
 def to_iterable(stream, maxsize = 0):
 
-    input_queue = stream.create_queue(maxsize)
+    input_queue = InputQueue(maxsize, stream.workers)
+
+    stream_input_queue, stream_output_queues = _build_queues(
+        stream = stream,
+        stream_input_queue = dict(),
+        stream_output_queues = dict(),
+        visited = set(),
+    )
+
+    stream_output_queues[stream] = OutputQueues([ input_queue ])
 
     processes = [
-        WORKER(target = task.f, args = task.args, kwargs = task.kwargs)
-        for task in stream.tasks
+        WORKER(
+            target = _stream.target,
+            args = _stream.args,
+            kwargs = dict(
+                output_queues = stream_output_queues[_stream],
+                input_queue = stream_input_queue.get(_stream, None),
+            ),
+        )
+        for _stream in stream_output_queues
+        for _ in range(_stream.workers)
     ]
 
     for p in processes:

@@ -1049,6 +1049,7 @@ table {
     <li class="mono"><a href="#pypeln.io.each">each</a></li>
     <li class="mono"><a href="#pypeln.io.filter">filter</a></li>
     <li class="mono"><a href="#pypeln.io.flat_map">flat_map</a></li>
+    <li class="mono"><a href="#pypeln.io.from_iterable">from_iterable</a></li>
     <li class="mono"><a href="#pypeln.io.map">map</a></li>
     <li class="mono"><a href="#pypeln.io.to_iterable">to_iterable</a></li>
   </ul>
@@ -1130,7 +1131,8 @@ table {
 
 <span class="k">class</span> <span class="nc">Stage</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">dependencies</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">dependencies</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">worker_constructor</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="n">target</span>
@@ -1145,7 +1147,8 @@ table {
         <span class="k">return</span> <span class="n">to_iterable</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;Stage(workers = {workers}, maxsize = {maxsize}, target = {target}, args = {args}, dependencies = {dependencies})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="k">return</span> <span class="s2">&quot;Stage(worker_constructor = {worker_constructor}, workers = {workers}, maxsize = {maxsize}, target = {target}, args = {args}, dependencies = {dependencies})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">worker_constructor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_constructor</span><span class="p">,</span>
             <span class="n">workers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">workers</span><span class="p">,</span>
             <span class="n">maxsize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxsize</span><span class="p">,</span>
             <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">,</span>
@@ -1234,6 +1237,7 @@ table {
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">Stage</span><span class="p">(</span>
+        <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">WORKER</span><span class="p">,</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_map</span><span class="p">,</span>
@@ -1269,6 +1273,7 @@ table {
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">Stage</span><span class="p">(</span>
+        <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">WORKER</span><span class="p">,</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_flat_map</span><span class="p">,</span>
@@ -1299,6 +1304,7 @@ table {
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">Stage</span><span class="p">(</span>
+        <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">WORKER</span><span class="p">,</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_filter</span><span class="p">,</span>
@@ -1329,6 +1335,7 @@ table {
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">Stage</span><span class="p">(</span>
+        <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">WORKER</span><span class="p">,</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_each</span><span class="p">,</span>
@@ -1365,6 +1372,7 @@ table {
     <span class="n">stages</span> <span class="o">=</span> <span class="p">[</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">stages</span> <span class="p">]</span>
 
     <span class="k">return</span> <span class="n">Stage</span><span class="p">(</span>
+        <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">WORKER</span><span class="p">,</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_concat</span><span class="p">,</span>
@@ -1392,7 +1400,7 @@ table {
     <span class="n">stage_output_queues</span><span class="p">[</span><span class="n">stage</span><span class="p">]</span> <span class="o">=</span> <span class="n">OutputQueues</span><span class="p">([</span> <span class="n">input_queue</span> <span class="p">])</span>
 
     <span class="n">tasks</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">WORKER</span><span class="p">(</span>
+        <span class="n">_stage</span><span class="o">.</span><span class="n">worker_constructor</span><span class="p">(</span>
             <span class="n">target</span> <span class="o">=</span> <span class="n">_stage</span><span class="o">.</span><span class="n">target</span><span class="p">,</span>
             <span class="n">args</span> <span class="o">=</span> <span class="n">_stage</span><span class="o">.</span><span class="n">args</span><span class="p">,</span>
             <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
@@ -1418,28 +1426,29 @@ table {
         <span class="k">return</span> <span class="n">obj</span>
 
     <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">_from_iterable</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">from_iterable</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
 
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Object {obj} is not iterable&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">obj</span> <span class="o">=</span> <span class="n">obj</span><span class="p">))</span>
     
 <span class="c1">########################</span>
-<span class="c1"># _from_iterable</span>
+<span class="c1"># from_iterable</span>
 <span class="c1">########################</span>
 
-<span class="n">async</span> <span class="k">def</span> <span class="nf">_from_iterable_fn</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">):</span>
+<span class="n">async</span> <span class="k">def</span> <span class="nf">_from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">):</span>
 
     <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">:</span>
         <span class="n">await</span> <span class="n">output_queues</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         
     <span class="n">await</span> <span class="n">output_queues</span><span class="o">.</span><span class="n">done</span><span class="p">()</span>
 
-<span class="k">def</span> <span class="nf">_from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">worker_constructor</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
     
     <span class="k">return</span> <span class="n">Stage</span><span class="p">(</span>
+        <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">WORKER</span><span class="p">,</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
-        <span class="n">target</span> <span class="o">=</span> <span class="n">_from_iterable_fn</span><span class="p">,</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">_from_iterable</span><span class="p">,</span>
         <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">iterable</span><span class="p">,),</span>
         <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[],</span>
     <span class="p">)</span>
@@ -1587,6 +1596,7 @@ table {
     <span class="n">stages</span> <span class="o">=</span> <span class="p">[</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">stages</span> <span class="p">]</span>
 
     <span class="k">return</span> <span class="n">Stage</span><span class="p">(</span>
+        <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">WORKER</span><span class="p">,</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_concat</span><span class="p">,</span>
@@ -1617,6 +1627,7 @@ table {
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">Stage</span><span class="p">(</span>
+        <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">WORKER</span><span class="p">,</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_each</span><span class="p">,</span>
@@ -1653,6 +1664,7 @@ table {
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">Stage</span><span class="p">(</span>
+        <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">WORKER</span><span class="p">,</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_filter</span><span class="p">,</span>
@@ -1683,11 +1695,41 @@ table {
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">Stage</span><span class="p">(</span>
+        <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">WORKER</span><span class="p">,</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_flat_map</span><span class="p">,</span>
         <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,),</span>
         <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stage</span><span class="p">],</span>
+    <span class="p">)</span>
+</pre></div>
+
+  </div>
+</div>
+
+  </div>
+  
+      
+  <div class="item">
+    <div class="name def" id="pypeln.io.from_iterable">
+    <p>def <span class="ident">from_iterable</span>(</p><p>iterable, worker_constructor=None)</p>
+    </div>
+    
+
+    
+  
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.from_iterable', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.io.from_iterable" class="source">
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">worker_constructor</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+    
+    <span class="k">return</span> <span class="n">Stage</span><span class="p">(</span>
+        <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">WORKER</span><span class="p">,</span>
+        <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">maxsize</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">_from_iterable</span><span class="p">,</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">iterable</span><span class="p">,),</span>
+        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[],</span>
     <span class="p">)</span>
 </pre></div>
 
@@ -1713,6 +1755,7 @@ table {
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">Stage</span><span class="p">(</span>
+        <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">WORKER</span><span class="p">,</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_map</span><span class="p">,</span>
@@ -2278,7 +2321,8 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
   <div id="source-pypeln.io.Stage" class="source">
     <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">Stage</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">dependencies</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">dependencies</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">worker_constructor</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="n">target</span>
@@ -2293,7 +2337,8 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
         <span class="k">return</span> <span class="n">to_iterable</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;Stage(workers = {workers}, maxsize = {maxsize}, target = {target}, args = {args}, dependencies = {dependencies})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="k">return</span> <span class="s2">&quot;Stage(worker_constructor = {worker_constructor}, workers = {workers}, maxsize = {maxsize}, target = {target}, args = {args}, dependencies = {dependencies})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">worker_constructor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_constructor</span><span class="p">,</span>
             <span class="n">workers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">workers</span><span class="p">,</span>
             <span class="n">maxsize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxsize</span><span class="p">,</span>
             <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">,</span>
@@ -2316,7 +2361,7 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
             
   <div class="item">
     <div class="name def" id="pypeln.io.Stage.__init__">
-    <p>def <span class="ident">__init__</span>(</p><p>self, workers, maxsize, target, args, dependencies)</p>
+    <p>def <span class="ident">__init__</span>(</p><p>self, worker_constructor, workers, maxsize, target, args, dependencies)</p>
     </div>
     
 
@@ -2326,7 +2371,8 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.Stage.__init__', this);">Show source &equiv;</a></p>
   <div id="source-pypeln.io.Stage.__init__" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">dependencies</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">dependencies</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">worker_constructor</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="n">target</span>
@@ -2372,6 +2418,16 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
             </div>
             <div class="item">
             <p id="pypeln.io.Stage.target" class="name">var <span class="ident">target</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="pypeln.io.Stage.worker_constructor" class="name">var <span class="ident">worker_constructor</span></p>
             
 
             

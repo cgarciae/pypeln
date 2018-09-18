@@ -1087,11 +1087,11 @@ table {
 
         </li>
         <li class="mono">
-        <span class="class_name"><a href="#pypeln.io.Stream">Stream</a></span>
+        <span class="class_name"><a href="#pypeln.io.Stage">Stage</a></span>
         
           
   <ul>
-    <li class="mono"><a href="#pypeln.io.Stream.__init__">__init__</a></li>
+    <li class="mono"><a href="#pypeln.io.Stage.__init__">__init__</a></li>
   </ul>
 
         </li>
@@ -1128,7 +1128,7 @@ table {
 <span class="k">def</span> <span class="nf">WORKER</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">target</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-<span class="k">class</span> <span class="nc">Stream</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">Stage</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">dependencies</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span>
@@ -1145,7 +1145,7 @@ table {
         <span class="k">return</span> <span class="n">to_iterable</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;Stream(workers = {workers}, maxsize = {maxsize}, target = {target}, args = {args}, dependencies = {dependencies})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="k">return</span> <span class="s2">&quot;Stage(workers = {workers}, maxsize = {maxsize}, target = {target}, args = {args}, dependencies = {dependencies})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="n">workers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">workers</span><span class="p">,</span>
             <span class="n">maxsize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxsize</span><span class="p">,</span>
             <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">,</span>
@@ -1229,16 +1229,16 @@ table {
     <span class="n">await</span> <span class="n">_runner_task</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
-    <span class="n">stream</span> <span class="o">=</span> <span class="n">_to_stream</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+    <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span>
+    <span class="k">return</span> <span class="n">Stage</span><span class="p">(</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_map</span><span class="p">,</span>
         <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,),</span>
-        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stream</span><span class="p">],</span>
+        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stage</span><span class="p">],</span>
     <span class="p">)</span>
 
 
@@ -1264,16 +1264,16 @@ table {
     <span class="n">await</span> <span class="n">_runner_task</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
-    <span class="n">stream</span> <span class="o">=</span> <span class="n">_to_stream</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+    <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span>
+    <span class="k">return</span> <span class="n">Stage</span><span class="p">(</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_flat_map</span><span class="p">,</span>
         <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,),</span>
-        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stream</span><span class="p">],</span>
+        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stage</span><span class="p">],</span>
     <span class="p">)</span>
 
 <span class="c1">########################</span>
@@ -1294,16 +1294,16 @@ table {
     <span class="n">await</span> <span class="n">_runner_task</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
-    <span class="n">stream</span> <span class="o">=</span> <span class="n">_to_stream</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+    <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span>
+    <span class="k">return</span> <span class="n">Stage</span><span class="p">(</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_filter</span><span class="p">,</span>
         <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,),</span>
-        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stream</span><span class="p">],</span>
+        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stage</span><span class="p">],</span>
     <span class="p">)</span>
 
 
@@ -1324,22 +1324,22 @@ table {
     <span class="n">await</span> <span class="n">_runner_task</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">run</span> <span class="o">=</span> <span class="bp">True</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">run</span> <span class="o">=</span> <span class="bp">True</span><span class="p">):</span>
 
-    <span class="n">stream</span> <span class="o">=</span> <span class="n">_to_stream</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+    <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
-    <span class="n">stream</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">(</span>
+    <span class="n">stage</span> <span class="o">=</span> <span class="n">Stage</span><span class="p">(</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_each</span><span class="p">,</span>
         <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,),</span>
-        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stream</span><span class="p">],</span>
+        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stage</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">run</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">stream</span>
+        <span class="k">return</span> <span class="n">stage</span>
 
-    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">stream</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">stage</span><span class="p">:</span>
         <span class="k">pass</span>
 
 <span class="c1">########################</span>
@@ -1360,16 +1360,16 @@ table {
     
 
 
-<span class="k">def</span> <span class="nf">concat</span><span class="p">(</span><span class="n">streams</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">concat</span><span class="p">(</span><span class="n">stages</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
-    <span class="n">streams</span> <span class="o">=</span> <span class="p">[</span> <span class="n">_to_stream</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">streams</span> <span class="p">]</span>
+    <span class="n">stages</span> <span class="o">=</span> <span class="p">[</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">stages</span> <span class="p">]</span>
 
-    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span>
+    <span class="k">return</span> <span class="n">Stage</span><span class="p">(</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_concat</span><span class="p">,</span>
         <span class="n">args</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(),</span>
-        <span class="n">dependencies</span> <span class="o">=</span> <span class="n">streams</span><span class="p">,</span>
+        <span class="n">dependencies</span> <span class="o">=</span> <span class="n">stages</span><span class="p">,</span>
     <span class="p">)</span>
 
 
@@ -1377,31 +1377,31 @@ table {
 <span class="c1"># _to_task</span>
 <span class="c1">################</span>
 
-<span class="k">def</span> <span class="nf">_to_task</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_to_task</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">):</span>
 
     <span class="n">total_done</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="n">input_queue</span> <span class="o">=</span> <span class="n">InputQueue</span><span class="p">(</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">total_done</span><span class="p">)</span>
 
-    <span class="n">stream_input_queue</span><span class="p">,</span> <span class="n">stream_output_queues</span> <span class="o">=</span> <span class="n">_build_queues</span><span class="p">(</span>
-        <span class="n">stream</span> <span class="o">=</span> <span class="n">stream</span><span class="p">,</span>
-        <span class="n">stream_input_queue</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
-        <span class="n">stream_output_queues</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
+    <span class="n">stage_input_queue</span><span class="p">,</span> <span class="n">stage_output_queues</span> <span class="o">=</span> <span class="n">_build_queues</span><span class="p">(</span>
+        <span class="n">stage</span> <span class="o">=</span> <span class="n">stage</span><span class="p">,</span>
+        <span class="n">stage_input_queue</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
+        <span class="n">stage_output_queues</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
         <span class="n">visited</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(),</span>
     <span class="p">)</span>
 
-    <span class="n">stream_output_queues</span><span class="p">[</span><span class="n">stream</span><span class="p">]</span> <span class="o">=</span> <span class="n">OutputQueues</span><span class="p">([</span> <span class="n">input_queue</span> <span class="p">])</span>
+    <span class="n">stage_output_queues</span><span class="p">[</span><span class="n">stage</span><span class="p">]</span> <span class="o">=</span> <span class="n">OutputQueues</span><span class="p">([</span> <span class="n">input_queue</span> <span class="p">])</span>
 
     <span class="n">tasks</span> <span class="o">=</span> <span class="p">[</span>
         <span class="n">WORKER</span><span class="p">(</span>
-            <span class="n">target</span> <span class="o">=</span> <span class="n">_stream</span><span class="o">.</span><span class="n">target</span><span class="p">,</span>
-            <span class="n">args</span> <span class="o">=</span> <span class="n">_stream</span><span class="o">.</span><span class="n">args</span><span class="p">,</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="n">_stage</span><span class="o">.</span><span class="n">target</span><span class="p">,</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="n">_stage</span><span class="o">.</span><span class="n">args</span><span class="p">,</span>
             <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
-                <span class="n">workers</span> <span class="o">=</span> <span class="n">_stream</span><span class="o">.</span><span class="n">workers</span><span class="p">,</span>
-                <span class="n">output_queues</span> <span class="o">=</span> <span class="n">stream_output_queues</span><span class="p">[</span><span class="n">_stream</span><span class="p">],</span>
-                <span class="n">input_queue</span> <span class="o">=</span> <span class="n">stream_input_queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_stream</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+                <span class="n">workers</span> <span class="o">=</span> <span class="n">_stage</span><span class="o">.</span><span class="n">workers</span><span class="p">,</span>
+                <span class="n">output_queues</span> <span class="o">=</span> <span class="n">stage_output_queues</span><span class="p">[</span><span class="n">_stage</span><span class="p">],</span>
+                <span class="n">input_queue</span> <span class="o">=</span> <span class="n">stage_input_queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_stage</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
             <span class="p">),</span>
         <span class="p">)</span>
-        <span class="k">for</span> <span class="n">_stream</span> <span class="ow">in</span> <span class="n">stream_output_queues</span>
+        <span class="k">for</span> <span class="n">_stage</span> <span class="ow">in</span> <span class="n">stage_output_queues</span>
     <span class="p">]</span>
 
     <span class="n">task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="n">tasks</span><span class="p">)</span>
@@ -1409,12 +1409,12 @@ table {
     <span class="k">return</span> <span class="n">task</span><span class="p">,</span> <span class="n">input_queue</span>
 
 <span class="c1">################</span>
-<span class="c1"># _to_stream</span>
+<span class="c1"># _to_stage</span>
 <span class="c1">################</span>
 
-<span class="k">def</span> <span class="nf">_to_stream</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_to_stage</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
 
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">Stream</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">Stage</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">obj</span>
 
     <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">):</span>
@@ -1436,7 +1436,7 @@ table {
 
 <span class="k">def</span> <span class="nf">_from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
     
-    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span>
+    <span class="k">return</span> <span class="n">Stage</span><span class="p">(</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_from_iterable_fn</span><span class="p">,</span>
@@ -1451,32 +1451,32 @@ table {
 <span class="c1">########################</span>
 
 
-<span class="k">def</span> <span class="nf">_build_queues</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">stream_input_queue</span><span class="p">,</span> <span class="n">stream_output_queues</span><span class="p">,</span> <span class="n">visited</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_build_queues</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">stage_input_queue</span><span class="p">,</span> <span class="n">stage_output_queues</span><span class="p">,</span> <span class="n">visited</span><span class="p">):</span>
 
-    <span class="k">if</span> <span class="n">stream</span> <span class="ow">in</span> <span class="n">visited</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">stream_input_queue</span><span class="p">,</span> <span class="n">stream_output_queues</span>
+    <span class="k">if</span> <span class="n">stage</span> <span class="ow">in</span> <span class="n">visited</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">stage_input_queue</span><span class="p">,</span> <span class="n">stage_output_queues</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">visited</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+        <span class="n">visited</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">dependencies</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">total_done</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">dependencies</span><span class="p">)</span>
-        <span class="n">input_queue</span> <span class="o">=</span> <span class="n">InputQueue</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">total_done</span><span class="p">)</span>
-        <span class="n">stream_input_queue</span><span class="p">[</span><span class="n">stream</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_queue</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">stage</span><span class="o">.</span><span class="n">dependencies</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">total_done</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stage</span><span class="o">.</span><span class="n">dependencies</span><span class="p">)</span>
+        <span class="n">input_queue</span> <span class="o">=</span> <span class="n">InputQueue</span><span class="p">(</span><span class="n">stage</span><span class="o">.</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">total_done</span><span class="p">)</span>
+        <span class="n">stage_input_queue</span><span class="p">[</span><span class="n">stage</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_queue</span>
 
-        <span class="k">for</span> <span class="n">stream</span> <span class="ow">in</span> <span class="n">stream</span><span class="o">.</span><span class="n">dependencies</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">stream</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stream_output_queues</span><span class="p">:</span>
-                <span class="n">stream_output_queues</span><span class="p">[</span><span class="n">stream</span><span class="p">]</span> <span class="o">=</span> <span class="n">OutputQueues</span><span class="p">([</span><span class="n">input_queue</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="n">stage</span><span class="o">.</span><span class="n">dependencies</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">stage</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stage_output_queues</span><span class="p">:</span>
+                <span class="n">stage_output_queues</span><span class="p">[</span><span class="n">stage</span><span class="p">]</span> <span class="o">=</span> <span class="n">OutputQueues</span><span class="p">([</span><span class="n">input_queue</span><span class="p">])</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">stream_output_queues</span><span class="p">[</span><span class="n">stream</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">input_queue</span><span class="p">)</span>
+                <span class="n">stage_output_queues</span><span class="p">[</span><span class="n">stage</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">input_queue</span><span class="p">)</span>
 
-            <span class="n">stream_input_queue</span><span class="p">,</span> <span class="n">stream_output_queues</span> <span class="o">=</span> <span class="n">_build_queues</span><span class="p">(</span>
-                <span class="n">stream</span><span class="p">,</span>
-                <span class="n">stream_input_queue</span><span class="p">,</span>
-                <span class="n">stream_output_queues</span><span class="p">,</span>
+            <span class="n">stage_input_queue</span><span class="p">,</span> <span class="n">stage_output_queues</span> <span class="o">=</span> <span class="n">_build_queues</span><span class="p">(</span>
+                <span class="n">stage</span><span class="p">,</span>
+                <span class="n">stage_input_queue</span><span class="p">,</span>
+                <span class="n">stage_output_queues</span><span class="p">,</span>
                 <span class="n">visited</span>
             <span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">stream_input_queue</span><span class="p">,</span> <span class="n">stream_output_queues</span>
+    <span class="k">return</span> <span class="n">stage_input_queue</span><span class="p">,</span> <span class="n">stage_output_queues</span>
 
 <span class="k">def</span> <span class="nf">_handle_async_exception</span><span class="p">(</span><span class="n">loop</span><span class="p">,</span> <span class="n">ctx</span><span class="p">):</span>
     <span class="n">loop</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
@@ -1488,14 +1488,14 @@ table {
 
 
 
-<span class="k">def</span> <span class="nf">to_iterable</span><span class="p">(</span><span class="n">stream</span><span class="p">:</span> <span class="n">Stream</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
     <span class="n">old_loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
     <span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">new_event_loop</span><span class="p">()</span>
     <span class="n">asyncio</span><span class="o">.</span><span class="n">set_event_loop</span><span class="p">(</span><span class="n">loop</span><span class="p">)</span>
     <span class="n">loop</span><span class="o">.</span><span class="n">set_exception_handler</span><span class="p">(</span><span class="n">_handle_async_exception</span><span class="p">)</span>
 
-    <span class="n">task</span><span class="p">,</span> <span class="n">input_queue</span> <span class="o">=</span> <span class="n">_to_task</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">)</span>
+    <span class="n">task</span><span class="p">,</span> <span class="n">input_queue</span> <span class="o">=</span> <span class="n">_to_task</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">)</span>
 
     <span class="k">try</span><span class="p">:</span>
         <span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">_to_iterable_fn</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">loop</span><span class="p">,</span> <span class="n">task</span><span class="p">))</span>
@@ -1528,15 +1528,15 @@ table {
         <span class="n">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span>
 
-    <span class="n">stream</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">stage</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
 
-    <span class="n">stream</span> <span class="o">=</span> <span class="n">flat_map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">2</span><span class="p">],</span> <span class="n">stream</span><span class="p">)</span>
+    <span class="n">stage</span> <span class="o">=</span> <span class="n">flat_map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">2</span><span class="p">],</span> <span class="n">stage</span><span class="p">)</span>
 
-    <span class="n">stream</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">slow_square</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="n">stage</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">slow_square</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">4</span><span class="p">)</span>
 
-    <span class="n">stream</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">9</span><span class="p">,</span> <span class="n">stream</span><span class="p">)</span>
+    <span class="n">stage</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">9</span><span class="p">,</span> <span class="n">stage</span><span class="p">)</span>
 
-    <span class="n">each</span><span class="p">(</span><span class="k">print</span><span class="p">,</span> <span class="n">stream</span><span class="p">)</span>
+    <span class="n">each</span><span class="p">(</span><span class="k">print</span><span class="p">,</span> <span class="n">stage</span><span class="p">)</span>
 
 
     
@@ -1573,7 +1573,7 @@ table {
       
   <div class="item">
     <div class="name def" id="pypeln.io.concat">
-    <p>def <span class="ident">concat</span>(</p><p>streams, maxsize=0)</p>
+    <p>def <span class="ident">concat</span>(</p><p>stages, maxsize=0)</p>
     </div>
     
 
@@ -1582,16 +1582,16 @@ table {
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.concat', this);">Show source &equiv;</a></p>
   <div id="source-pypeln.io.concat" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">concat</span><span class="p">(</span><span class="n">streams</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">concat</span><span class="p">(</span><span class="n">stages</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
-    <span class="n">streams</span> <span class="o">=</span> <span class="p">[</span> <span class="n">_to_stream</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">streams</span> <span class="p">]</span>
+    <span class="n">stages</span> <span class="o">=</span> <span class="p">[</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">stages</span> <span class="p">]</span>
 
-    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span>
+    <span class="k">return</span> <span class="n">Stage</span><span class="p">(</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_concat</span><span class="p">,</span>
         <span class="n">args</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(),</span>
-        <span class="n">dependencies</span> <span class="o">=</span> <span class="n">streams</span><span class="p">,</span>
+        <span class="n">dependencies</span> <span class="o">=</span> <span class="n">stages</span><span class="p">,</span>
     <span class="p">)</span>
 </pre></div>
 
@@ -1603,7 +1603,7 @@ table {
       
   <div class="item">
     <div class="name def" id="pypeln.io.each">
-    <p>def <span class="ident">each</span>(</p><p>f, stream, workers=1, maxsize=0, run=True)</p>
+    <p>def <span class="ident">each</span>(</p><p>f, stage, workers=1, maxsize=0, run=True)</p>
     </div>
     
 
@@ -1612,22 +1612,22 @@ table {
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.each', this);">Show source &equiv;</a></p>
   <div id="source-pypeln.io.each" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">run</span> <span class="o">=</span> <span class="bp">True</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">run</span> <span class="o">=</span> <span class="bp">True</span><span class="p">):</span>
 
-    <span class="n">stream</span> <span class="o">=</span> <span class="n">_to_stream</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+    <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
-    <span class="n">stream</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">(</span>
+    <span class="n">stage</span> <span class="o">=</span> <span class="n">Stage</span><span class="p">(</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_each</span><span class="p">,</span>
         <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,),</span>
-        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stream</span><span class="p">],</span>
+        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stage</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">run</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">stream</span>
+        <span class="k">return</span> <span class="n">stage</span>
 
-    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">stream</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">stage</span><span class="p">:</span>
         <span class="k">pass</span>
 </pre></div>
 
@@ -1639,7 +1639,7 @@ table {
       
   <div class="item">
     <div class="name def" id="pypeln.io.filter">
-    <p>def <span class="ident">filter</span>(</p><p>f, stream, workers=1, maxsize=0)</p>
+    <p>def <span class="ident">filter</span>(</p><p>f, stage, workers=1, maxsize=0)</p>
     </div>
     
 
@@ -1648,16 +1648,16 @@ table {
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.filter', this);">Show source &equiv;</a></p>
   <div id="source-pypeln.io.filter" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
-    <span class="n">stream</span> <span class="o">=</span> <span class="n">_to_stream</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+    <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span>
+    <span class="k">return</span> <span class="n">Stage</span><span class="p">(</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_filter</span><span class="p">,</span>
         <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,),</span>
-        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stream</span><span class="p">],</span>
+        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stage</span><span class="p">],</span>
     <span class="p">)</span>
 </pre></div>
 
@@ -1669,7 +1669,7 @@ table {
       
   <div class="item">
     <div class="name def" id="pypeln.io.flat_map">
-    <p>def <span class="ident">flat_map</span>(</p><p>f, stream, workers=1, maxsize=0)</p>
+    <p>def <span class="ident">flat_map</span>(</p><p>f, stage, workers=1, maxsize=0)</p>
     </div>
     
 
@@ -1678,16 +1678,16 @@ table {
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.flat_map', this);">Show source &equiv;</a></p>
   <div id="source-pypeln.io.flat_map" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
-    <span class="n">stream</span> <span class="o">=</span> <span class="n">_to_stream</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+    <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span>
+    <span class="k">return</span> <span class="n">Stage</span><span class="p">(</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_flat_map</span><span class="p">,</span>
         <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,),</span>
-        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stream</span><span class="p">],</span>
+        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stage</span><span class="p">],</span>
     <span class="p">)</span>
 </pre></div>
 
@@ -1699,7 +1699,7 @@ table {
       
   <div class="item">
     <div class="name def" id="pypeln.io.map">
-    <p>def <span class="ident">map</span>(</p><p>f, stream, workers=1, maxsize=0)</p>
+    <p>def <span class="ident">map</span>(</p><p>f, stage, workers=1, maxsize=0)</p>
     </div>
     
 
@@ -1708,16 +1708,16 @@ table {
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.map', this);">Show source &equiv;</a></p>
   <div id="source-pypeln.io.map" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
-    <span class="n">stream</span> <span class="o">=</span> <span class="n">_to_stream</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+    <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">Stream</span><span class="p">(</span>
+    <span class="k">return</span> <span class="n">Stage</span><span class="p">(</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_map</span><span class="p">,</span>
         <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,),</span>
-        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stream</span><span class="p">],</span>
+        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stage</span><span class="p">],</span>
     <span class="p">)</span>
 </pre></div>
 
@@ -1729,7 +1729,7 @@ table {
       
   <div class="item">
     <div class="name def" id="pypeln.io.to_iterable">
-    <p>def <span class="ident">to_iterable</span>(</p><p>stream, maxsize=0)</p>
+    <p>def <span class="ident">to_iterable</span>(</p><p>stage, maxsize=0)</p>
     </div>
     
 
@@ -1738,14 +1738,14 @@ table {
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.to_iterable', this);">Show source &equiv;</a></p>
   <div id="source-pypeln.io.to_iterable" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">to_iterable</span><span class="p">(</span><span class="n">stream</span><span class="p">:</span> <span class="n">Stream</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
     <span class="n">old_loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
     <span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">new_event_loop</span><span class="p">()</span>
     <span class="n">asyncio</span><span class="o">.</span><span class="n">set_event_loop</span><span class="p">(</span><span class="n">loop</span><span class="p">)</span>
     <span class="n">loop</span><span class="o">.</span><span class="n">set_exception_handler</span><span class="p">(</span><span class="n">_handle_async_exception</span><span class="p">)</span>
 
-    <span class="n">task</span><span class="p">,</span> <span class="n">input_queue</span> <span class="o">=</span> <span class="n">_to_task</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">)</span>
+    <span class="n">task</span><span class="p">,</span> <span class="n">input_queue</span> <span class="o">=</span> <span class="n">_to_task</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">)</span>
 
     <span class="k">try</span><span class="p">:</span>
         <span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">_to_iterable_fn</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">loop</span><span class="p">,</span> <span class="n">task</span><span class="p">))</span>
@@ -2270,13 +2270,13 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
       </div>
       
       <div class="item">
-      <p id="pypeln.io.Stream" class="name">class <span class="ident">Stream</span></p>
+      <p id="pypeln.io.Stage" class="name">class <span class="ident">Stage</span></p>
       
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.Stream', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.Stream" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">Stream</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.Stage', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.io.Stage" class="source">
+    <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">Stage</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">dependencies</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span>
@@ -2293,7 +2293,7 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
         <span class="k">return</span> <span class="n">to_iterable</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;Stream(workers = {workers}, maxsize = {maxsize}, target = {target}, args = {args}, dependencies = {dependencies})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="k">return</span> <span class="s2">&quot;Stage(workers = {workers}, maxsize = {maxsize}, target = {target}, args = {args}, dependencies = {dependencies})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="n">workers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">workers</span><span class="p">,</span>
             <span class="n">maxsize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxsize</span><span class="p">,</span>
             <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">,</span>
@@ -2309,13 +2309,13 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
       <div class="class">
           <h3>Ancestors (in MRO)</h3>
           <ul class="class_list">
-          <li><a href="#pypeln.io.Stream">Stream</a></li>
+          <li><a href="#pypeln.io.Stage">Stage</a></li>
           <li>builtins.object</li>
           </ul>
           <h3>Static methods</h3>
             
   <div class="item">
-    <div class="name def" id="pypeln.io.Stream.__init__">
+    <div class="name def" id="pypeln.io.Stage.__init__">
     <p>def <span class="ident">__init__</span>(</p><p>self, workers, maxsize, target, args, dependencies)</p>
     </div>
     
@@ -2324,8 +2324,8 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
   
     <div class="desc"><p>Initialize self.  See help(type(self)) for accurate signature.</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.Stream.__init__', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.Stream.__init__" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.Stage.__init__', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.io.Stage.__init__" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">dependencies</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span>
@@ -2341,7 +2341,7 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
   
           <h3>Instance variables</h3>
             <div class="item">
-            <p id="pypeln.io.Stream.args" class="name">var <span class="ident">args</span></p>
+            <p id="pypeln.io.Stage.args" class="name">var <span class="ident">args</span></p>
             
 
             
@@ -2351,7 +2351,7 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
 
             </div>
             <div class="item">
-            <p id="pypeln.io.Stream.dependencies" class="name">var <span class="ident">dependencies</span></p>
+            <p id="pypeln.io.Stage.dependencies" class="name">var <span class="ident">dependencies</span></p>
             
 
             
@@ -2361,7 +2361,7 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
 
             </div>
             <div class="item">
-            <p id="pypeln.io.Stream.maxsize" class="name">var <span class="ident">maxsize</span></p>
+            <p id="pypeln.io.Stage.maxsize" class="name">var <span class="ident">maxsize</span></p>
             
 
             
@@ -2371,7 +2371,7 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
 
             </div>
             <div class="item">
-            <p id="pypeln.io.Stream.target" class="name">var <span class="ident">target</span></p>
+            <p id="pypeln.io.Stage.target" class="name">var <span class="ident">target</span></p>
             
 
             
@@ -2381,7 +2381,7 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
 
             </div>
             <div class="item">
-            <p id="pypeln.io.Stream.workers" class="name">var <span class="ident">workers</span></p>
+            <p id="pypeln.io.Stage.workers" class="name">var <span class="ident">workers</span></p>
             
 
             

@@ -21,7 +21,7 @@ pip install git+https://github.com/cgarciae/pypeln@develop
 You can build a _stage_ (a pipeline unit) out of any _iterable_ object and apply certain type of transformations with the operations performed in parallel and/or concurrently depending on the mechanism you use. 
 
 ### Processes
-You create a stage based on [multiprocessing.Process](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process)es by using the `pr` module:
+You can create a stage based on [multiprocessing.Process](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process)es by using the `pr` module:
 
 ```python
 from pypeln import pr
@@ -37,7 +37,7 @@ stage = pr.map(slow_add1, data, workers = 2) # [2, 3, 4, 5] (sorted)
 data = list(stage) # [5, 2, 3, 4] (possible real output)
 ```
 ### Threads
-You create a stage based on [threading.Thread](https://docs.python.org/3/library/threading.html#threading.Thread)s by using the `th` module:
+You can create a stage based on [threading.Thread](https://docs.python.org/3/library/threading.html#threading.Thread)s by using the `th` module:
 ```python
 from pypeln import th
 import time
@@ -52,7 +52,7 @@ stage = th.map(slow_add1, data, workers = 2) # [2, 3, 4, 5] (sorted)
 data = list(stage) # [5, 2, 3, 4] (possible real output)
 ```
 ### Tasks
-You create a stage based on [asyncio.Task](https://docs.python.org/3.4/library/asyncio-task.html#asyncio.Task)s by using the `io` module:
+You can create a stage based on [asyncio.Task](https://docs.python.org/3.4/library/asyncio-task.html#asyncio.Task)s by using the `io` module:
 ```python
 from pypeln import io
 import asyncio

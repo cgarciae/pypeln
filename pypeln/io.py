@@ -12,7 +12,7 @@ from functools import reduce
 def WORKER(target, args, kwargs):
     return target(*args, **kwargs)
 
-class Stream(object):
+class Stage(object):
 
     def __init__(self, workers, maxsize, target, args, dependencies):
         self.workers = workers
@@ -29,7 +29,7 @@ class Stream(object):
         return to_iterable(self)
 
     def __repr__(self):
-        return "Stream(workers = {workers}, maxsize = {maxsize}, target = {target}, args = {args}, dependencies = {dependencies})".format(
+        return "Stage(workers = {workers}, maxsize = {maxsize}, target = {target}, args = {args}, dependencies = {dependencies})".format(
             workers = self.workers,
             maxsize = self.maxsize,
             target = self.target,
@@ -113,16 +113,16 @@ async def _map(f, workers, input_queue, output_queues):
     await _runner_task(f_task, workers, input_queue, output_queues)
 
 
-def map(f, stream, workers = 1, maxsize = 0):
+def map(f, stage, workers = 1, maxsize = 0):
 
-    stream = _to_stream(stream)
+    stage = _to_stage(stage)
 
-    return Stream(
+    return Stage(
         workers = workers,
         maxsize = maxsize,
         target = _map,
         args = (f,),
-        dependencies = [stream],
+        dependencies = [stage],
     )
 
 
@@ -148,16 +148,16 @@ async def _flat_map(f, workers, input_queue, output_queues):
     await _runner_task(f_task, workers, input_queue, output_queues)
 
 
-def flat_map(f, stream, workers = 1, maxsize = 0):
+def flat_map(f, stage, workers = 1, maxsize = 0):
 
-    stream = _to_stream(stream)
+    stage = _to_stage(stage)
 
-    return Stream(
+    return Stage(
         workers = workers,
         maxsize = maxsize,
         target = _flat_map,
         args = (f,),
-        dependencies = [stream],
+        dependencies = [stage],
     )
 
 ########################
@@ -178,16 +178,16 @@ async def _filter(f, workers, input_queue, output_queues):
     await _runner_task(f_task, workers, input_queue, output_queues)
 
 
-def filter(f, stream, workers = 1, maxsize = 0):
+def filter(f, stage, workers = 1, maxsize = 0):
 
-    stream = _to_stream(stream)
+    stage = _to_stage(stage)
 
-    return Stream(
+    return Stage(
         workers = workers,
         maxsize = maxsize,
         target = _filter,
         args = (f,),
-        dependencies = [stream],
+        dependencies = [stage],
     )
 
 
@@ -208,22 +208,22 @@ async def _each(f, workers, input_queue, output_queues):
     await _runner_task(f_task, workers, input_queue, output_queues)
 
 
-def each(f, stream, workers = 1, maxsize = 0, run = True):
+def each(f, stage, workers = 1, maxsize = 0, run = True):
 
-    stream = _to_stream(stream)
+    stage = _to_stage(stage)
 
-    stream = Stream(
+    stage = Stage(
         workers = workers,
         maxsize = maxsize,
         target = _each,
         args = (f,),
-        dependencies = [stream],
+        dependencies = [stage],
     )
 
     if not run:
-        return stream
+        return stage
 
-    for _ in stream:
+    for _ in stage:
         pass
 
 ########################
@@ -244,16 +244,16 @@ async def _concat(workers, input_queue, output_queues):
     
 
 
-def concat(streams, maxsize = 0):
+def concat(stages, maxsize = 0):
 
-    streams = [ _to_stream(s) for s in streams ]
+    stages = [ _to_stage(s) for s in stages ]
 
-    return Stream(
+    return Stage(
         workers = 1,
         maxsize = maxsize,
         target = _concat,
         args = tuple(),
-        dependencies = streams,
+        dependencies = stages,
     )
 
 
@@ -261,31 +261,31 @@ def concat(streams, maxsize = 0):
 # _to_task
 ################
 
-def _to_task(stream, maxsize):
+def _to_task(stage, maxsize):
 
     total_done = 1
     input_queue = InputQueue(maxsize, total_done)
 
-    stream_input_queue, stream_output_queues = _build_queues(
-        stream = stream,
-        stream_input_queue = dict(),
-        stream_output_queues = dict(),
+    stage_input_queue, stage_output_queues = _build_queues(
+        stage = stage,
+        stage_input_queue = dict(),
+        stage_output_queues = dict(),
         visited = set(),
     )
 
-    stream_output_queues[stream] = OutputQueues([ input_queue ])
+    stage_output_queues[stage] = OutputQueues([ input_queue ])
 
     tasks = [
         WORKER(
-            target = _stream.target,
-            args = _stream.args,
+            target = _stage.target,
+            args = _stage.args,
             kwargs = dict(
-                workers = _stream.workers,
-                output_queues = stream_output_queues[_stream],
-                input_queue = stream_input_queue.get(_stream, None),
+                workers = _stage.workers,
+                output_queues = stage_output_queues[_stage],
+                input_queue = stage_input_queue.get(_stage, None),
             ),
         )
-        for _stream in stream_output_queues
+        for _stage in stage_output_queues
     ]
 
     task = asyncio.gather(*tasks)
@@ -293,12 +293,12 @@ def _to_task(stream, maxsize):
     return task, input_queue
 
 ################
-# _to_stream
+# _to_stage
 ################
 
-def _to_stream(obj):
+def _to_stage(obj):
 
-    if isinstance(obj, Stream):
+    if isinstance(obj, Stage):
         return obj
 
     elif hasattr(obj, "__iter__"):
@@ -320,7 +320,7 @@ async def _from_iterable_fn(iterable, workers, input_queue, output_queues):
 
 def _from_iterable(iterable):
     
-    return Stream(
+    return Stage(
         workers = 1,
         maxsize = None,
         target = _from_iterable_fn,
@@ -335,32 +335,32 @@ def _from_iterable(iterable):
 ########################
 
 
-def _build_queues(stream, stream_input_queue, stream_output_queues, visited):
+def _build_queues(stage, stage_input_queue, stage_output_queues, visited):
 
-    if stream in visited:
-        return stream_input_queue, stream_output_queues
+    if stage in visited:
+        return stage_input_queue, stage_output_queues
     else:
-        visited.add(stream)
+        visited.add(stage)
 
-    if len(stream.dependencies) > 0:
-        total_done = len(stream.dependencies)
-        input_queue = InputQueue(stream.maxsize, total_done)
-        stream_input_queue[stream] = input_queue
+    if len(stage.dependencies) > 0:
+        total_done = len(stage.dependencies)
+        input_queue = InputQueue(stage.maxsize, total_done)
+        stage_input_queue[stage] = input_queue
 
-        for stream in stream.dependencies:
-            if stream not in stream_output_queues:
-                stream_output_queues[stream] = OutputQueues([input_queue])
+        for stage in stage.dependencies:
+            if stage not in stage_output_queues:
+                stage_output_queues[stage] = OutputQueues([input_queue])
             else:
-                stream_output_queues[stream].append(input_queue)
+                stage_output_queues[stage].append(input_queue)
 
-            stream_input_queue, stream_output_queues = _build_queues(
-                stream,
-                stream_input_queue,
-                stream_output_queues,
+            stage_input_queue, stage_output_queues = _build_queues(
+                stage,
+                stage_input_queue,
+                stage_output_queues,
                 visited
             )
 
-    return stream_input_queue, stream_output_queues
+    return stage_input_queue, stage_output_queues
 
 def _handle_async_exception(loop, ctx):
     loop.stop()
@@ -372,14 +372,14 @@ def _to_iterable_fn(loop, task):
 
 
 
-def to_iterable(stream: Stream, maxsize = 0):
+def to_iterable(stage: Stage, maxsize = 0):
 
     old_loop = asyncio.get_event_loop()
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     loop.set_exception_handler(_handle_async_exception)
 
-    task, input_queue = _to_task(stream, maxsize = maxsize)
+    task, input_queue = _to_task(stage, maxsize = maxsize)
 
     try:
         thread = threading.Thread(target=_to_iterable_fn, args=(loop, task))
@@ -412,15 +412,15 @@ if __name__ == '__main__':
         await asyncio.sleep(random.uniform(0, 1))
         return x**2
 
-    stream = range(10)
+    stage = range(10)
 
-    stream = flat_map(lambda x: [x, x + 1, x + 2], stream)
+    stage = flat_map(lambda x: [x, x + 1, x + 2], stage)
 
-    stream = map(slow_square, stream, workers = 4)
+    stage = map(slow_square, stage, workers = 4)
 
-    stream = filter(lambda x: x > 9, stream)
+    stage = filter(lambda x: x > 9, stage)
 
-    each(print, stream)
+    each(print, stage)
 
 
     

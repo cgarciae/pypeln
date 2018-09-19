@@ -18,15 +18,19 @@ pip install git+https://github.com/cgarciae/pypeln@develop
 ```
 
 ## Concept
-**[MISSING INTRODUCTION]**
+When creating a program that performs several non-trivial operations other sequences in an efficient manner it common to end up doing the following:
+
+* Breaking the problem into several concurrent parts or **stages**
+* Creating several **worker** entities to complete that task of each stage in parallel if possible
+
+Given that you end up having an architectures such as this one
 
 ![diagram](docs/diagram.png)
 
-**[MISSING DIAGRAM EXPLANATION]**
+On each stage workers _get_ the data from a **queue** structure from a previous stage, perform certain operations over it, and _put_ the result into the next queue for another stage to consume. As shown in the diagram, the initial stage consumes the _iterable_ source, and a final iterable sink is created to receive the results. 
 
 ## Basic Usage
-You can build a stage out of any _iterable_ object and apply certain type of transformations with the operations performed in parallel and/or concurrently depending on the mechanism you use. 
-
+Pypeline has 3 main modules, each module lets you use a specific type of worker:
 
 ### Processes
 You can create a stage based on [multiprocessing.Process](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process)es by using the `pr` module:

@@ -111,7 +111,7 @@ data = list(stage) # e.g. [5, 6, 9, 4, 8, 10, 7]
 ```
 While conceptually similar there are a few differences to the previous 2 cases due to the nature of asyncio:
 * Everything is running in a single thread, as everything in asyncio.
-* Due to the light-weight nature of asyncio Tasks, workers are created dynamically. On each stage the total amount of workers existing simultaneously is specified by the `workers` parameter, you can remove this bound by setting `workers = 0`.
+* Due to the light-weight nature of asyncio Tasks, workers are created dynamically. On each stage the total amount of workers existing simultaneously is specified by the `workers` parameter, you can remove this bound by setting `workers=0`.
 
 
 ## Benchmarks

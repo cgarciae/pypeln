@@ -122,8 +122,11 @@ While conceptually similar there are a few differences to the previous 2 cases d
 * [Pypeline API Documentation](https://cgarciae.github.io/pypeln/) **[WORK IN PROGRESS]**
 * Pypeline Guide: **[COMMING SOON]**
 
-## Related Material
-* 
+## Related Stuff
+* [mpipe](https://vmlaker.github.io/mpipe/)
+* [Process Pools](https://docs.python.org/3.4/library/multiprocessing.html?highlight=process#module-multiprocessing.pool)
+* [Making 100 million requests with Python aiohttp](https://www.artificialworlds.net/blog/2017/06/12/making-100-million-requests-with-python-aiohttp/)
+* [Python multiprocessing Queue memory management](https://stackoverflow.com/questions/52286527/python-multiprocessing-queue-memory-management/52286686#52286686)
 
 
 ## Contributors

@@ -44,6 +44,8 @@ stage = pr.map(slow_add1, data, workers = 2) # [2, 3, 4, 5] (sorted)
 
 data = list(stage) # [5, 2, 3, 4]
 ```
+**[EXPLENATION NEEDED]**
+
 ### Threads
 You can create a stage based on [threading.Thread](https://docs.python.org/3/library/threading.html#threading.Thread)s by using the `th` module:
 ```python

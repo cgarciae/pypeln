@@ -21,7 +21,7 @@ pip install git+https://github.com/cgarciae/pypeln@develop
 ## Concept
 **<<MAYBE MOVE THIS TO THE GUIDE???>>**
 
-When creating a program that performs several non-trivial operations other sequences in an efficient manner it common to end up doing the following:
+When creating a program that performs several non-trivial operations over sequences in an efficient manner it common to end up doing the following:
 
 * Breaking the problem into several concurrent **stages**
 * Creating several **worker** entities at each stage to complete the task in parallel (if possible)

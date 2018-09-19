@@ -40,7 +40,7 @@ def slow_add1(x):
     return x + 1
 
 data = [1,2,3,4]
-stage = pr.map(slow_add1, data, workers = 2) # [2, 3, 4, 5] (sorted)
+stage = pr.map(slow_add1, data, workers = 3) # [2, 3, 4, 5] (sorted)
 
 data = list(stage) # [5, 2, 3, 4]
 ```
@@ -57,7 +57,7 @@ def slow_add1(x):
     return x + 1
 
 data = [1,2,3,4]
-stage = th.map(slow_add1, data, workers = 2) # [2, 3, 4, 5] (sorted)
+stage = th.map(slow_add1, data, workers = 3) # [2, 3, 4, 5] (sorted)
 
 data = list(stage) # [5, 2, 3, 4]
 ```
@@ -74,7 +74,7 @@ async def slow_add1(x):
     return x + 1
 
 data = [1,2,3,4]
-stage = io.map(slow_add1, data, workers = 2) # [2, 3, 4, 5] (sorted)
+stage = io.map(slow_add1, data, workers = 3) # [2, 3, 4, 5] (sorted)
 
 data = list(stage) # i.e. [5, 2, 3, 4]
 ```
@@ -94,8 +94,8 @@ def slow_gte3(x):
     return x >= 3
 
 data = [1,2,3,4]
-stage = pr.map(slow_add1, data, workers = 2) # [2, 3, 4, 5] (sorted)
-stage = pr.filter(slow_gte3, stage, workers = 3) # [3, 4, 5] (sorted)
+stage = pr.map(slow_add1, data, workers = 3) # [2, 3, 4, 5] (sorted)
+stage = pr.filter(slow_gte3, stage, workers = 2) # [3, 4, 5] (sorted)
 
 data = list(stage) # [5, 3, 4]
 ```

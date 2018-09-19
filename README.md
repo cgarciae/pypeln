@@ -59,7 +59,7 @@ stage = pr.filter(slow_gt3, stage, workers = 2)
 data = list(stage) # e.g. [5, 6, 9, 4, 8, 10, 7]
 ```
 Here the following is happening:
-* A 3 staged pipeline is created (the `data` iterable is implicitly converted into an input stage with 1 worker)
+* A 3 stage pipeline is created (the `data` iterable is implicitly converted into an input stage with 1 worker)
 * A total of 6 Process workers (1 + 3 + 2) will be created
 * The `maxsize` parameter limits the amount of elements that the input `Queue` of a stage can hold.
 

@@ -4,32 +4,32 @@ class TaskPool(object):
 
     def __init__(self, workers = 1):
         self._limit = workers
-        self._tasks = []
+        self._tasks = set()
+        self._closed = False
 
     def filter_tasks(self):
-        self._tasks = [ task for task in self._tasks if not task.done() ]
+        self._tasks = { task for task in self._tasks if not task.done() }
 
     async def join(self):
-        self.filter_tasks()
 
-        if len(self._tasks) > 0:
-            await asyncio.wait(self._tasks)
+        await asyncio.gather(*self._tasks)
 
-        self.filter_tasks()
+        self._closed = True
         
 
     async def put(self, coro):
-        self.filter_tasks()
 
-        # wait until space is available
+        if self._closed:
+            raise RuntimeError("Trying put items into a closed TaskPool")
+        
         while self._limit > 0 and len(self._tasks) >= self._limit:
-            await asyncio.sleep(0)
+            done, _pending = await asyncio.wait(self._tasks, return_when=asyncio.FIRST_COMPLETED)
 
-            self.filter_tasks()
+            self._tasks -= done
 
         
         task = asyncio.ensure_future(coro)
-        self._tasks.append(task)
+        self._tasks.add(task)
 
 
     async def __aenter__(self):

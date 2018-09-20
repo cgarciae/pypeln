@@ -1487,9 +1487,17 @@ table {
 
     <span class="k">return</span> <span class="n">stage_input_queue</span><span class="p">,</span> <span class="n">stage_output_queues</span>
 
-<span class="k">def</span> <span class="nf">_handle_async_exception</span><span class="p">(</span><span class="n">loop</span><span class="p">,</span> <span class="n">ctx</span><span class="p">):</span>
-    <span class="n">loop</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
-    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Exception in async task: {ctx}&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">_handle_async_exception</span><span class="p">(</span><span class="n">loop</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">error_namespace</span><span class="p">,</span> <span class="n">task</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;CTX&quot;</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">error_namespace</span><span class="o">.</span><span class="n">exception</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;exception&quot;</span> <span class="ow">in</span> <span class="n">ctx</span><span class="p">:</span>
+            <span class="n">error_namespace</span><span class="o">.</span><span class="n">exception</span> <span class="o">=</span> <span class="n">ctx</span><span class="p">[</span><span class="s2">&quot;exception&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">&quot;message&quot;</span> <span class="ow">in</span> <span class="n">ctx</span><span class="p">:</span>
+            <span class="n">error_namespace</span><span class="o">.</span><span class="n">exception</span> <span class="o">=</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">ctx</span><span class="p">[</span><span class="s2">&quot;message&quot;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">error_namespace</span><span class="o">.</span><span class="n">exception</span> <span class="o">=</span> <span class="ne">Exception</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ctx</span><span class="p">))</span>
+        
+        <span class="n">task</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
 
 <span class="k">def</span> <span class="nf">_to_iterable_fn</span><span class="p">(</span><span class="n">loop</span><span class="p">,</span> <span class="n">task</span><span class="p">):</span>
     
@@ -1499,19 +1507,33 @@ table {
 
 <span class="k">def</span> <span class="nf">to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
-    <span class="n">old_loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
-    <span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">new_event_loop</span><span class="p">()</span>
-    <span class="n">asyncio</span><span class="o">.</span><span class="n">set_event_loop</span><span class="p">(</span><span class="n">loop</span><span class="p">)</span>
-    <span class="n">loop</span><span class="o">.</span><span class="n">set_exception_handler</span><span class="p">(</span><span class="n">_handle_async_exception</span><span class="p">)</span>
+    <span class="n">error_namespace</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">Namespace</span><span class="p">()</span>
+    <span class="n">error_namespace</span><span class="o">.</span><span class="n">exception</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="c1"># old_loop = asyncio.get_event_loop()</span>
+    <span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
+    <span class="c1"># loop = asyncio.new_event_loop()</span>
+    <span class="c1"># asyncio.set_event_loop(loop)</span>
+    
 
     <span class="n">task</span><span class="p">,</span> <span class="n">input_queue</span> <span class="o">=</span> <span class="n">_to_task</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">)</span>
 
+    <span class="c1"># exception handler</span>
+    <span class="n">old_exception_handler</span> <span class="o">=</span> <span class="n">loop</span><span class="o">.</span><span class="n">get_exception_handler</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">exception_handler</span><span class="p">(</span><span class="n">loop</span><span class="p">,</span> <span class="n">ctx</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">old_exception_handler</span><span class="p">:</span>
+            <span class="n">old_exception_handler</span><span class="p">(</span><span class="n">loop</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span>
+        <span class="n">_handle_async_exception</span><span class="p">(</span><span class="n">loop</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">error_namespace</span><span class="p">,</span> <span class="n">task</span><span class="p">)</span>
+    
+    <span class="n">loop</span><span class="o">.</span><span class="n">set_exception_handler</span><span class="p">(</span><span class="n">exception_handler</span><span class="p">)</span>
+
+    <span class="c1"># start thread</span>
+    <span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">_to_iterable_fn</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">loop</span><span class="p">,</span> <span class="n">task</span><span class="p">))</span>
+    <span class="n">thread</span><span class="o">.</span><span class="n">daemon</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">_to_iterable_fn</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">loop</span><span class="p">,</span> <span class="n">task</span><span class="p">))</span>
-        <span class="n">thread</span><span class="o">.</span><span class="n">daemon</span> <span class="o">=</span> <span class="bp">True</span>
-        <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
-
-
         <span class="k">while</span> <span class="ow">not</span> <span class="n">input_queue</span><span class="o">.</span><span class="n">is_done</span><span class="p">():</span>
 
             <span class="k">while</span> <span class="n">input_queue</span><span class="o">.</span><span class="n">empty</span><span class="p">():</span>
@@ -1519,13 +1541,18 @@ table {
 
             <span class="n">x</span> <span class="o">=</span> <span class="n">input_queue</span><span class="o">.</span><span class="n">get_nowait</span><span class="p">()</span>
 
+            <span class="k">if</span> <span class="n">error_namespace</span><span class="o">.</span><span class="n">exception</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">error_namespace</span><span class="o">.</span><span class="n">exception</span>
+
             <span class="k">if</span> <span class="ow">not</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_continue</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
                 <span class="k">yield</span> <span class="n">x</span>
         
         <span class="n">thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
-
+        
     <span class="k">finally</span><span class="p">:</span>
-        <span class="n">asyncio</span><span class="o">.</span><span class="n">set_event_loop</span><span class="p">(</span><span class="n">old_loop</span><span class="p">)</span>
+        <span class="c1"># asyncio.set_event_loop(old_loop)</span>
+        <span class="n">loop</span><span class="o">.</span><span class="n">set_exception_handler</span><span class="p">(</span><span class="n">old_exception_handler</span><span class="p">)</span>
+        <span class="k">pass</span>
 
 
 
@@ -1783,19 +1810,33 @@ table {
   <div id="source-pypeln.io.to_iterable" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
-    <span class="n">old_loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
-    <span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">new_event_loop</span><span class="p">()</span>
-    <span class="n">asyncio</span><span class="o">.</span><span class="n">set_event_loop</span><span class="p">(</span><span class="n">loop</span><span class="p">)</span>
-    <span class="n">loop</span><span class="o">.</span><span class="n">set_exception_handler</span><span class="p">(</span><span class="n">_handle_async_exception</span><span class="p">)</span>
+    <span class="n">error_namespace</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">Namespace</span><span class="p">()</span>
+    <span class="n">error_namespace</span><span class="o">.</span><span class="n">exception</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="c1"># old_loop = asyncio.get_event_loop()</span>
+    <span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
+    <span class="c1"># loop = asyncio.new_event_loop()</span>
+    <span class="c1"># asyncio.set_event_loop(loop)</span>
+    
 
     <span class="n">task</span><span class="p">,</span> <span class="n">input_queue</span> <span class="o">=</span> <span class="n">_to_task</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">)</span>
 
+    <span class="c1"># exception handler</span>
+    <span class="n">old_exception_handler</span> <span class="o">=</span> <span class="n">loop</span><span class="o">.</span><span class="n">get_exception_handler</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">exception_handler</span><span class="p">(</span><span class="n">loop</span><span class="p">,</span> <span class="n">ctx</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">old_exception_handler</span><span class="p">:</span>
+            <span class="n">old_exception_handler</span><span class="p">(</span><span class="n">loop</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span>
+        <span class="n">_handle_async_exception</span><span class="p">(</span><span class="n">loop</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">error_namespace</span><span class="p">,</span> <span class="n">task</span><span class="p">)</span>
+    
+    <span class="n">loop</span><span class="o">.</span><span class="n">set_exception_handler</span><span class="p">(</span><span class="n">exception_handler</span><span class="p">)</span>
+
+    <span class="c1"># start thread</span>
+    <span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">_to_iterable_fn</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">loop</span><span class="p">,</span> <span class="n">task</span><span class="p">))</span>
+    <span class="n">thread</span><span class="o">.</span><span class="n">daemon</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">_to_iterable_fn</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">loop</span><span class="p">,</span> <span class="n">task</span><span class="p">))</span>
-        <span class="n">thread</span><span class="o">.</span><span class="n">daemon</span> <span class="o">=</span> <span class="bp">True</span>
-        <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
-
-
         <span class="k">while</span> <span class="ow">not</span> <span class="n">input_queue</span><span class="o">.</span><span class="n">is_done</span><span class="p">():</span>
 
             <span class="k">while</span> <span class="n">input_queue</span><span class="o">.</span><span class="n">empty</span><span class="p">():</span>
@@ -1803,13 +1844,18 @@ table {
 
             <span class="n">x</span> <span class="o">=</span> <span class="n">input_queue</span><span class="o">.</span><span class="n">get_nowait</span><span class="p">()</span>
 
+            <span class="k">if</span> <span class="n">error_namespace</span><span class="o">.</span><span class="n">exception</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">error_namespace</span><span class="o">.</span><span class="n">exception</span>
+
             <span class="k">if</span> <span class="ow">not</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_continue</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
                 <span class="k">yield</span> <span class="n">x</span>
         
         <span class="n">thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
-
+        
     <span class="k">finally</span><span class="p">:</span>
-        <span class="n">asyncio</span><span class="o">.</span><span class="n">set_event_loop</span><span class="p">(</span><span class="n">old_loop</span><span class="p">)</span>
+        <span class="c1"># asyncio.set_event_loop(old_loop)</span>
+        <span class="n">loop</span><span class="o">.</span><span class="n">set_exception_handler</span><span class="p">(</span><span class="n">old_exception_handler</span><span class="p">)</span>
+        <span class="k">pass</span>
 </pre></div>
 
   </div>

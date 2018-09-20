@@ -370,9 +370,17 @@ def _build_queues(stage, stage_input_queue, stage_output_queues, visited):
 
     return stage_input_queue, stage_output_queues
 
-def _handle_async_exception(loop, ctx):
-    loop.stop()
-    raise Exception(f"Exception in async task: {ctx}")
+def _handle_async_exception(loop, ctx, error_namespace, task):
+    print("CTX", ctx)
+    if error_namespace.exception is None:
+        if "exception" in ctx:
+            error_namespace.exception = ctx["exception"]
+        if "message" in ctx:
+            error_namespace.exception = Exception(ctx["message"])
+        else:
+            error_namespace.exception = Exception(str(ctx))
+        
+        task.cancel()
 
 def _to_iterable_fn(loop, task):
     
@@ -382,19 +390,33 @@ def _to_iterable_fn(loop, task):
 
 def to_iterable(stage: Stage, maxsize = 0):
 
-    old_loop = asyncio.get_event_loop()
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.set_exception_handler(_handle_async_exception)
+    error_namespace = utils.Namespace()
+    error_namespace.exception = None
+
+    # old_loop = asyncio.get_event_loop()
+    loop = asyncio.get_event_loop()
+    # loop = asyncio.new_event_loop()
+    # asyncio.set_event_loop(loop)
+    
 
     task, input_queue = _to_task(stage, maxsize = maxsize)
 
+    # exception handler
+    old_exception_handler = loop.get_exception_handler()
+
+    def exception_handler(loop, ctx):
+        if old_exception_handler:
+            old_exception_handler(loop, ctx)
+        _handle_async_exception(loop, ctx, error_namespace, task)
+    
+    loop.set_exception_handler(exception_handler)
+
+    # start thread
+    thread = threading.Thread(target=_to_iterable_fn, args=(loop, task))
+    thread.daemon = True
+    thread.start()
+
     try:
-        thread = threading.Thread(target=_to_iterable_fn, args=(loop, task))
-        thread.daemon = True
-        thread.start()
-
-
         while not input_queue.is_done():
 
             while input_queue.empty():
@@ -402,13 +424,18 @@ def to_iterable(stage: Stage, maxsize = 0):
 
             x = input_queue.get_nowait()
 
+            if error_namespace.exception is not None:
+                raise error_namespace.exception
+
             if not utils.is_continue(x):
                 yield x
         
         thread.join()
-
+        
     finally:
-        asyncio.set_event_loop(old_loop)
+        # asyncio.set_event_loop(old_loop)
+        loop.set_exception_handler(old_exception_handler)
+        pass
 
 
 

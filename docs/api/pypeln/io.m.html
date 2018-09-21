@@ -1163,6 +1163,14 @@ table {
 
         <span class="bp">self</span><span class="o">.</span><span class="n">remaining</span> <span class="o">=</span> <span class="n">total_done</span>
 
+    <span class="n">async</span> <span class="k">def</span> <span class="nf">__aiter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_done</span><span class="p">():</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_continue</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="n">x</span>
+
     <span class="n">async</span> <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         
         <span class="n">x</span> <span class="o">=</span> <span class="n">await</span> <span class="nb">super</span><span class="p">(</span><span class="n">InputQueue</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
@@ -1185,7 +1193,7 @@ table {
             
 
     <span class="k">def</span> <span class="nf">is_done</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">remaining</span> <span class="o">==</span> <span class="mi">0</span> <span class="c1">#and self.queue.empty()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">remaining</span> <span class="o">==</span> <span class="mi">0</span> <span class="c1"># and self.empty()</span>
 
 
 <span class="k">class</span> <span class="nc">OutputQueues</span><span class="p">(</span><span class="nb">list</span><span class="p">):</span>
@@ -1198,18 +1206,20 @@ table {
         <span class="k">for</span> <span class="n">queue</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
             <span class="n">await</span> <span class="n">queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">DONE</span><span class="p">)</span>
 
+    <span class="n">async</span> <span class="k">def</span> <span class="nf">__aenter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
 
-<span class="n">async</span> <span class="k">def</span> <span class="nf">_runner_task</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__aexit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc</span><span class="p">,</span> <span class="n">tb</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">done</span><span class="p">()</span>
+
+
+<span class="n">async</span> <span class="k">def</span> <span class="nf">_run_tasks</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">):</span>
 
     <span class="n">async</span> <span class="k">with</span> <span class="n">TaskPool</span><span class="p">(</span><span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">)</span> <span class="k">as</span> <span class="n">tasks</span><span class="p">:</span>
-
-        <span class="k">while</span> <span class="ow">not</span> <span class="n">input_queue</span><span class="o">.</span><span class="n">is_done</span><span class="p">():</span>
-
-            <span class="n">x</span> <span class="o">=</span> <span class="n">await</span> <span class="n">input_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_continue</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-                <span class="n">task</span> <span class="o">=</span> <span class="n">f_task</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-                <span class="n">await</span> <span class="n">tasks</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+        <span class="n">async</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">input_queue</span><span class="p">:</span>
+            
+            <span class="n">task</span> <span class="o">=</span> <span class="n">f_task</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">await</span> <span class="n">tasks</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
 
     <span class="c1"># wait all tasks to finish</span>
     <span class="n">await</span> <span class="n">output_queues</span><span class="o">.</span><span class="n">done</span><span class="p">()</span>
@@ -1229,7 +1239,7 @@ table {
 
         <span class="n">await</span> <span class="n">output_queues</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
 
-    <span class="n">await</span> <span class="n">_runner_task</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">)</span>
+    <span class="n">await</span> <span class="n">_run_tasks</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
@@ -1253,6 +1263,7 @@ table {
 
 <span class="n">async</span> <span class="k">def</span> <span class="nf">_flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">):</span>
     
+
     <span class="n">async</span> <span class="k">def</span> <span class="nf">f_task</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
 
         <span class="n">ys</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -1265,7 +1276,7 @@ table {
             <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">ys</span><span class="p">:</span>
                 <span class="n">await</span> <span class="n">output_queues</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
 
-    <span class="n">await</span> <span class="n">_runner_task</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">)</span>
+    <span class="n">await</span> <span class="n">_run_tasks</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
@@ -1286,6 +1297,7 @@ table {
 <span class="c1">########################</span>
 
 <span class="n">async</span> <span class="k">def</span> <span class="nf">_filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">):</span>
+    
     <span class="n">async</span> <span class="k">def</span> <span class="nf">f_task</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
 
         <span class="n">y</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -1296,7 +1308,7 @@ table {
         <span class="k">if</span> <span class="n">y</span><span class="p">:</span>
             <span class="n">await</span> <span class="n">output_queues</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
-    <span class="n">await</span> <span class="n">_runner_task</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">)</span>
+    <span class="n">await</span> <span class="n">_run_tasks</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
@@ -1327,7 +1339,7 @@ table {
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="s2">&quot;__await__&quot;</span><span class="p">):</span>
             <span class="n">y</span> <span class="o">=</span> <span class="n">await</span> <span class="n">y</span>
 
-    <span class="n">await</span> <span class="n">_runner_task</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">)</span>
+    <span class="n">await</span> <span class="n">_run_tasks</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">run</span> <span class="o">=</span> <span class="bp">True</span><span class="p">):</span>
@@ -1355,14 +1367,9 @@ table {
 
 <span class="n">async</span> <span class="k">def</span> <span class="nf">_concat</span><span class="p">(</span><span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">):</span>
 
-    <span class="k">while</span> <span class="ow">not</span> <span class="n">input_queue</span><span class="o">.</span><span class="n">is_done</span><span class="p">():</span>
-
-        <span class="n">x</span> <span class="o">=</span> <span class="n">await</span> <span class="n">input_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_continue</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-            <span class="n">await</span> <span class="n">output_queues</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">async</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">input_queue</span><span class="p">:</span>
+        <span class="n">await</span> <span class="n">output_queues</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         
-    <span class="c1"># wait all tasks to finish</span>
     <span class="n">await</span> <span class="n">output_queues</span><span class="o">.</span><span class="n">done</span><span class="p">()</span>
     
 
@@ -1887,6 +1894,14 @@ interrupted between calling qsize() and doing an operation on the Queue.</p></di
 
         <span class="bp">self</span><span class="o">.</span><span class="n">remaining</span> <span class="o">=</span> <span class="n">total_done</span>
 
+    <span class="n">async</span> <span class="k">def</span> <span class="nf">__aiter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_done</span><span class="p">():</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_continue</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="n">x</span>
+
     <span class="n">async</span> <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         
         <span class="n">x</span> <span class="o">=</span> <span class="n">await</span> <span class="nb">super</span><span class="p">(</span><span class="n">InputQueue</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
@@ -1909,7 +1924,7 @@ interrupted between calling qsize() and doing an operation on the Queue.</p></di
             
 
     <span class="k">def</span> <span class="nf">is_done</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">remaining</span> <span class="o">==</span> <span class="mi">0</span> <span class="c1">#and self.queue.empty()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">remaining</span> <span class="o">==</span> <span class="mi">0</span> <span class="c1"># and self.empty()</span>
 </pre></div>
 
   </div>
@@ -2071,7 +2086,7 @@ then full() is never True.</p></div>
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.InputQueue.is_done', this);">Show source &equiv;</a></p>
   <div id="source-pypeln.io.InputQueue.is_done" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">is_done</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">remaining</span> <span class="o">==</span> <span class="mi">0</span> <span class="c1">#and self.queue.empty()</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">remaining</span> <span class="o">==</span> <span class="mi">0</span> <span class="c1"># and self.empty()</span>
 </pre></div>
 
   </div>
@@ -2297,6 +2312,12 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
     <span class="n">async</span> <span class="k">def</span> <span class="nf">done</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">queue</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
             <span class="n">await</span> <span class="n">queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">DONE</span><span class="p">)</span>
+
+    <span class="n">async</span> <span class="k">def</span> <span class="nf">__aenter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__aexit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc</span><span class="p">,</span> <span class="n">tb</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">done</span><span class="p">()</span>
 </pre></div>
 
   </div>

@@ -25,10 +25,7 @@ async def _main(url, total_requests, workers):
 def main(total_requests, workers = 1000):
     url = "http://localhost:8080/{}"
     loop = asyncio.get_event_loop()
-
-    task = _main(url, total_requests, workers)
-
-    loop.run_until_complete(task)
+    loop.run_until_complete(_main(url, total_requests, workers))
 
 if __name__ == '__main__':
     fire.Fire(main)

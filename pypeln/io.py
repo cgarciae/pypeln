@@ -46,6 +46,14 @@ class InputQueue(asyncio.Queue):
 
         self.remaining = total_done
 
+    async def __aiter__(self):
+
+        while not self.is_done():
+            x = await self.get()
+
+            if not utils.is_continue(x):
+                yield x
+
     async def get(self):
         
         x = await super(InputQueue, self).get()

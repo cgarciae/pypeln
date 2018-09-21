@@ -89,6 +89,12 @@ class OutputQueues(list):
         for queue in self:
             await queue.put(utils.DONE)
 
+    async def __aenter__(self):
+        return self
+
+    def __aexit__(self, exc_type, exc, tb):
+        return self.done()
+
 
 async def _run_tasks(f_task, workers, input_queue, output_queues):
 

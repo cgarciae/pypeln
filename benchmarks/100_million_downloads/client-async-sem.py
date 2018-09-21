@@ -1,3 +1,4 @@
+
 from aiohttp import ClientSession
 import asyncio
 import sys
@@ -29,5 +30,4 @@ loop = asyncio.get_event_loop()
 async def main():
     async with ClientSession() as session:
         await run(session, int(sys.argv[1]))
-
 loop.run_until_complete(main())

@@ -76,7 +76,7 @@ class InputQueue(asyncio.Queue):
             
 
     def is_done(self):
-        return self.remaining == 0 #and self.queue.empty()
+        return self.remaining == 0 # and self.empty()
 
 
 class OutputQueues(list):
@@ -90,17 +90,13 @@ class OutputQueues(list):
             await queue.put(utils.DONE)
 
 
-async def _runner_task(f_task, workers, input_queue, output_queues):
+async def _run_tasks(f_task, workers, input_queue, output_queues):
 
     async with TaskPool(workers = workers) as tasks:
-
-        while not input_queue.is_done():
-
-            x = await input_queue.get()
-
-            if not utils.is_continue(x):
-                task = f_task(x)
-                await tasks.put(task)
+        async for x in input_queue:
+            
+            task = f_task(x)
+            await tasks.put(task)
 
     # wait all tasks to finish
     await output_queues.done()
@@ -120,7 +116,7 @@ async def _map(f, workers, input_queue, output_queues):
 
         await output_queues.put(y)
 
-    await _runner_task(f_task, workers, input_queue, output_queues)
+    await _run_tasks(f_task, workers, input_queue, output_queues)
 
 
 def map(f, stage, workers = 1, maxsize = 0):
@@ -144,6 +140,7 @@ def map(f, stage, workers = 1, maxsize = 0):
 
 async def _flat_map(f, workers, input_queue, output_queues):
     
+
     async def f_task(x):
 
         ys = f(x)
@@ -156,7 +153,7 @@ async def _flat_map(f, workers, input_queue, output_queues):
             for y in ys:
                 await output_queues.put(y)
 
-    await _runner_task(f_task, workers, input_queue, output_queues)
+    await _run_tasks(f_task, workers, input_queue, output_queues)
 
 
 def flat_map(f, stage, workers = 1, maxsize = 0):
@@ -177,6 +174,7 @@ def flat_map(f, stage, workers = 1, maxsize = 0):
 ########################
 
 async def _filter(f, workers, input_queue, output_queues):
+    
     async def f_task(x):
 
         y = f(x)
@@ -187,7 +185,7 @@ async def _filter(f, workers, input_queue, output_queues):
         if y:
             await output_queues.put(x)
 
-    await _runner_task(f_task, workers, input_queue, output_queues)
+    await _run_tasks(f_task, workers, input_queue, output_queues)
 
 
 def filter(f, stage, workers = 1, maxsize = 0):
@@ -218,7 +216,7 @@ async def _each(f, workers, input_queue, output_queues):
         if hasattr(y, "__await__"):
             y = await y
 
-    await _runner_task(f_task, workers, input_queue, output_queues)
+    await _run_tasks(f_task, workers, input_queue, output_queues)
 
 
 def each(f, stage, workers = 1, maxsize = 0, run = True):
@@ -246,14 +244,9 @@ def each(f, stage, workers = 1, maxsize = 0, run = True):
 
 async def _concat(workers, input_queue, output_queues):
 
-    while not input_queue.is_done():
-
-        x = await input_queue.get()
-
-        if not utils.is_continue(x):
-            await output_queues.put(x)
+    async for x in input_queue:
+        await output_queues.put(x)
         
-    # wait all tasks to finish
     await output_queues.done()
     
 

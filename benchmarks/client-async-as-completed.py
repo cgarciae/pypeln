@@ -30,16 +30,16 @@ async def fetch(url, session):
 
 limit = 1000
 
-async def print_when_done(tasks):
+async def print_when_done(tasks, session):
     for res in limited_as_completed(tasks, limit):
         await res
+
+    await session.close()
 
 r = int(sys.argv[1])
 url = "http://localhost:8080/{}"
 loop = asyncio.get_event_loop()
-async def main():
-    async with ClientSession() as session:
-        coros = (fetch(url.format(i), session) for i in range(r))
-        await print_when_done(coros)
-loop.run_until_complete(main())
+session = ClientSession()
+coros = (fetch(url.format(i), session) for i in range(r))
+loop.run_until_complete(print_when_done(coros, session))
 loop.close()

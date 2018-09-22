@@ -2,14 +2,10 @@ import asyncio
 
 class TaskPool(object):
 
-    def __init__(self, workers = 1):
+    def __init__(self, workers):
         self._semaphore = asyncio.Semaphore(workers)
         self._tasks = set()
         self._closed = False
-
-    async def join(self):
-        await asyncio.gather(*self._tasks)
-        self._closed = True
         
 
     async def put(self, coro):
@@ -30,5 +26,6 @@ class TaskPool(object):
     async def __aenter__(self):
         return self
 
-    def __aexit__(self, exc_type, exc, tb):
-        return self.join()
+    async def __aexit__(self, exc_type, exc, tb):
+        await asyncio.gather(*self._tasks)
+        self._closed = True

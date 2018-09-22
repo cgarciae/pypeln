@@ -1128,7 +1128,6 @@ table {
 <span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="kn">import</span> <span class="n">Process</span> <span class="k">as</span> <span class="n">WORKER</span>
 <span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="kn">import</span> <span class="n">Manager</span><span class="p">,</span> <span class="n">Lock</span><span class="p">,</span> <span class="n">Queue</span>
 <span class="kn">from</span> <span class="nn">multiprocessing.queues</span> <span class="kn">import</span> <span class="n">Full</span><span class="p">,</span> <span class="n">Empty</span>
-<span class="kn">from</span> <span class="nn">multiprocessing.context</span> <span class="kn">import</span> <span class="n">DefaultContext</span>
 <span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">Thread</span>
 
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
@@ -1440,20 +1439,22 @@ table {
         <span class="k">return</span> <span class="n">stage_input_queue</span><span class="p">,</span> <span class="n">stage_output_queues</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">visited</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
-
+    
+    
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">stage</span><span class="o">.</span><span class="n">dependencies</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">total_done</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span> <span class="n">stage</span><span class="o">.</span><span class="n">workers</span> <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="n">stage</span><span class="o">.</span><span class="n">dependencies</span> <span class="p">])</span>
+        <span class="n">total_done</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span> <span class="n">s</span><span class="o">.</span><span class="n">workers</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">stage</span><span class="o">.</span><span class="n">dependencies</span> <span class="p">])</span>
         <span class="n">input_queue</span> <span class="o">=</span> <span class="n">InputQueue</span><span class="p">(</span><span class="n">stage</span><span class="o">.</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">total_done</span><span class="p">)</span>
         <span class="n">stage_input_queue</span><span class="p">[</span><span class="n">stage</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_queue</span>
 
-        <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="n">stage</span><span class="o">.</span><span class="n">dependencies</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">stage</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stage_output_queues</span><span class="p">:</span>
-                <span class="n">stage_output_queues</span><span class="p">[</span><span class="n">stage</span><span class="p">]</span> <span class="o">=</span> <span class="n">OutputQueues</span><span class="p">([</span><span class="n">input_queue</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">_stage</span> <span class="ow">in</span> <span class="n">stage</span><span class="o">.</span><span class="n">dependencies</span><span class="p">:</span>
+            
+            <span class="k">if</span> <span class="n">_stage</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stage_output_queues</span><span class="p">:</span>
+                <span class="n">stage_output_queues</span><span class="p">[</span><span class="n">_stage</span><span class="p">]</span> <span class="o">=</span> <span class="n">OutputQueues</span><span class="p">([</span><span class="n">input_queue</span><span class="p">])</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">stage_output_queues</span><span class="p">[</span><span class="n">stage</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">input_queue</span><span class="p">)</span>
+                <span class="n">stage_output_queues</span><span class="p">[</span><span class="n">_stage</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">input_queue</span><span class="p">)</span>
 
             <span class="n">stage_input_queue</span><span class="p">,</span> <span class="n">stage_output_queues</span> <span class="o">=</span> <span class="n">_build_queues</span><span class="p">(</span>
-                <span class="n">stage</span><span class="p">,</span>
+                <span class="n">_stage</span><span class="p">,</span>
                 <span class="n">stage_input_queue</span><span class="p">,</span>
                 <span class="n">stage_output_queues</span><span class="p">,</span>
                 <span class="n">visited</span>

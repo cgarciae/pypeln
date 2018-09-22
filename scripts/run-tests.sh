@@ -1,11 +1,17 @@
-sudo chown -R $USER:$USER .
-find . -name "*.pyc" -delete
+bash scripts/clean.sh
 
-docker-compose build
+# docker-compose build
 
 echo "PYTHON 2.7"
-docker-compose run --rm python27 bash -c 'pip install -e . && py.test -k "not io"'
+P27_FILES=($(find tests/* | grep -v io | grep -v __pycache__ | grep '\.py'))
+COMMAND="pip install -q -e . && py.test ${P27_FILES[@]}"
+docker-compose run --rm python27 bash -c "$COMMAND"
 
 
-sudo chown -R $USER:$USER .
-find . -name "*.pyc" -delete
+bash scripts/clean.sh
+
+
+echo -e "\n\nPYTHON 3.6"
+docker-compose run --rm python36 bash -c 'pip install -q -e . && py.test'
+
+bash scripts/clean.sh

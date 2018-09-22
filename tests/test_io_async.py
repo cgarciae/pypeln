@@ -2,7 +2,7 @@ import hypothesis as hp
 from hypothesis import strategies as st
 import asyncio
 from pypeln import io
-from utils_async import run_async
+from utils_io import run_async
 from aiohttp import ClientSession
 
 

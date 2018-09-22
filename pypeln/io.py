@@ -5,7 +5,7 @@ import asyncio
 import threading
 import sys
 from . import utils
-from .utils_async import TaskPool
+from .task_pool import TaskPool
 import time
 from functools import reduce
 

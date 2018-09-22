@@ -11,7 +11,6 @@ from . import utils
 from multiprocessing import Process as WORKER
 from multiprocessing import Manager, Lock, Queue
 from multiprocessing.queues import Full, Empty
-from multiprocessing.context import DefaultContext
 from threading import Thread
 
 from collections import namedtuple

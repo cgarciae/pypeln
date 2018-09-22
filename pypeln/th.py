@@ -11,7 +11,6 @@ from . import utils
 # from multiprocessing import Process as WORKER
 # from multiprocessing import Manager, Lock, Queue
 # from multiprocessing.queues import Full, Empty
-# from multiprocessing.context import DefaultContext
 # from threading import Thread
 
 # from collections import namedtuple
@@ -73,6 +72,14 @@ class InputQueue(object):
         self.namespace = _get_namespace()
         self.namespace.remaining = total_done
 
+    def __iter__(self):
+
+        while not self.is_done():
+            x = self.get()
+
+            if not utils.is_continue(x):
+                yield x
+
     def get(self):
         
         try:
@@ -111,13 +118,9 @@ class OutputQueues(list):
 
 def _map(f, input_queue, output_queues):
 
-    while not input_queue.is_done():
-        
-        x = input_queue.get()
-
-        if not utils.is_continue(x):
-            y = f(x)
-            output_queues.put(y)
+    for x in input_queue:
+        y = f(x)
+        output_queues.put(y)
 
 
     output_queues.done()
@@ -143,13 +146,9 @@ def map(f, stage, workers = 1, maxsize = 0):
 
 def _flat_map(f, input_queue, output_queues):
 
-    while not input_queue.is_done():
-
-        x = input_queue.get()
-
-        if not utils.is_continue(x):
-            for y in f(x):
-                output_queues.put(y)
+    for x in input_queue:
+        for y in f(x):
+            output_queues.put(y)
 
     output_queues.done()
 
@@ -175,14 +174,9 @@ def flat_map(f, stage, workers = 1, maxsize = 0):
 
 def _filter(f, input_queue, output_queues):
 
-    while not input_queue.is_done():
-        
-        x = input_queue.get()
-
-        if not utils.is_continue(x):
-            if f(x):
-                output_queues.put(x)
-
+    for x in input_queue:
+        if f(x):
+            output_queues.put(x)
 
     output_queues.done()
 
@@ -208,13 +202,8 @@ def filter(f, stage, workers = 1, maxsize = 0):
 
 def _each(f, input_queue, output_queues):
 
-    while not input_queue.is_done():
-        
-        x = input_queue.get()
-
-        if not utils.is_continue(x):
-            f(x)
-
+    for x in input_queue:
+        f(x)
 
     output_queues.done()
 
@@ -245,13 +234,8 @@ def each(f, stage, workers = 1, maxsize = 0, run = True):
 
 def _concat(input_queue, output_queues):
 
-    while not input_queue.is_done():
-        
-        x = input_queue.get()
-
-        if not utils.is_continue(x):
-            output_queues.put(x)
-
+    for x in input_queue:
+        output_queues.put(x)
 
     output_queues.done()
 
@@ -338,20 +322,22 @@ def _build_queues(stage, stage_input_queue, stage_output_queues, visited):
         return stage_input_queue, stage_output_queues
     else:
         visited.add(stage)
-
+    
+    
     if len(stage.dependencies) > 0:
-        total_done = sum([ stage.workers for stage in stage.dependencies ])
+        total_done = sum([ s.workers for s in stage.dependencies ])
         input_queue = InputQueue(stage.maxsize, total_done)
         stage_input_queue[stage] = input_queue
 
-        for stage in stage.dependencies:
-            if stage not in stage_output_queues:
-                stage_output_queues[stage] = OutputQueues([input_queue])
+        for _stage in stage.dependencies:
+            
+            if _stage not in stage_output_queues:
+                stage_output_queues[_stage] = OutputQueues([input_queue])
             else:
-                stage_output_queues[stage].append(input_queue)
+                stage_output_queues[_stage].append(input_queue)
 
             stage_input_queue, stage_output_queues = _build_queues(
-                stage,
+                _stage,
                 stage_input_queue,
                 stage_output_queues,
                 visited
@@ -399,14 +385,8 @@ def to_iterable(stage, maxsize = 0):
         p.daemon = True
         p.start()
 
-    while not input_queue.is_done():
-
-        x = input_queue.get()
-
-        if utils.is_continue(x):
-            continue
-        else:
-            yield x
+    for x in input_queue:
+        yield x
 
     
     for p in processes:

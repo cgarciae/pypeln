@@ -1,0 +1,25 @@
+
+version: '2.3'
+
+
+services:
+
+  python27:
+    build:
+      context: .
+      dockerfile: docker/python27.dockerfile
+
+    volumes:
+      - ./:/code
+
+    working_dir: /code
+
+  python36:
+    build:
+      context: .
+      dockerfile: docker/python36.dockerfile
+
+    volumes:
+      - ./:/code
+
+    working_dir: /code

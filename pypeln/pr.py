@@ -322,20 +322,22 @@ def _build_queues(stage, stage_input_queue, stage_output_queues, visited):
         return stage_input_queue, stage_output_queues
     else:
         visited.add(stage)
-
+    
+    
     if len(stage.dependencies) > 0:
-        total_done = sum([ stage.workers for stage in stage.dependencies ])
+        total_done = sum([ s.workers for s in stage.dependencies ])
         input_queue = InputQueue(stage.maxsize, total_done)
         stage_input_queue[stage] = input_queue
 
-        for stage in stage.dependencies:
-            if stage not in stage_output_queues:
-                stage_output_queues[stage] = OutputQueues([input_queue])
+        for _stage in stage.dependencies:
+            
+            if _stage not in stage_output_queues:
+                stage_output_queues[_stage] = OutputQueues([input_queue])
             else:
-                stage_output_queues[stage].append(input_queue)
+                stage_output_queues[_stage].append(input_queue)
 
             stage_input_queue, stage_output_queues = _build_queues(
-                stage,
+                _stage,
                 stage_input_queue,
                 stage_output_queues,
                 visited

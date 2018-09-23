@@ -1,4 +1,6 @@
-from aiohttp import ClientSession
+# client-async-as-completed.py
+
+from aiohttp import ClientSession, TCPConnector
 import asyncio
 from itertools import islice
 import sys
@@ -39,7 +41,8 @@ url = "http://localhost:8080/{}"
 loop = asyncio.get_event_loop()
 
 async def main():
-    async with ClientSession() as session:
+    connector = TCPConnector(limit=None)
+    async with ClientSession(connector=connector) as session:
         coros = (fetch(url.format(i), session) for i in range(r))
         await print_when_done(coros)
 

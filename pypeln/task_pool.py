@@ -23,9 +23,12 @@ class TaskPool(object):
         self._tasks.remove(task)
         self._semaphore.release()
 
+    async def join(self):
+        await asyncio.gather(*self._tasks)
+        self._closed = True
+
     async def __aenter__(self):
         return self
 
-    async def __aexit__(self, exc_type, exc, tb):
-        await asyncio.gather(*self._tasks)
-        self._closed = True
+    def __aexit__(self, exc_type, exc, tb):
+        return self.join()    

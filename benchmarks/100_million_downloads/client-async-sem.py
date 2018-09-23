@@ -1,5 +1,6 @@
+# client-async-sem.py
 
-from aiohttp import ClientSession
+from aiohttp import ClientSession, TCPConnector
 import asyncio
 import sys
 
@@ -28,6 +29,7 @@ async def run(session, r):
 
 loop = asyncio.get_event_loop()
 async def main():
-    async with ClientSession() as session:
+    connector = TCPConnector(limit=None)
+    async with ClientSession(connector=connector) as session:
         await run(session, int(sys.argv[1]))
 loop.run_until_complete(main())

@@ -1,4 +1,6 @@
-#!/usr/bin/env bash
+# timed.sh
+
+ulimit -n 3000 # increase to avoid "out of file descriptors" error
 
 python server.py &
 

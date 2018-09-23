@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.5
+# server.py
 
 from aiohttp import web
 import asyncio

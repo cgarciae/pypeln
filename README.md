@@ -15,7 +15,7 @@ pip install pypeln
 ```
 
 ## Basic Usage
-With Pypeline you can create multi-stage data pipelines using with 3 type of workers:
+With Pypeline you can easily create multi-stage data pipelines using 3 type of workers:
 
 ### Processes
 You can create a pipeline based on [multiprocessing.Process](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process) workers by using the `pr` module:

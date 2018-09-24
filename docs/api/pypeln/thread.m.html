@@ -3,7 +3,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 
-    <title>pypeln.th API documentation</title>
+    <title>pypeln.thread API documentation</title>
     <meta name="description" content="" />
 
   <link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300' rel='stylesheet' type='text/css'>
@@ -1044,14 +1044,14 @@ table {
     <li class="set"><h3><a href="#header-functions">Functions</a></h3>
       
   <ul>
-    <li class="mono"><a href="#pypeln.th.concat">concat</a></li>
-    <li class="mono"><a href="#pypeln.th.each">each</a></li>
-    <li class="mono"><a href="#pypeln.th.filter">filter</a></li>
-    <li class="mono"><a href="#pypeln.th.flat_map">flat_map</a></li>
-    <li class="mono"><a href="#pypeln.th.from_iterable">from_iterable</a></li>
-    <li class="mono"><a href="#pypeln.th.map">map</a></li>
-    <li class="mono"><a href="#pypeln.th.run">run</a></li>
-    <li class="mono"><a href="#pypeln.th.to_iterable">to_iterable</a></li>
+    <li class="mono"><a href="#pypeln.thread.concat">concat</a></li>
+    <li class="mono"><a href="#pypeln.thread.each">each</a></li>
+    <li class="mono"><a href="#pypeln.thread.filter">filter</a></li>
+    <li class="mono"><a href="#pypeln.thread.flat_map">flat_map</a></li>
+    <li class="mono"><a href="#pypeln.thread.from_iterable">from_iterable</a></li>
+    <li class="mono"><a href="#pypeln.thread.map">map</a></li>
+    <li class="mono"><a href="#pypeln.thread.run">run</a></li>
+    <li class="mono"><a href="#pypeln.thread.to_iterable">to_iterable</a></li>
   </ul>
 
     </li>
@@ -1059,33 +1059,33 @@ table {
     <li class="set"><h3><a href="#header-classes">Classes</a></h3>
       <ul>
         <li class="mono">
-        <span class="class_name"><a href="#pypeln.th.InputQueue">InputQueue</a></span>
+        <span class="class_name"><a href="#pypeln.thread.InputQueue">InputQueue</a></span>
         
           
   <ul>
-    <li class="mono"><a href="#pypeln.th.InputQueue.__init__">__init__</a></li>
-    <li class="mono"><a href="#pypeln.th.InputQueue.get">get</a></li>
-    <li class="mono"><a href="#pypeln.th.InputQueue.is_done">is_done</a></li>
-    <li class="mono"><a href="#pypeln.th.InputQueue.put">put</a></li>
+    <li class="mono"><a href="#pypeln.thread.InputQueue.__init__">__init__</a></li>
+    <li class="mono"><a href="#pypeln.thread.InputQueue.get">get</a></li>
+    <li class="mono"><a href="#pypeln.thread.InputQueue.is_done">is_done</a></li>
+    <li class="mono"><a href="#pypeln.thread.InputQueue.put">put</a></li>
   </ul>
 
         </li>
         <li class="mono">
-        <span class="class_name"><a href="#pypeln.th.OutputQueues">OutputQueues</a></span>
+        <span class="class_name"><a href="#pypeln.thread.OutputQueues">OutputQueues</a></span>
         
           
   <ul>
-    <li class="mono"><a href="#pypeln.th.OutputQueues.done">done</a></li>
-    <li class="mono"><a href="#pypeln.th.OutputQueues.put">put</a></li>
+    <li class="mono"><a href="#pypeln.thread.OutputQueues.done">done</a></li>
+    <li class="mono"><a href="#pypeln.thread.OutputQueues.put">put</a></li>
   </ul>
 
         </li>
         <li class="mono">
-        <span class="class_name"><a href="#pypeln.th.Stage">Stage</a></span>
+        <span class="class_name"><a href="#pypeln.thread.Stage">Stage</a></span>
         
           
   <ul>
-    <li class="mono"><a href="#pypeln.th.Stage.__init__">__init__</a></li>
+    <li class="mono"><a href="#pypeln.thread.Stage.__init__">__init__</a></li>
   </ul>
 
         </li>
@@ -1103,11 +1103,11 @@ table {
 
 
   <header id="section-intro">
-  <h1 class="title"><span class="name">pypeln.th</span> module</h1>
+  <h1 class="title"><span class="name">pypeln.thread</span> module</h1>
   
   
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.th', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.th" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.thread', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.thread" class="source">
     <div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span>
 
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="nb">reduce</span>
@@ -1536,7 +1536,7 @@ table {
     <h2 class="section-title" id="header-functions">Functions</h2>
       
   <div class="item">
-    <div class="name def" id="pypeln.th.concat">
+    <div class="name def" id="pypeln.thread.concat">
     <p>def <span class="ident">concat</span>(</p><p>stages, maxsize=0)</p>
     </div>
     
@@ -1544,8 +1544,8 @@ table {
     
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.th.concat', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.th.concat" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.thread.concat', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.thread.concat" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">concat</span><span class="p">(</span><span class="n">stages</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
     <span class="n">stages</span> <span class="o">=</span> <span class="p">[</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">stages</span> <span class="p">]</span>
@@ -1567,7 +1567,7 @@ table {
   
       
   <div class="item">
-    <div class="name def" id="pypeln.th.each">
+    <div class="name def" id="pypeln.thread.each">
     <p>def <span class="ident">each</span>(</p><p>f, stage=None, workers=1, maxsize=0, run=True)</p>
     </div>
     
@@ -1575,8 +1575,8 @@ table {
     
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.th.each', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.th.each" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.thread.each', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.thread.each" class="source">
     <div class="codehilite"><pre><span></span><span class="nd">@utils.maybe_partial</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">run</span> <span class="o">=</span> <span class="bp">True</span><span class="p">):</span>
 
@@ -1605,7 +1605,7 @@ table {
   
       
   <div class="item">
-    <div class="name def" id="pypeln.th.filter">
+    <div class="name def" id="pypeln.thread.filter">
     <p>def <span class="ident">filter</span>(</p><p>f, stage=None, workers=1, maxsize=0)</p>
     </div>
     
@@ -1613,8 +1613,8 @@ table {
     
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.th.filter', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.th.filter" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.thread.filter', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.thread.filter" class="source">
     <div class="codehilite"><pre><span></span><span class="nd">@utils.maybe_partial</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
@@ -1637,7 +1637,7 @@ table {
   
       
   <div class="item">
-    <div class="name def" id="pypeln.th.flat_map">
+    <div class="name def" id="pypeln.thread.flat_map">
     <p>def <span class="ident">flat_map</span>(</p><p>f, stage=None, workers=1, maxsize=0)</p>
     </div>
     
@@ -1645,8 +1645,8 @@ table {
     
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.th.flat_map', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.th.flat_map" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.thread.flat_map', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.thread.flat_map" class="source">
     <div class="codehilite"><pre><span></span><span class="nd">@utils.maybe_partial</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
@@ -1669,7 +1669,7 @@ table {
   
       
   <div class="item">
-    <div class="name def" id="pypeln.th.from_iterable">
+    <div class="name def" id="pypeln.thread.from_iterable">
     <p>def <span class="ident">from_iterable</span>(</p><p>iterable=None, worker_constructor=&lt;class &#39;threading.Thread&#39;&gt;)</p>
     </div>
     
@@ -1677,8 +1677,8 @@ table {
     
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.th.from_iterable', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.th.from_iterable" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.thread.from_iterable', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.thread.from_iterable" class="source">
     <div class="codehilite"><pre><span></span><span class="nd">@utils.maybe_partial</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">from_iterable</span><span class="p">(</span><span class="n">iterable</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">Thread</span><span class="p">):</span>
 
@@ -1699,7 +1699,7 @@ table {
   
       
   <div class="item">
-    <div class="name def" id="pypeln.th.map">
+    <div class="name def" id="pypeln.thread.map">
     <p>def <span class="ident">map</span>(</p><p>f, stage=None, workers=1, maxsize=0)</p>
     </div>
     
@@ -1707,8 +1707,8 @@ table {
     
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.th.map', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.th.map" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.thread.map', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.thread.map" class="source">
     <div class="codehilite"><pre><span></span><span class="nd">@utils.maybe_partial</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
@@ -1731,7 +1731,7 @@ table {
   
       
   <div class="item">
-    <div class="name def" id="pypeln.th.run">
+    <div class="name def" id="pypeln.thread.run">
     <p>def <span class="ident">run</span>(</p><p>stages, maxsize=0)</p>
     </div>
     
@@ -1739,8 +1739,8 @@ table {
     
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.th.run', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.th.run" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.thread.run', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.thread.run" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">stages</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
     
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stages</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">stages</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -1765,7 +1765,7 @@ table {
   
       
   <div class="item">
-    <div class="name def" id="pypeln.th.to_iterable">
+    <div class="name def" id="pypeln.thread.to_iterable">
     <p>def <span class="ident">to_iterable</span>(</p><p>stage=None, maxsize=0)</p>
     </div>
     
@@ -1773,8 +1773,8 @@ table {
     
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.th.to_iterable', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.th.to_iterable" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.thread.to_iterable', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.thread.to_iterable" class="source">
     <div class="codehilite"><pre><span></span><span class="nd">@utils.maybe_partial</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">to_iterable</span><span class="p">(</span><span class="n">stage</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
@@ -1823,12 +1823,12 @@ table {
     <h2 class="section-title" id="header-classes">Classes</h2>
       
       <div class="item">
-      <p id="pypeln.th.InputQueue" class="name">class <span class="ident">InputQueue</span></p>
+      <p id="pypeln.thread.InputQueue" class="name">class <span class="ident">InputQueue</span></p>
       
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.th.InputQueue', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.th.InputQueue" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.thread.InputQueue', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.thread.InputQueue" class="source">
     <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">InputQueue</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">total_done</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -1875,13 +1875,13 @@ table {
       <div class="class">
           <h3>Ancestors (in MRO)</h3>
           <ul class="class_list">
-          <li><a href="#pypeln.th.InputQueue">InputQueue</a></li>
+          <li><a href="#pypeln.thread.InputQueue">InputQueue</a></li>
           <li>builtins.object</li>
           </ul>
           <h3>Static methods</h3>
             
   <div class="item">
-    <div class="name def" id="pypeln.th.InputQueue.__init__">
+    <div class="name def" id="pypeln.thread.InputQueue.__init__">
     <p>def <span class="ident">__init__</span>(</p><p>self, maxsize, total_done, **kwargs)</p>
     </div>
     
@@ -1890,8 +1890,8 @@ table {
   
     <div class="desc"><p>Initialize self.  See help(type(self)) for accurate signature.</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.th.InputQueue.__init__', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.th.InputQueue.__init__" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.thread.InputQueue.__init__', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.thread.InputQueue.__init__" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">total_done</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     
     <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="n">Queue</span><span class="p">(</span><span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -1907,7 +1907,7 @@ table {
   
             
   <div class="item">
-    <div class="name def" id="pypeln.th.InputQueue.get">
+    <div class="name def" id="pypeln.thread.InputQueue.get">
     <p>def <span class="ident">get</span>(</p><p>self)</p>
     </div>
     
@@ -1915,8 +1915,8 @@ table {
     
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.th.InputQueue.get', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.th.InputQueue.get" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.thread.InputQueue.get', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.thread.InputQueue.get" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     
     <span class="k">try</span><span class="p">:</span>
@@ -1940,7 +1940,7 @@ table {
   
             
   <div class="item">
-    <div class="name def" id="pypeln.th.InputQueue.is_done">
+    <div class="name def" id="pypeln.thread.InputQueue.is_done">
     <p>def <span class="ident">is_done</span>(</p><p>self)</p>
     </div>
     
@@ -1948,8 +1948,8 @@ table {
     
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.th.InputQueue.is_done', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.th.InputQueue.is_done" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.thread.InputQueue.is_done', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.thread.InputQueue.is_done" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">is_done</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">namespace</span><span class="o">.</span><span class="n">remaining</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="o">.</span><span class="n">empty</span><span class="p">()</span>
 </pre></div>
@@ -1961,7 +1961,7 @@ table {
   
             
   <div class="item">
-    <div class="name def" id="pypeln.th.InputQueue.put">
+    <div class="name def" id="pypeln.thread.InputQueue.put">
     <p>def <span class="ident">put</span>(</p><p>self, x)</p>
     </div>
     
@@ -1969,8 +1969,8 @@ table {
     
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.th.InputQueue.put', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.th.InputQueue.put" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.thread.InputQueue.put', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.thread.InputQueue.put" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 </pre></div>
@@ -1982,7 +1982,7 @@ table {
   
           <h3>Instance variables</h3>
             <div class="item">
-            <p id="pypeln.th.InputQueue.lock" class="name">var <span class="ident">lock</span></p>
+            <p id="pypeln.thread.InputQueue.lock" class="name">var <span class="ident">lock</span></p>
             
 
             
@@ -1992,7 +1992,7 @@ table {
 
             </div>
             <div class="item">
-            <p id="pypeln.th.InputQueue.namespace" class="name">var <span class="ident">namespace</span></p>
+            <p id="pypeln.thread.InputQueue.namespace" class="name">var <span class="ident">namespace</span></p>
             
 
             
@@ -2002,7 +2002,7 @@ table {
 
             </div>
             <div class="item">
-            <p id="pypeln.th.InputQueue.queue" class="name">var <span class="ident">queue</span></p>
+            <p id="pypeln.thread.InputQueue.queue" class="name">var <span class="ident">queue</span></p>
             
 
             
@@ -2015,14 +2015,14 @@ table {
       </div>
       
       <div class="item">
-      <p id="pypeln.th.OutputQueues" class="name">class <span class="ident">OutputQueues</span></p>
+      <p id="pypeln.thread.OutputQueues" class="name">class <span class="ident">OutputQueues</span></p>
       
   
     <div class="desc"><p>list() -&gt; new empty list
 list(iterable) -&gt; new list initialized from iterable's items</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.th.OutputQueues', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.th.OutputQueues" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.thread.OutputQueues', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.thread.OutputQueues" class="source">
     <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">OutputQueues</span><span class="p">(</span><span class="nb">list</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
@@ -2041,14 +2041,14 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
       <div class="class">
           <h3>Ancestors (in MRO)</h3>
           <ul class="class_list">
-          <li><a href="#pypeln.th.OutputQueues">OutputQueues</a></li>
+          <li><a href="#pypeln.thread.OutputQueues">OutputQueues</a></li>
           <li>builtins.list</li>
           <li>builtins.object</li>
           </ul>
           <h3>Static methods</h3>
             
   <div class="item">
-    <div class="name def" id="pypeln.th.OutputQueues.done">
+    <div class="name def" id="pypeln.thread.OutputQueues.done">
     <p>def <span class="ident">done</span>(</p><p>self)</p>
     </div>
     
@@ -2056,8 +2056,8 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
     
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.th.OutputQueues.done', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.th.OutputQueues.done" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.thread.OutputQueues.done', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.thread.OutputQueues.done" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">done</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">queue</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
         <span class="n">queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">DONE</span><span class="p">)</span>
@@ -2070,7 +2070,7 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
   
             
   <div class="item">
-    <div class="name def" id="pypeln.th.OutputQueues.put">
+    <div class="name def" id="pypeln.thread.OutputQueues.put">
     <p>def <span class="ident">put</span>(</p><p>self, x)</p>
     </div>
     
@@ -2078,8 +2078,8 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
     
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.th.OutputQueues.put', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.th.OutputQueues.put" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.thread.OutputQueues.put', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.thread.OutputQueues.put" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">queue</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
         <span class="n">queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -2094,12 +2094,12 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
       </div>
       
       <div class="item">
-      <p id="pypeln.th.Stage" class="name">class <span class="ident">Stage</span></p>
+      <p id="pypeln.thread.Stage" class="name">class <span class="ident">Stage</span></p>
       
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.th.Stage', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.th.Stage" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.thread.Stage', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.thread.Stage" class="source">
     <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">Stage</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">BaseStage</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">dependencies</span><span class="p">):</span>
@@ -2131,14 +2131,14 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
       <div class="class">
           <h3>Ancestors (in MRO)</h3>
           <ul class="class_list">
-          <li><a href="#pypeln.th.Stage">Stage</a></li>
+          <li><a href="#pypeln.thread.Stage">Stage</a></li>
           <li>__pdoc_file_module__.utils.BaseStage</li>
           <li>builtins.object</li>
           </ul>
           <h3>Static methods</h3>
             
   <div class="item">
-    <div class="name def" id="pypeln.th.Stage.__init__">
+    <div class="name def" id="pypeln.thread.Stage.__init__">
     <p>def <span class="ident">__init__</span>(</p><p>self, worker_constructor, workers, maxsize, target, args, dependencies)</p>
     </div>
     
@@ -2147,8 +2147,8 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
   
     <div class="desc"><p>Initialize self.  See help(type(self)) for accurate signature.</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.th.Stage.__init__', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.th.Stage.__init__" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.thread.Stage.__init__', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.thread.Stage.__init__" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">dependencies</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">worker_constructor</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span>
@@ -2165,7 +2165,7 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
   
           <h3>Instance variables</h3>
             <div class="item">
-            <p id="pypeln.th.Stage.args" class="name">var <span class="ident">args</span></p>
+            <p id="pypeln.thread.Stage.args" class="name">var <span class="ident">args</span></p>
             
 
             
@@ -2175,7 +2175,7 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
 
             </div>
             <div class="item">
-            <p id="pypeln.th.Stage.dependencies" class="name">var <span class="ident">dependencies</span></p>
+            <p id="pypeln.thread.Stage.dependencies" class="name">var <span class="ident">dependencies</span></p>
             
 
             
@@ -2185,7 +2185,7 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
 
             </div>
             <div class="item">
-            <p id="pypeln.th.Stage.maxsize" class="name">var <span class="ident">maxsize</span></p>
+            <p id="pypeln.thread.Stage.maxsize" class="name">var <span class="ident">maxsize</span></p>
             
 
             
@@ -2195,7 +2195,7 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
 
             </div>
             <div class="item">
-            <p id="pypeln.th.Stage.target" class="name">var <span class="ident">target</span></p>
+            <p id="pypeln.thread.Stage.target" class="name">var <span class="ident">target</span></p>
             
 
             
@@ -2205,7 +2205,7 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
 
             </div>
             <div class="item">
-            <p id="pypeln.th.Stage.worker_constructor" class="name">var <span class="ident">worker_constructor</span></p>
+            <p id="pypeln.thread.Stage.worker_constructor" class="name">var <span class="ident">worker_constructor</span></p>
             
 
             
@@ -2215,7 +2215,7 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
 
             </div>
             <div class="item">
-            <p id="pypeln.th.Stage.workers" class="name">var <span class="ident">workers</span></p>
+            <p id="pypeln.thread.Stage.workers" class="name">var <span class="ident">workers</span></p>
             
 
             

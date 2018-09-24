@@ -3,7 +3,7 @@ import hypothesis as hp
 from hypothesis import strategies as st
 import cytoolz as cz
 
-from pypeln import th
+from pypeln import thread as th
 
 MAX_EXAMPLES = 15
 

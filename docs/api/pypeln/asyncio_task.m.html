@@ -3,7 +3,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 
-    <title>pypeln.io API documentation</title>
+    <title>pypeln.asyncio_task API documentation</title>
     <meta name="description" content="" />
 
   <link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300' rel='stylesheet' type='text/css'>
@@ -1044,14 +1044,14 @@ table {
     <li class="set"><h3><a href="#header-functions">Functions</a></h3>
       
   <ul>
-    <li class="mono"><a href="#pypeln.io.WORKER">WORKER</a></li>
-    <li class="mono"><a href="#pypeln.io.concat">concat</a></li>
-    <li class="mono"><a href="#pypeln.io.each">each</a></li>
-    <li class="mono"><a href="#pypeln.io.filter">filter</a></li>
-    <li class="mono"><a href="#pypeln.io.flat_map">flat_map</a></li>
-    <li class="mono"><a href="#pypeln.io.from_iterable">from_iterable</a></li>
-    <li class="mono"><a href="#pypeln.io.map">map</a></li>
-    <li class="mono"><a href="#pypeln.io.to_iterable">to_iterable</a></li>
+    <li class="mono"><a href="#pypeln.asyncio_task.WORKER">WORKER</a></li>
+    <li class="mono"><a href="#pypeln.asyncio_task.concat">concat</a></li>
+    <li class="mono"><a href="#pypeln.asyncio_task.each">each</a></li>
+    <li class="mono"><a href="#pypeln.asyncio_task.filter">filter</a></li>
+    <li class="mono"><a href="#pypeln.asyncio_task.flat_map">flat_map</a></li>
+    <li class="mono"><a href="#pypeln.asyncio_task.from_iterable">from_iterable</a></li>
+    <li class="mono"><a href="#pypeln.asyncio_task.map">map</a></li>
+    <li class="mono"><a href="#pypeln.asyncio_task.to_iterable">to_iterable</a></li>
   </ul>
 
     </li>
@@ -1059,40 +1059,40 @@ table {
     <li class="set"><h3><a href="#header-classes">Classes</a></h3>
       <ul>
         <li class="mono">
-        <span class="class_name"><a href="#pypeln.io.InputQueue">InputQueue</a></span>
+        <span class="class_name"><a href="#pypeln.asyncio_task.InputQueue">InputQueue</a></span>
         
           
   <ul>
-    <li class="mono"><a href="#pypeln.io.InputQueue.__init__">__init__</a></li>
-    <li class="mono"><a href="#pypeln.io.InputQueue.empty">empty</a></li>
-    <li class="mono"><a href="#pypeln.io.InputQueue.full">full</a></li>
-    <li class="mono"><a href="#pypeln.io.InputQueue.get">get</a></li>
-    <li class="mono"><a href="#pypeln.io.InputQueue.get_nowait">get_nowait</a></li>
-    <li class="mono"><a href="#pypeln.io.InputQueue.is_done">is_done</a></li>
-    <li class="mono"><a href="#pypeln.io.InputQueue.join">join</a></li>
-    <li class="mono"><a href="#pypeln.io.InputQueue.put">put</a></li>
-    <li class="mono"><a href="#pypeln.io.InputQueue.put_nowait">put_nowait</a></li>
-    <li class="mono"><a href="#pypeln.io.InputQueue.qsize">qsize</a></li>
-    <li class="mono"><a href="#pypeln.io.InputQueue.task_done">task_done</a></li>
+    <li class="mono"><a href="#pypeln.asyncio_task.InputQueue.__init__">__init__</a></li>
+    <li class="mono"><a href="#pypeln.asyncio_task.InputQueue.empty">empty</a></li>
+    <li class="mono"><a href="#pypeln.asyncio_task.InputQueue.full">full</a></li>
+    <li class="mono"><a href="#pypeln.asyncio_task.InputQueue.get">get</a></li>
+    <li class="mono"><a href="#pypeln.asyncio_task.InputQueue.get_nowait">get_nowait</a></li>
+    <li class="mono"><a href="#pypeln.asyncio_task.InputQueue.is_done">is_done</a></li>
+    <li class="mono"><a href="#pypeln.asyncio_task.InputQueue.join">join</a></li>
+    <li class="mono"><a href="#pypeln.asyncio_task.InputQueue.put">put</a></li>
+    <li class="mono"><a href="#pypeln.asyncio_task.InputQueue.put_nowait">put_nowait</a></li>
+    <li class="mono"><a href="#pypeln.asyncio_task.InputQueue.qsize">qsize</a></li>
+    <li class="mono"><a href="#pypeln.asyncio_task.InputQueue.task_done">task_done</a></li>
   </ul>
 
         </li>
         <li class="mono">
-        <span class="class_name"><a href="#pypeln.io.OutputQueues">OutputQueues</a></span>
+        <span class="class_name"><a href="#pypeln.asyncio_task.OutputQueues">OutputQueues</a></span>
         
           
   <ul>
-    <li class="mono"><a href="#pypeln.io.OutputQueues.done">done</a></li>
-    <li class="mono"><a href="#pypeln.io.OutputQueues.put">put</a></li>
+    <li class="mono"><a href="#pypeln.asyncio_task.OutputQueues.done">done</a></li>
+    <li class="mono"><a href="#pypeln.asyncio_task.OutputQueues.put">put</a></li>
   </ul>
 
         </li>
         <li class="mono">
-        <span class="class_name"><a href="#pypeln.io.Stage">Stage</a></span>
+        <span class="class_name"><a href="#pypeln.asyncio_task.Stage">Stage</a></span>
         
           
   <ul>
-    <li class="mono"><a href="#pypeln.io.Stage.__init__">__init__</a></li>
+    <li class="mono"><a href="#pypeln.asyncio_task.Stage.__init__">__init__</a></li>
   </ul>
 
         </li>
@@ -1110,11 +1110,11 @@ table {
 
 
   <header id="section-intro">
-  <h1 class="title"><span class="name">pypeln.io</span> module</h1>
+  <h1 class="title"><span class="name">pypeln.asyncio_task</span> module</h1>
   
   
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.asyncio_task" class="source">
     <div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span>
 
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
@@ -1599,7 +1599,7 @@ table {
     <h2 class="section-title" id="header-functions">Functions</h2>
       
   <div class="item">
-    <div class="name def" id="pypeln.io.WORKER">
+    <div class="name def" id="pypeln.asyncio_task.WORKER">
     <p>def <span class="ident">WORKER</span>(</p><p>target, args, kwargs)</p>
     </div>
     
@@ -1607,8 +1607,8 @@ table {
     
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.WORKER', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.WORKER" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.WORKER', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.asyncio_task.WORKER" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">WORKER</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">target</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </pre></div>
@@ -1620,7 +1620,7 @@ table {
   
       
   <div class="item">
-    <div class="name def" id="pypeln.io.concat">
+    <div class="name def" id="pypeln.asyncio_task.concat">
     <p>def <span class="ident">concat</span>(</p><p>stages, maxsize=0)</p>
     </div>
     
@@ -1628,8 +1628,8 @@ table {
     
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.concat', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.concat" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.concat', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.asyncio_task.concat" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">concat</span><span class="p">(</span><span class="n">stages</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
     <span class="n">stages</span> <span class="o">=</span> <span class="p">[</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">stages</span> <span class="p">]</span>
@@ -1651,7 +1651,7 @@ table {
   
       
   <div class="item">
-    <div class="name def" id="pypeln.io.each">
+    <div class="name def" id="pypeln.asyncio_task.each">
     <p>def <span class="ident">each</span>(</p><p>f, stage=None, workers=1, maxsize=0, run=True)</p>
     </div>
     
@@ -1659,8 +1659,8 @@ table {
     
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.each', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.each" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.each', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.asyncio_task.each" class="source">
     <div class="codehilite"><pre><span></span><span class="nd">@utils.maybe_partial</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">run</span> <span class="o">=</span> <span class="bp">True</span><span class="p">):</span>
 
@@ -1689,7 +1689,7 @@ table {
   
       
   <div class="item">
-    <div class="name def" id="pypeln.io.filter">
+    <div class="name def" id="pypeln.asyncio_task.filter">
     <p>def <span class="ident">filter</span>(</p><p>f, stage=None, workers=1, maxsize=0)</p>
     </div>
     
@@ -1697,8 +1697,8 @@ table {
     
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.filter', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.filter" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.filter', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.asyncio_task.filter" class="source">
     <div class="codehilite"><pre><span></span><span class="nd">@utils.maybe_partial</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
@@ -1721,7 +1721,7 @@ table {
   
       
   <div class="item">
-    <div class="name def" id="pypeln.io.flat_map">
+    <div class="name def" id="pypeln.asyncio_task.flat_map">
     <p>def <span class="ident">flat_map</span>(</p><p>f, stage=None, workers=1, maxsize=0)</p>
     </div>
     
@@ -1729,8 +1729,8 @@ table {
     
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.flat_map', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.flat_map" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.flat_map', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.asyncio_task.flat_map" class="source">
     <div class="codehilite"><pre><span></span><span class="nd">@utils.maybe_partial</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
@@ -1753,7 +1753,7 @@ table {
   
       
   <div class="item">
-    <div class="name def" id="pypeln.io.from_iterable">
+    <div class="name def" id="pypeln.asyncio_task.from_iterable">
     <p>def <span class="ident">from_iterable</span>(</p><p>iterable=None, worker_constructor=None)</p>
     </div>
     
@@ -1761,8 +1761,8 @@ table {
     
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.from_iterable', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.from_iterable" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.from_iterable', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.asyncio_task.from_iterable" class="source">
     <div class="codehilite"><pre><span></span><span class="nd">@utils.maybe_partial</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">from_iterable</span><span class="p">(</span><span class="n">iterable</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">worker_constructor</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
     
@@ -1783,7 +1783,7 @@ table {
   
       
   <div class="item">
-    <div class="name def" id="pypeln.io.map">
+    <div class="name def" id="pypeln.asyncio_task.map">
     <p>def <span class="ident">map</span>(</p><p>f, stage=None, workers=1, maxsize=0)</p>
     </div>
     
@@ -1791,8 +1791,8 @@ table {
     
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.map', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.map" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.map', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.asyncio_task.map" class="source">
     <div class="codehilite"><pre><span></span><span class="nd">@utils.maybe_partial</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
@@ -1815,7 +1815,7 @@ table {
   
       
   <div class="item">
-    <div class="name def" id="pypeln.io.to_iterable">
+    <div class="name def" id="pypeln.asyncio_task.to_iterable">
     <p>def <span class="ident">to_iterable</span>(</p><p>stage=None, maxsize=0)</p>
     </div>
     
@@ -1823,8 +1823,8 @@ table {
     
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.to_iterable', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.to_iterable" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.to_iterable', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.asyncio_task.to_iterable" class="source">
     <div class="codehilite"><pre><span></span><span class="nd">@utils.maybe_partial</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
@@ -1885,7 +1885,7 @@ table {
     <h2 class="section-title" id="header-classes">Classes</h2>
       
       <div class="item">
-      <p id="pypeln.io.InputQueue" class="name">class <span class="ident">InputQueue</span></p>
+      <p id="pypeln.asyncio_task.InputQueue" class="name">class <span class="ident">InputQueue</span></p>
       
   
     <div class="desc"><p>A queue, useful for coordinating producer and consumer coroutines.</p>
@@ -1896,8 +1896,8 @@ queue reaches maxsize, until an item is removed by get().</p>
 with qsize(), since your single-threaded asyncio application won't be
 interrupted between calling qsize() and doing an operation on the Queue.</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.InputQueue', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.InputQueue" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.InputQueue', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.asyncio_task.InputQueue" class="source">
     <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">InputQueue</span><span class="p">(</span><span class="n">asyncio</span><span class="o">.</span><span class="n">Queue</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">total_done</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -1945,14 +1945,14 @@ interrupted between calling qsize() and doing an operation on the Queue.</p></di
       <div class="class">
           <h3>Ancestors (in MRO)</h3>
           <ul class="class_list">
-          <li><a href="#pypeln.io.InputQueue">InputQueue</a></li>
+          <li><a href="#pypeln.asyncio_task.InputQueue">InputQueue</a></li>
           <li>asyncio.queues.Queue</li>
           <li>builtins.object</li>
           </ul>
           <h3>Static methods</h3>
             
   <div class="item">
-    <div class="name def" id="pypeln.io.InputQueue.__init__">
+    <div class="name def" id="pypeln.asyncio_task.InputQueue.__init__">
     <p>def <span class="ident">__init__</span>(</p><p>self, maxsize=0, total_done=1, **kwargs)</p>
     </div>
     
@@ -1961,8 +1961,8 @@ interrupted between calling qsize() and doing an operation on the Queue.</p></di
   
     <div class="desc"><p>Initialize self.  See help(type(self)) for accurate signature.</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.InputQueue.__init__', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.InputQueue.__init__" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.InputQueue.__init__', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.asyncio_task.InputQueue.__init__" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">total_done</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="nb">super</span><span class="p">(</span><span class="n">InputQueue</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">remaining</span> <span class="o">=</span> <span class="n">total_done</span>
@@ -1975,7 +1975,7 @@ interrupted between calling qsize() and doing an operation on the Queue.</p></di
   
             
   <div class="item">
-    <div class="name def" id="pypeln.io.InputQueue.empty">
+    <div class="name def" id="pypeln.asyncio_task.InputQueue.empty">
     <p>def <span class="ident">empty</span>(</p><p>self)</p>
     </div>
     
@@ -1984,8 +1984,8 @@ interrupted between calling qsize() and doing an operation on the Queue.</p></di
   
     <div class="desc"><p>Return True if the queue is empty, False otherwise.</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.InputQueue.empty', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.InputQueue.empty" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.InputQueue.empty', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.asyncio_task.InputQueue.empty" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">empty</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Return True if the queue is empty, False otherwise.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span>
@@ -1998,7 +1998,7 @@ interrupted between calling qsize() and doing an operation on the Queue.</p></di
   
             
   <div class="item">
-    <div class="name def" id="pypeln.io.InputQueue.full">
+    <div class="name def" id="pypeln.asyncio_task.InputQueue.full">
     <p>def <span class="ident">full</span>(</p><p>self)</p>
     </div>
     
@@ -2009,8 +2009,8 @@ interrupted between calling qsize() and doing an operation on the Queue.</p></di
 <p>Note: if the Queue was initialized with maxsize=0 (the default),
 then full() is never True.</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.InputQueue.full', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.InputQueue.full" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.InputQueue.full', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.asyncio_task.InputQueue.full" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">full</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Return True if there are maxsize items in the queue.</span>
 <span class="sd">    Note: if the Queue was initialized with maxsize=0 (the default),</span>
@@ -2029,7 +2029,7 @@ then full() is never True.</p></div>
   
             
   <div class="item">
-    <div class="name def" id="pypeln.io.InputQueue.get">
+    <div class="name def" id="pypeln.asyncio_task.InputQueue.get">
     <p>def <span class="ident">get</span>(</p><p>self)</p>
     </div>
     
@@ -2040,8 +2040,8 @@ then full() is never True.</p></div>
 <p>If queue is empty, wait until an item is available.</p>
 <p>This method is a coroutine.</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.InputQueue.get', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.InputQueue.get" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.InputQueue.get', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.asyncio_task.InputQueue.get" class="source">
     <div class="codehilite"><pre><span></span><span class="n">async</span> <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     
     <span class="n">x</span> <span class="o">=</span> <span class="n">await</span> <span class="nb">super</span><span class="p">(</span><span class="n">InputQueue</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
@@ -2058,7 +2058,7 @@ then full() is never True.</p></div>
   
             
   <div class="item">
-    <div class="name def" id="pypeln.io.InputQueue.get_nowait">
+    <div class="name def" id="pypeln.asyncio_task.InputQueue.get_nowait">
     <p>def <span class="ident">get_nowait</span>(</p><p>self)</p>
     </div>
     
@@ -2068,8 +2068,8 @@ then full() is never True.</p></div>
     <div class="desc"><p>Remove and return an item from the queue.</p>
 <p>Return an item if one is immediately available, else raise QueueEmpty.</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.InputQueue.get_nowait', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.InputQueue.get_nowait" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.InputQueue.get_nowait', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.asyncio_task.InputQueue.get_nowait" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">get_nowait</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     
     <span class="n">x</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">InputQueue</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">get_nowait</span><span class="p">()</span>
@@ -2086,7 +2086,7 @@ then full() is never True.</p></div>
   
             
   <div class="item">
-    <div class="name def" id="pypeln.io.InputQueue.is_done">
+    <div class="name def" id="pypeln.asyncio_task.InputQueue.is_done">
     <p>def <span class="ident">is_done</span>(</p><p>self)</p>
     </div>
     
@@ -2094,8 +2094,8 @@ then full() is never True.</p></div>
     
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.InputQueue.is_done', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.InputQueue.is_done" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.InputQueue.is_done', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.asyncio_task.InputQueue.is_done" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">is_done</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">remaining</span> <span class="o">==</span> <span class="mi">0</span> <span class="c1"># and self.empty()</span>
 </pre></div>
@@ -2107,7 +2107,7 @@ then full() is never True.</p></div>
   
             
   <div class="item">
-    <div class="name def" id="pypeln.io.InputQueue.join">
+    <div class="name def" id="pypeln.asyncio_task.InputQueue.join">
     <p>def <span class="ident">join</span>(</p><p>self)</p>
     </div>
     
@@ -2120,8 +2120,8 @@ queue. The count goes down whenever a consumer calls task_done() to
 indicate that the item was retrieved and all work on it is complete.
 When the count of unfinished tasks drops to zero, join() unblocks.</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.InputQueue.join', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.InputQueue.join" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.InputQueue.join', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.asyncio_task.InputQueue.join" class="source">
     <div class="codehilite"><pre><span></span><span class="nd">@coroutine</span>
 <span class="k">def</span> <span class="nf">join</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Block until all items in the queue have been gotten and processed.</span>
@@ -2141,7 +2141,7 @@ When the count of unfinished tasks drops to zero, join() unblocks.</p></div>
   
             
   <div class="item">
-    <div class="name def" id="pypeln.io.InputQueue.put">
+    <div class="name def" id="pypeln.asyncio_task.InputQueue.put">
     <p>def <span class="ident">put</span>(</p><p>self, item)</p>
     </div>
     
@@ -2153,8 +2153,8 @@ When the count of unfinished tasks drops to zero, join() unblocks.</p></div>
 slot is available before adding item.</p>
 <p>This method is a coroutine.</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.InputQueue.put', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.InputQueue.put" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.InputQueue.put', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.asyncio_task.InputQueue.put" class="source">
     <div class="codehilite"><pre><span></span><span class="nd">@coroutine</span>
 <span class="k">def</span> <span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Put an item into the queue.</span>
@@ -2184,7 +2184,7 @@ slot is available before adding item.</p>
   
             
   <div class="item">
-    <div class="name def" id="pypeln.io.InputQueue.put_nowait">
+    <div class="name def" id="pypeln.asyncio_task.InputQueue.put_nowait">
     <p>def <span class="ident">put_nowait</span>(</p><p>self, item)</p>
     </div>
     
@@ -2194,8 +2194,8 @@ slot is available before adding item.</p>
     <div class="desc"><p>Put an item into the queue without blocking.</p>
 <p>If no free slot is immediately available, raise QueueFull.</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.InputQueue.put_nowait', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.InputQueue.put_nowait" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.InputQueue.put_nowait', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.asyncio_task.InputQueue.put_nowait" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">put_nowait</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Put an item into the queue without blocking.</span>
 <span class="sd">    If no free slot is immediately available, raise QueueFull.</span>
@@ -2215,7 +2215,7 @@ slot is available before adding item.</p>
   
             
   <div class="item">
-    <div class="name def" id="pypeln.io.InputQueue.qsize">
+    <div class="name def" id="pypeln.asyncio_task.InputQueue.qsize">
     <p>def <span class="ident">qsize</span>(</p><p>self)</p>
     </div>
     
@@ -2224,8 +2224,8 @@ slot is available before adding item.</p>
   
     <div class="desc"><p>Number of items in the queue.</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.InputQueue.qsize', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.InputQueue.qsize" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.InputQueue.qsize', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.asyncio_task.InputQueue.qsize" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">qsize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Number of items in the queue.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="p">)</span>
@@ -2238,7 +2238,7 @@ slot is available before adding item.</p>
   
             
   <div class="item">
-    <div class="name def" id="pypeln.io.InputQueue.task_done">
+    <div class="name def" id="pypeln.asyncio_task.InputQueue.task_done">
     <p>def <span class="ident">task_done</span>(</p><p>self)</p>
     </div>
     
@@ -2255,8 +2255,8 @@ item that had been put() into the queue).</p>
 <p>Raises ValueError if called more times than there were items placed in
 the queue.</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.InputQueue.task_done', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.InputQueue.task_done" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.InputQueue.task_done', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.asyncio_task.InputQueue.task_done" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">task_done</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Indicate that a formerly enqueued task is complete.</span>
 <span class="sd">    Used by queue consumers. For each get() used to fetch a task,</span>
@@ -2282,7 +2282,7 @@ the queue.</p></div>
   
           <h3>Instance variables</h3>
             <div class="item">
-            <p id="pypeln.io.InputQueue.maxsize" class="name">var <span class="ident">maxsize</span></p>
+            <p id="pypeln.asyncio_task.InputQueue.maxsize" class="name">var <span class="ident">maxsize</span></p>
             
 
             
@@ -2293,7 +2293,7 @@ the queue.</p></div>
 
             </div>
             <div class="item">
-            <p id="pypeln.io.InputQueue.remaining" class="name">var <span class="ident">remaining</span></p>
+            <p id="pypeln.asyncio_task.InputQueue.remaining" class="name">var <span class="ident">remaining</span></p>
             
 
             
@@ -2306,14 +2306,14 @@ the queue.</p></div>
       </div>
       
       <div class="item">
-      <p id="pypeln.io.OutputQueues" class="name">class <span class="ident">OutputQueues</span></p>
+      <p id="pypeln.asyncio_task.OutputQueues" class="name">class <span class="ident">OutputQueues</span></p>
       
   
     <div class="desc"><p>list() -&gt; new empty list
 list(iterable) -&gt; new list initialized from iterable's items</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.OutputQueues', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.OutputQueues" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.OutputQueues', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.asyncio_task.OutputQueues" class="source">
     <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">OutputQueues</span><span class="p">(</span><span class="nb">list</span><span class="p">):</span>
 
     <span class="n">async</span> <span class="k">def</span> <span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
@@ -2338,14 +2338,14 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
       <div class="class">
           <h3>Ancestors (in MRO)</h3>
           <ul class="class_list">
-          <li><a href="#pypeln.io.OutputQueues">OutputQueues</a></li>
+          <li><a href="#pypeln.asyncio_task.OutputQueues">OutputQueues</a></li>
           <li>builtins.list</li>
           <li>builtins.object</li>
           </ul>
           <h3>Static methods</h3>
             
   <div class="item">
-    <div class="name def" id="pypeln.io.OutputQueues.done">
+    <div class="name def" id="pypeln.asyncio_task.OutputQueues.done">
     <p>def <span class="ident">done</span>(</p><p>self)</p>
     </div>
     
@@ -2353,8 +2353,8 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
     
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.OutputQueues.done', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.OutputQueues.done" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.OutputQueues.done', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.asyncio_task.OutputQueues.done" class="source">
     <div class="codehilite"><pre><span></span><span class="n">async</span> <span class="k">def</span> <span class="nf">done</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">queue</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
         <span class="n">await</span> <span class="n">queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">DONE</span><span class="p">)</span>
@@ -2367,7 +2367,7 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
   
             
   <div class="item">
-    <div class="name def" id="pypeln.io.OutputQueues.put">
+    <div class="name def" id="pypeln.asyncio_task.OutputQueues.put">
     <p>def <span class="ident">put</span>(</p><p>self, x)</p>
     </div>
     
@@ -2375,8 +2375,8 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
     
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.OutputQueues.put', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.OutputQueues.put" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.OutputQueues.put', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.asyncio_task.OutputQueues.put" class="source">
     <div class="codehilite"><pre><span></span><span class="n">async</span> <span class="k">def</span> <span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">queue</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
         <span class="n">await</span> <span class="n">queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -2391,12 +2391,12 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
       </div>
       
       <div class="item">
-      <p id="pypeln.io.Stage" class="name">class <span class="ident">Stage</span></p>
+      <p id="pypeln.asyncio_task.Stage" class="name">class <span class="ident">Stage</span></p>
       
   
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.Stage', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.Stage" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.Stage', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.asyncio_task.Stage" class="source">
     <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">Stage</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">BaseStage</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">dependencies</span><span class="p">):</span>
@@ -2432,14 +2432,14 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
       <div class="class">
           <h3>Ancestors (in MRO)</h3>
           <ul class="class_list">
-          <li><a href="#pypeln.io.Stage">Stage</a></li>
+          <li><a href="#pypeln.asyncio_task.Stage">Stage</a></li>
           <li>__pdoc_file_module__.utils.BaseStage</li>
           <li>builtins.object</li>
           </ul>
           <h3>Static methods</h3>
             
   <div class="item">
-    <div class="name def" id="pypeln.io.Stage.__init__">
+    <div class="name def" id="pypeln.asyncio_task.Stage.__init__">
     <p>def <span class="ident">__init__</span>(</p><p>self, worker_constructor, workers, maxsize, target, args, dependencies)</p>
     </div>
     
@@ -2448,8 +2448,8 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
   
     <div class="desc"><p>Initialize self.  See help(type(self)) for accurate signature.</p></div>
   <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.io.Stage.__init__', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln.io.Stage.__init__" class="source">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.Stage.__init__', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.asyncio_task.Stage.__init__" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">dependencies</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">worker_constructor</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span>
@@ -2466,7 +2466,7 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
   
           <h3>Instance variables</h3>
             <div class="item">
-            <p id="pypeln.io.Stage.args" class="name">var <span class="ident">args</span></p>
+            <p id="pypeln.asyncio_task.Stage.args" class="name">var <span class="ident">args</span></p>
             
 
             
@@ -2476,7 +2476,7 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
 
             </div>
             <div class="item">
-            <p id="pypeln.io.Stage.dependencies" class="name">var <span class="ident">dependencies</span></p>
+            <p id="pypeln.asyncio_task.Stage.dependencies" class="name">var <span class="ident">dependencies</span></p>
             
 
             
@@ -2486,7 +2486,7 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
 
             </div>
             <div class="item">
-            <p id="pypeln.io.Stage.maxsize" class="name">var <span class="ident">maxsize</span></p>
+            <p id="pypeln.asyncio_task.Stage.maxsize" class="name">var <span class="ident">maxsize</span></p>
             
 
             
@@ -2496,7 +2496,7 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
 
             </div>
             <div class="item">
-            <p id="pypeln.io.Stage.target" class="name">var <span class="ident">target</span></p>
+            <p id="pypeln.asyncio_task.Stage.target" class="name">var <span class="ident">target</span></p>
             
 
             
@@ -2506,7 +2506,7 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
 
             </div>
             <div class="item">
-            <p id="pypeln.io.Stage.worker_constructor" class="name">var <span class="ident">worker_constructor</span></p>
+            <p id="pypeln.asyncio_task.Stage.worker_constructor" class="name">var <span class="ident">worker_constructor</span></p>
             
 
             
@@ -2516,7 +2516,7 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
 
             </div>
             <div class="item">
-            <p id="pypeln.io.Stage.workers" class="name">var <span class="ident">workers</span></p>
+            <p id="pypeln.asyncio_task.Stage.workers" class="name">var <span class="ident">workers</span></p>
             
 
             

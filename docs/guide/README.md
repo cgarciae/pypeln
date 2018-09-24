@@ -20,10 +20,10 @@ On each stage workers _get_ the data from a **queue** structure from a previous 
 With Pypeline you can create multi-stage data pipelines using familiar functions like `map`, `flat_map`, `filter`, etc. While doing so you will define a computational graph that specifies the operations to be performed at each stage, the amount of resources, and the type of workers you want to use. Pypeline comes with 3 main modules, each uses a different type of worker:
 
 ### Processes
-You can create a pipeline based on [multiprocessing.Process](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process) workers by using the `pr` module:
+You can create a pipeline based on [multiprocessing.Process](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process) workers by using the `process` module:
 
 ```python
-from pypeln import pr
+from pypeln import process as pr
 import time
 from random import random
 
@@ -48,9 +48,9 @@ Here the following is happening:
 * The `maxsize` parameter limits the amount of elements that the input `Queue` of a stage can hold.
 
 ### Threads
-You can create a pipeline based on [threading.Thread](https://docs.python.org/3/library/threading.html#threading.Thread) workers by using the `th` module:
+You can create a pipeline based on [threading.Thread](https://docs.python.org/3/library/threading.html#threading.Thread) workers by using the `thread` module:
 ```python
-from pypeln import th
+from pypeln import thread as th
 import time
 from random import random
 
@@ -72,9 +72,9 @@ data = list(stage) # e.g. [5, 6, 9, 4, 8, 10, 7]
 Here we have the exact same situation as in the previous case except that the worker are Threads.
 
 ### Tasks
-You can create a pipeline based on [asyncio.Task](https://docs.python.org/3.4/library/asyncio-task.html#asyncio.Task) workers by using the `io` module:
+You can create a pipeline based on [asyncio.Task](https://docs.python.org/3.4/library/asyncio-task.html#asyncio.Task) workers by using the `asyncio_task` module:
 ```python
-from pypeln import io
+from pypeln import asyncio_task as aio
 import asyncio
 from random import random
 
@@ -88,8 +88,8 @@ async def slow_gt3(x):
 
 data = range(10) # [0, 1, 2, ..., 9] 
 
-stage = io.map(slow_add1, data, workers = 3, maxsize = 4)
-stage = io.filter(slow_gt3, stage, workers = 2)
+stage = aio.map(slow_add1, data, workers = 3, maxsize = 4)
+stage = aio.filter(slow_gt3, stage, workers = 2)
 
 data = list(stage) # e.g. [5, 6, 9, 4, 8, 10, 7]
 ```

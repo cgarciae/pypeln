@@ -1,9 +1,9 @@
-# client-pypeln-io.py
+# client-pypeln-aio.py
 
 from aiohttp import ClientSession, TCPConnector
 import asyncio
 import sys
-from pypeln import io
+from pypeln import asyncio_task as aio
 
 limit = 1000
 
@@ -15,7 +15,7 @@ async def main(url, total_requests):
     connector = TCPConnector(limit=None)
     async with ClientSession(connector=connector) as session:
         data = range(total_requests)
-        await io.each(lambda i: fetch(url.format(i), session), data, workers = limit, run = False)
+        await aio.each(lambda i: fetch(url.format(i), session), data, workers = limit, run = False)
     
 
 

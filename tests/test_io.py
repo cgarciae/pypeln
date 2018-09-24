@@ -3,7 +3,7 @@ import hypothesis as hp
 from hypothesis import strategies as st
 import cytoolz as cz
 
-from pypeln import io
+from pypeln import asyncio_task as aio
 
 MAX_EXAMPLES = 15
 
@@ -17,7 +17,7 @@ def test_from_to_iterable(nums):
 
     nums_py = nums
 
-    nums_pl = io.from_iterable(nums)
+    nums_pl = aio.from_iterable(nums)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums_py
@@ -30,7 +30,7 @@ def test_from_to_iterable_pipe(nums):
 
     nums_pl = (
         nums
-        | io.from_iterable()
+        | aio.from_iterable()
         | list 
     )
 
@@ -46,7 +46,7 @@ def test_map_id(nums):
 
     nums_py = nums
 
-    nums_pl = io.map(lambda x: x, nums)
+    nums_pl = aio.map(lambda x: x, nums)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums_py
@@ -57,7 +57,7 @@ def test_map_id_pipe(nums):
 
     nums_pl = (
         nums
-        | io.map(lambda x: x)
+        | aio.map(lambda x: x)
         | list
     )
 
@@ -71,7 +71,7 @@ def test_map_square(nums):
     nums_py = map(lambda x: x ** 2, nums)
     nums_py = list(nums_py)
 
-    nums_pl = io.map(lambda x: x ** 2, nums)
+    nums_pl = aio.map(lambda x: x ** 2, nums)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums_py
@@ -84,7 +84,7 @@ def test_map_square_workers(nums):
     nums_py = map(lambda x: x ** 2, nums)
     nums_py = list(nums_py)
 
-    nums_pl = io.map(lambda x: x ** 2, nums, workers=2)
+    nums_pl = aio.map(lambda x: x ** 2, nums, workers=2)
     nums_pl = list(nums_pl)
 
     assert sorted(nums_pl) == sorted(nums_py)
@@ -107,8 +107,8 @@ def test_flat_map_square(nums):
     nums_py = cz.mapcat(_generator, nums_py)
     nums_py = list(nums_py)
 
-    nums_pl = io.map(lambda x: x ** 2, nums)
-    nums_pl = io.flat_map(_generator, nums_pl)
+    nums_pl = aio.map(lambda x: x ** 2, nums)
+    nums_pl = aio.flat_map(_generator, nums_pl)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums_py
@@ -127,8 +127,8 @@ def test_flat_map_square_workers(nums):
     nums_py = cz.mapcat(_generator, nums_py)
     nums_py = list(nums_py)
 
-    nums_pl = io.map(lambda x: x ** 2, nums)
-    nums_pl = io.flat_map(_generator, nums_pl, workers=3)
+    nums_pl = aio.map(lambda x: x ** 2, nums)
+    nums_pl = aio.flat_map(_generator, nums_pl, workers=3)
     nums_pl = list(nums_pl)
 
     assert sorted(nums_pl) == sorted(nums_py)
@@ -151,9 +151,9 @@ def test_flat_map_square_filter_workers(nums):
     nums_py = cz.filter(lambda x: x > 1, nums_py)
     nums_py = list(nums_py)
 
-    nums_pl = io.map(lambda x: x ** 2, nums)
-    nums_pl = io.flat_map(_generator, nums_pl, workers=3)
-    nums_pl = io.filter(lambda x: x > 1, nums_pl)
+    nums_pl = aio.map(lambda x: x ** 2, nums)
+    nums_pl = aio.flat_map(_generator, nums_pl, workers=3)
+    nums_pl = aio.filter(lambda x: x > 1, nums_pl)
     nums_pl = list(nums_pl)
 
     assert sorted(nums_pl) == sorted(nums_py)
@@ -175,9 +175,9 @@ def test_flat_map_square_filter_workers_pipe(nums):
 
     nums_pl = (
         nums
-        | io.map(lambda x: x ** 2)
-        | io.flat_map(_generator, workers=3)
-        | io.filter(lambda x: x > 1)
+        | aio.map(lambda x: x ** 2)
+        | aio.flat_map(_generator, workers=3)
+        | aio.filter(lambda x: x > 1)
         | list
     )
 
@@ -197,10 +197,10 @@ def test_concat_basic(nums):
     nums_py2 = list(map(lambda x: -x, nums_py))
     nums_py = nums_py1 + nums_py2
 
-    nums_pl = io.map(lambda x: x + 1, nums)
-    nums_pl1 = io.map(lambda x: x ** 2, nums_pl)
-    nums_pl2 = io.map(lambda x: -x, nums_pl)
-    nums_pl = io.concat([nums_pl1, nums_pl2])
+    nums_pl = aio.map(lambda x: x + 1, nums)
+    nums_pl1 = aio.map(lambda x: x ** 2, nums_pl)
+    nums_pl2 = aio.map(lambda x: -x, nums_pl)
+    nums_pl = aio.concat([nums_pl1, nums_pl2])
 
     assert sorted(nums_pl) == sorted(nums_py)
 
@@ -213,9 +213,9 @@ def test_concat_multiple(nums):
     nums_py1 = nums_py + nums_py
     nums_py2 = nums_py1 + nums_py
 
-    nums_pl = io.map(lambda x: x + 1, nums)
-    nums_pl1 = io.concat([nums_pl, nums_pl])
-    nums_pl2 = io.concat([nums_pl1, nums_pl])
+    nums_pl = aio.map(lambda x: x + 1, nums)
+    nums_pl1 = aio.concat([nums_pl, nums_pl])
+    nums_pl2 = aio.concat([nums_pl1, nums_pl])
 
     assert sorted(nums_py1) == sorted(list(nums_pl1))
     assert sorted(nums_py2) == sorted(list(nums_pl2))

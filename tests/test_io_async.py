@@ -1,7 +1,7 @@
 import hypothesis as hp
 from hypothesis import strategies as st
 import asyncio
-from pypeln import io
+from pypeln import asyncio_task as aio
 from utils_io import run_async
 from aiohttp import ClientSession
 
@@ -26,7 +26,7 @@ async def _impure_add1(x):
 async def test_await(nums):
     X[0] = 0
 
-    await io.map(_impure_add1, nums)
+    await aio.map(_impure_add1, nums)
 
     assert len(nums) == 0 or X[0] == 1
 
@@ -42,4 +42,4 @@ async def test_iohttp():
 
     async with ClientSession() as session:
         data = range(r)
-        await io.each(lambda i: fetch(url, session), data, workers = 10, run = False)
+        await aio.each(lambda i: fetch(url, session), data, workers = 10, run = False)

@@ -18,10 +18,10 @@ pip install pypeln
 With Pypeline you can easily create multi-stage data pipelines using 3 type of workers:
 
 ### Processes
-You can create a pipeline based on [multiprocessing.Process](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process) workers by using the `pr` module:
+You can create a pipeline based on [multiprocessing.Process](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process) workers by using the `process` module:
 
 ```python
-from pypeln import pr
+from pypeln import process as pr
 import time
 from random import random
 
@@ -43,9 +43,9 @@ data = list(stage) # e.g. [5, 6, 9, 4, 8, 10, 7]
 At each stage the you can specify the numbers of `workers`. The `maxsize` parameter limits the maximum amount of elements that the stage can hold simultaneously.
 
 ### Threads
-You can create a pipeline based on [threading.Thread](https://docs.python.org/3/library/threading.html#threading.Thread) workers by using the `th` module:
+You can create a pipeline based on [threading.Thread](https://docs.python.org/3/library/threading.html#threading.Thread) workers by using the `thread` module:
 ```python
-from pypeln import th
+from pypeln import thread as th
 import time
 from random import random
 
@@ -67,9 +67,9 @@ data = list(stage) # e.g. [5, 6, 9, 4, 8, 10, 7]
 Here we have the exact same situation as in the previous case except that the worker are Threads.
 
 ### Tasks
-You can create a pipeline based on [asyncio.Task](https://docs.python.org/3.4/library/asyncio-task.html#asyncio.Task) workers by using the `io` module:
+You can create a pipeline based on [asyncio.Task](https://docs.python.org/3.4/library/asyncio-task.html#asyncio.Task) workers by using the `asyncio_task` module:
 ```python
-from pypeln import io
+from pypeln import asyncio_task as aio
 import asyncio
 from random import random
 
@@ -83,8 +83,8 @@ async def slow_gt3(x):
 
 data = range(10) # [0, 1, 2, ..., 9] 
 
-stage = io.map(slow_add1, data, workers = 3, maxsize = 4)
-stage = io.filter(slow_gt3, stage, workers = 2)
+stage = aio.map(slow_add1, data, workers = 3, maxsize = 4)
+stage = aio.filter(slow_gt3, stage, workers = 2)
 
 data = list(stage) # e.g. [5, 6, 9, 4, 8, 10, 7]
 ```

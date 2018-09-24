@@ -39,7 +39,7 @@ def _get_namespace():
 # classes
 ####################
 
-class Stage(object):
+class Stage(utils.BaseStage):
 
     def __init__(self, worker_constructor, workers, maxsize, target, args, dependencies):
         self.worker_constructor = worker_constructor
@@ -126,8 +126,8 @@ def _map(f, input_queue, output_queues):
     output_queues.done()
 
 
-
-def map(f, stage, workers = 1, maxsize = 0):
+@utils.maybe_partial(2)
+def map(f, stage = None, workers = 1, maxsize = 0):
 
     stage = _to_stage(stage)
 
@@ -153,8 +153,8 @@ def _flat_map(f, input_queue, output_queues):
     output_queues.done()
 
 
-
-def flat_map(f, stage, workers = 1, maxsize = 0):
+@utils.maybe_partial(2)
+def flat_map(f, stage = None, workers = 1, maxsize = 0):
 
     stage = _to_stage(stage)
 
@@ -181,8 +181,8 @@ def _filter(f, input_queue, output_queues):
     output_queues.done()
 
 
-
-def filter(f, stage, workers = 1, maxsize = 0):
+@utils.maybe_partial(2)
+def filter(f, stage = None, workers = 1, maxsize = 0):
 
     stage = _to_stage(stage)
 
@@ -208,7 +208,8 @@ def _each(f, input_queue, output_queues):
     output_queues.done()
 
 
-def each(f, stage, workers = 1, maxsize = 0, run = True):
+@utils.maybe_partial(2)
+def each(f, stage = None, workers = 1, maxsize = 0, run = True):
 
     stage = _to_stage(stage)
 
@@ -301,7 +302,8 @@ def _from_iterable(iterable, input_queue, output_queues):
     
     output_queues.done()
 
-def from_iterable(iterable, worker_constructor = Thread):
+@utils.maybe_partial(1)
+def from_iterable(iterable = None, worker_constructor = Thread):
 
     return Stage(
         worker_constructor = worker_constructor,
@@ -355,7 +357,8 @@ def _create_worker(f, args, output_queues, input_queue):
 
     return WORKER(target = f, args = args, kwargs = kwargs)
 
-def to_iterable(stage, maxsize = 0):
+@utils.maybe_partial(1)
+def to_iterable(stage = None, maxsize = 0):
 
     input_queue = InputQueue(maxsize, stage.workers)
 

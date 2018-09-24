@@ -6,3 +6,4 @@ RUN pip install cytoolz
 RUN pip install pytest-sugar
 RUN pip install aiohttp
 RUN pip install python_path
+RUN pip install wrapt

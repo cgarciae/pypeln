@@ -2,12 +2,12 @@ import os
 from setuptools import setup, find_packages
 
 install_requires = [
-    
+    "wrapt",
 ]
 
 setup(
     name = "pypeln",
-    version = "0.0.9",
+    version = "0.0.10",
     author = "Cristian Garcia",
     author_email = "cgarcia.e88@gmail.com",
     description = (""),

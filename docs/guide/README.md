@@ -1,22 +1,6 @@
 # Pypeline
 
-_Pypeline is a python library that enables you to easily create concurrent/parallel data pipelines._
-
-* Pypeline was designed to solve simple _medium_ data tasks that require concurrency and parallelism but where using frameworks like Spark or Dask feel exaggerated or unnatural.
-* Pypeline hides away all the boilerplate code required to execute concurrent/parallel tasks and exposes an easy to use, familiar, functional API.
-* Pypeline enables you to build concurrent pipelines using all 3 major concurrency/parallelism mechanisms in Python (multiprocessing, threading, and asyncio) via the exact same API.
-* Pypeline allows you to have control over the memory and cpu resources used at each stage of your pipeline.
-
-## Instalation
-
-To install Pypeline with pip run
-```bash
-pip install pypeln
-```
-If you want the latest development version you can install via
-```bash
-pip install git+https://github.com/cgarciae/pypeln@develop
-```
+_Pypeline is a python library for easily creating concurrent data pipelines._
 
 ## Concept
 

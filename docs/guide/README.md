@@ -13,9 +13,27 @@ To install Pypeline with pip run
 ```bash
 pip install pypeln
 ```
+If you want the latest development version you can install via
+```bash
+pip install git+https://github.com/cgarciae/pypeln@develop
+```
+
+## Concept
+**<<MAYBE MOVE THIS TO THE GUIDE???>>**
+
+When creating a program that performs several non-trivial operations over sequences in an efficient manner it common to end up doing the following:
+
+* Breaking the problem into several concurrent **stages**
+* Creating several **worker** entities at each stage to complete the task in parallel (if possible)
+
+Given this you can end up having architectures such as this one
+
+![diagram](docs/diagram.png)
+
+On each stage workers _get_ the data from a **queue** structure from a previous stage, perform certain operations over it, and _put_ the result into the next queue for another stage to consume. As shown in the diagram, the initial stage consumes the _iterable_ source, and a final iterable sink is created to receive the results. 
 
 ## Basic Usage
-With Pypeline you can create multi-stage data pipelines, it comes with 3 main modules and each uses a different type of worker:
+With Pypeline you can create multi-stage data pipelines using familiar functions like `map`, `flat_map`, `filter`, etc. While doing so you will define a computational graph that specifies the operations to be performed at each stage, the amount of resources, and the type of workers you want to use. Pypeline comes with 3 main modules, each uses a different type of worker:
 
 ### Processes
 You can create a pipeline based on [multiprocessing.Process](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process) workers by using the `pr` module:
@@ -40,7 +58,10 @@ stage = pr.filter(slow_gt3, stage, workers = 2)
 
 data = list(stage) # e.g. [5, 6, 9, 4, 8, 10, 7]
 ```
-At each stage the you can specify the numbers of `workers` and `maxsize` parameter that limits the maximum amount of elements that the stage can hold simultaneously.
+Here the following is happening:
+* A 3 stage pipeline is created (the `data` iterable is implicitly converted into an input stage with 1 worker).
+* A total of 6 Process workers (1 + 3 + 2) are created.
+* The `maxsize` parameter limits the amount of elements that the input `Queue` of a stage can hold.
 
 ### Threads
 You can create a pipeline based on [threading.Thread](https://docs.python.org/3/library/threading.html#threading.Thread) workers by using the `th` module:
@@ -88,12 +109,13 @@ stage = io.filter(slow_gt3, stage, workers = 2)
 
 data = list(stage) # e.g. [5, 6, 9, 4, 8, 10, 7]
 ```
-While conceptually but everything is running in a single thread and Task workers are created dynamically.
+While conceptually similar there are a few differences to the previous 2 cases due to the nature of asyncio:
+* Everything is running in a single thread, as everything in asyncio.
+* Due to the light-weight nature of asyncio Tasks, workers are created dynamically. On each stage the maximum amount of workers running simultaneously is limited by the `workers` parameter, you can remove this bound by setting `workers=0`.
 
 
 ## Benchmarks
-* [Making an Unlimited Number of Requests with Python aiohttp + pypeln](https://medium.com/@cgarciae/making-an-infinite-number-of-requests-with-python-aiohttp-pypeln-3a552b97dc95)
-  * [Code](https://github.com/cgarciae/pypeln/tree/master/benchmarks/100_million_downloads)
+**[COMMING SOON]**
 
 ## Resources
 

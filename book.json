@@ -1,5 +1,6 @@
 {
     "title": "Pypeline",
+    "gitbook": ">= 3.2.2",
     "structure": {
       "Guide": "docs/guide/README.md" 
     } 

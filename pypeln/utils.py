@@ -1,7 +1,22 @@
 import functools
 import traceback
 from collections import namedtuple
-import wrapt
+
+try:
+    from wrapt import decorator as wrapt_decorator
+except ImportError:
+    def wrapt_decorator(f):
+
+        @functools.wraps(f)
+        def wrapper_f(g):
+
+            @functools.wraps(g)
+            def wrapper_g(*args, **kwargs):
+                return f(g, None, args, kwargs)
+
+            return wrapper_g
+
+        return wrapper_f
 
 
 
@@ -58,7 +73,7 @@ def chunks(n, l):
     
 def maybe_partial(n):
 
-    @wrapt.decorator
+    @wrapt_decorator
     def wrapper(wrapped_f, instance, args, kwargs):
 
         if len(args) < n:

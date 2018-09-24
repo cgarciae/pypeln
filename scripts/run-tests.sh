@@ -1,6 +1,6 @@
 bash scripts/clean.sh
 
-# docker-compose build
+docker-compose build
 
 echo "PYTHON 2.7"
 P27_FILES=($(find tests/* | grep -v io | grep -v __pycache__ | grep '\.py'))

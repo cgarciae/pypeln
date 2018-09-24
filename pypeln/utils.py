@@ -1,8 +1,32 @@
 import functools
 import traceback
 from collections import namedtuple
+import wrapt
+
+
 
 TIMEOUT = 0.0001
+
+class Partial(object):
+
+    def __init__(self, f):
+        self.f = f
+
+    def __or__(self, stage):
+        return self.f(stage)
+
+    def __ror__(self, stage):
+        return self.f(stage)
+
+    def __call__(self, stage):
+        return self.f(stage)
+
+class BaseStage(object):
+
+    def __or__(self, f):
+        return f(self)
+
+    
 
 class Namespace(object):
     pass
@@ -18,12 +42,31 @@ class Continue(object): pass
 CONTINUE = Continue()
 def is_continue(x): return isinstance(x, Continue)
 
+class _None(object): pass
+NONE = _None()
+def is_none(x): return isinstance(x, _None)
+
 
 def chunks(n, l):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
         if i + n <= len(l):
             yield l[i:i + n]
+
+
+
+    
+def maybe_partial(n):
+
+    @wrapt.decorator
+    def wrapper(wrapped_f, instance, args, kwargs):
+
+        if len(args) < n:
+            return Partial(lambda s: wrapped_f(*(args + (s,)), **kwargs))
+        else:
+            return wrapped_f(*args, **kwargs)
+
+    return wrapper
 
 
 def print_error(f):

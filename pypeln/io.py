@@ -12,7 +12,7 @@ from functools import reduce
 def WORKER(target, args, kwargs):
     return target(*args, **kwargs)
 
-class Stage(object):
+class Stage(utils.BaseStage):
 
     def __init__(self, worker_constructor, workers, maxsize, target, args, dependencies):
         self.worker_constructor = worker_constructor
@@ -125,7 +125,8 @@ async def _map(f, workers, input_queue, output_queues):
     await _run_tasks(f_task, workers, input_queue, output_queues)
 
 
-def map(f, stage, workers = 1, maxsize = 0):
+@utils.maybe_partial(2)
+def map(f, stage = None, workers = 1, maxsize = 0):
 
     stage = _to_stage(stage)
 
@@ -162,7 +163,8 @@ async def _flat_map(f, workers, input_queue, output_queues):
     await _run_tasks(f_task, workers, input_queue, output_queues)
 
 
-def flat_map(f, stage, workers = 1, maxsize = 0):
+@utils.maybe_partial(2)
+def flat_map(f, stage = None, workers = 1, maxsize = 0):
 
     stage = _to_stage(stage)
 
@@ -194,7 +196,8 @@ async def _filter(f, workers, input_queue, output_queues):
     await _run_tasks(f_task, workers, input_queue, output_queues)
 
 
-def filter(f, stage, workers = 1, maxsize = 0):
+@utils.maybe_partial(2)
+def filter(f, stage = None, workers = 1, maxsize = 0):
 
     stage = _to_stage(stage)
 
@@ -225,7 +228,8 @@ async def _each(f, workers, input_queue, output_queues):
     await _run_tasks(f_task, workers, input_queue, output_queues)
 
 
-def each(f, stage, workers = 1, maxsize = 0, run = True):
+@utils.maybe_partial(2)
+def each(f, stage = None, workers = 1, maxsize = 0, run = True):
 
     stage = _to_stage(stage)
 
@@ -332,7 +336,8 @@ async def _from_iterable(iterable, workers, input_queue, output_queues):
         
     await output_queues.done()
 
-def from_iterable(iterable, worker_constructor = None):
+@utils.maybe_partial(1)
+def from_iterable(iterable = None, worker_constructor = None):
     
     return Stage(
         worker_constructor = WORKER,
@@ -394,8 +399,8 @@ def _to_iterable_fn(loop, task):
     loop.run_until_complete(task)
 
 
-
-def to_iterable(stage: Stage, maxsize = 0):
+@utils.maybe_partial(1)
+def to_iterable(stage: Stage = None, maxsize = 0):
 
     error_namespace = utils.Namespace()
     error_namespace.exception = None

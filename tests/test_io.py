@@ -22,6 +22,20 @@ def test_from_to_iterable(nums):
 
     assert nums_pl == nums_py
 
+@hp.given(nums = st.lists(st.integers()))
+@hp.settings(max_examples=MAX_EXAMPLES)
+def test_from_to_iterable_pipe(nums):
+
+    nums_py = nums
+
+    nums_pl = (
+        nums
+        | io.from_iterable()
+        | list 
+    )
+
+    assert nums_pl == nums_py
+
 ############
 # map
 ############
@@ -37,6 +51,17 @@ def test_map_id(nums):
 
     assert nums_pl == nums_py
 
+@hp.given(nums = st.lists(st.integers()))
+@hp.settings(max_examples=MAX_EXAMPLES)
+def test_map_id_pipe(nums):
+
+    nums_pl = (
+        nums
+        | io.map(lambda x: x)
+        | list
+    )
+
+    assert nums_pl == nums
 
 @hp.given(nums = st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
@@ -59,7 +84,7 @@ def test_map_square_workers(nums):
     nums_py = map(lambda x: x ** 2, nums)
     nums_py = list(nums_py)
 
-    nums_pl = io.map(lambda x: x ** 2, nums, workers = 2)
+    nums_pl = io.map(lambda x: x ** 2, nums, workers=2)
     nums_pl = list(nums_pl)
 
     assert sorted(nums_pl) == sorted(nums_py)
@@ -133,6 +158,30 @@ def test_flat_map_square_filter_workers(nums):
 
     assert sorted(nums_pl) == sorted(nums_py)
 
+
+@hp.given(nums = st.lists(st.integers()))
+@hp.settings(max_examples=MAX_EXAMPLES)
+def test_flat_map_square_filter_workers_pipe(nums):
+
+    def _generator(x):
+        yield x
+        yield x + 1
+        yield x + 2
+    
+    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = cz.mapcat(_generator, nums_py)
+    nums_py = cz.filter(lambda x: x > 1, nums_py)
+    nums_py = list(nums_py)
+
+    nums_pl = (
+        nums
+        | io.map(lambda x: x ** 2)
+        | io.flat_map(_generator, workers=3)
+        | io.filter(lambda x: x > 1)
+        | list
+    )
+
+    assert sorted(nums_pl) == sorted(nums_py)
 
 ############
 # concat

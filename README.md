@@ -1,6 +1,6 @@
 # Pypeline
 
-_Pypeline is a python library that enables you to easily create concurrent/parallel data pipelines._
+_Pypeline is a python library for easily creating concurrent data pipelines._
 
 * Pypeline was designed to solve simple _medium_ data tasks that require concurrency and parallelism but where using frameworks like Spark or Dask feel exaggerated or unnatural.
 * Pypeline exposes an easy to use, familiar, functional API.

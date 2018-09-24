@@ -92,6 +92,18 @@ Conceptually similar but everything is running in a single thread and Task worke
 
 For more information see the [Pypeline Guide](https://cgarciae.gitbook.io/pypeln).
 
+## Pipe Operator
+In the spirit of being a true pipeline library, Pypeline also lets you create your pipelines using the pipe `|` operator:
+
+```python
+data = (
+    range(10)
+    | pr.map(slow_add1, workers = 3, maxsize = 4)
+    | pr.filter(slow_gt3, workers = 2)
+    | list
+)
+```
+
 ## Benchmarks
 * [Making an Unlimited Number of Requests with Python aiohttp + pypeln](https://medium.com/@cgarciae/making-an-infinite-number-of-requests-with-python-aiohttp-pypeln-3a552b97dc95)
   * [Code](https://github.com/cgarciae/pypeln/tree/master/benchmarks/100_million_downloads)

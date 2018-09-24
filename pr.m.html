@@ -1156,7 +1156,7 @@ table {
 <span class="c1"># classes</span>
 <span class="c1">####################</span>
 
-<span class="k">class</span> <span class="nc">Stage</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">Stage</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">BaseStage</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">dependencies</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">worker_constructor</span>
@@ -1243,8 +1243,8 @@ table {
     <span class="n">output_queues</span><span class="o">.</span><span class="n">done</span><span class="p">()</span>
 
 
-
-<span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+<span class="nd">@utils.maybe_partial</span>
+<span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
@@ -1709,7 +1709,7 @@ table {
       
   <div class="item">
     <div class="name def" id="pypeln.pr.map">
-    <p>def <span class="ident">map</span>(</p><p>f, stage, workers=1, maxsize=0)</p>
+    <p>def <span class="ident">map</span>(</p><p>f, stage=None, workers=1, maxsize=0)</p>
     </div>
     
 
@@ -1718,7 +1718,8 @@ table {
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.pr.map', this);">Show source &equiv;</a></p>
   <div id="source-pypeln.pr.map" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="nd">@utils.maybe_partial</span>
+<span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
@@ -2107,7 +2108,7 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.pr.Stage', this);">Show source &equiv;</a></p>
   <div id="source-pypeln.pr.Stage" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">Stage</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">Stage</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">BaseStage</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">dependencies</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">worker_constructor</span>
@@ -2139,6 +2140,7 @@ list(iterable) -&gt; new list initialized from iterable's items</p></div>
           <h3>Ancestors (in MRO)</h3>
           <ul class="class_list">
           <li><a href="#pypeln.pr.Stage">Stage</a></li>
+          <li>__pdoc_file_module__.utils.BaseStage</li>
           <li>builtins.object</li>
           </ul>
           <h3>Static methods</h3>

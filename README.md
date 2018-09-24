@@ -7,7 +7,7 @@ _Pypeline is a simple yet powerful python library for creating concurrent data p
 * Pypeline enables you to build pipelines using Processes, Threads and asyncio.Tasks via the exact same API.
 * Pypeline allows you to have control over the memory and cpu resources used at each stage of your pipeline.
 
-## Instalation
+## Installation
 
 Install Pypeline using pip:
 ```bash

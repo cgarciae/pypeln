@@ -28,7 +28,7 @@ When creating a program that performs several non-trivial operations over sequen
 
 Given this you can end up having architectures such as this one
 
-![diagram](docs/diagram.png)
+![diagram](diagram.png)
 
 On each stage workers _get_ the data from a **queue** structure from a previous stage, perform certain operations over it, and _put_ the result into the next queue for another stage to consume. As shown in the diagram, the initial stage consumes the _iterable_ source, and a final iterable sink is created to receive the results. 
 

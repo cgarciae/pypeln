@@ -19,7 +19,7 @@ pip install git+https://github.com/cgarciae/pypeln@develop
 ```
 
 ## Concept
-**<<MAYBE MOVE THIS TO THE GUIDE???>>**
+
 
 When creating a program that performs several non-trivial operations over sequences in an efficient manner it common to end up doing the following:
 
@@ -114,21 +114,6 @@ While conceptually similar there are a few differences to the previous 2 cases d
 * Due to the light-weight nature of asyncio Tasks, workers are created dynamically. On each stage the maximum amount of workers running simultaneously is limited by the `workers` parameter, you can remove this bound by setting `workers=0`.
 
 
-## Benchmarks
-**[COMMING SOON]**
-
-## Resources
-
-* [Pypeline API Documentation](https://cgarciae.github.io/pypeln/) **[WORK IN PROGRESS]**
-* Pypeline Guide: **[COMMING SOON]**
-
-## Related Stuff
-* [mpipe](https://vmlaker.github.io/mpipe/)
-* [Process Pools](https://docs.python.org/3.4/library/multiprocessing.html?highlight=process#module-multiprocessing.pool)
-* [Making 100 million requests with Python aiohttp](https://www.artificialworlds.net/blog/2017/06/12/making-100-million-requests-with-python-aiohttp/)
-* [Python multiprocessing Queue memory management](https://stackoverflow.com/questions/52286527/python-multiprocessing-queue-memory-management/52286686#52286686)
 
 
-## Contributors
-* [cgarciae](https://github.com/cgarciae)
-* [davidnet](https://github.com/davidnet)
+

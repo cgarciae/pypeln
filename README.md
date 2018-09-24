@@ -3,19 +3,19 @@
 _Pypeline is a python library that enables you to easily create concurrent/parallel data pipelines._
 
 * Pypeline was designed to solve simple _medium_ data tasks that require concurrency and parallelism but where using frameworks like Spark or Dask feel exaggerated or unnatural.
-* Pypeline hides away all the boilerplate code required to execute concurrent/parallel tasks and exposes an easy to use, familiar, functional API.
-* Pypeline enables you to build concurrent pipelines using all 3 major concurrency/parallelism mechanisms in Python (multiprocessing, threading, and asyncio) via the exact same API.
+* Pypeline exposes an easy to use, familiar, functional API.
+* Pypeline enables you to build pipelines using Processes, Threads and asyncio.Tasks via the exact same API.
 * Pypeline allows you to have control over the memory and cpu resources used at each stage of your pipeline.
 
 ## Instalation
 
-To install Pypeline with pip run
+Install Pypeline using pip:
 ```bash
 pip install pypeln
 ```
 
 ## Basic Usage
-With Pypeline you can create multi-stage data pipelines, it comes with 3 main modules and each uses a different type of worker:
+With Pypeline you can create multi-stage data pipelines using with 3 type of workers:
 
 ### Processes
 You can create a pipeline based on [multiprocessing.Process](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process) workers by using the `pr` module:
@@ -40,7 +40,7 @@ stage = pr.filter(slow_gt3, stage, workers = 2)
 
 data = list(stage) # e.g. [5, 6, 9, 4, 8, 10, 7]
 ```
-At each stage the you can specify the numbers of `workers` and `maxsize` parameter that limits the maximum amount of elements that the stage can hold simultaneously.
+At each stage the you can specify the numbers of `workers`. The `maxsize` parameter limits the maximum amount of elements that the stage can hold simultaneously.
 
 ### Threads
 You can create a pipeline based on [threading.Thread](https://docs.python.org/3/library/threading.html#threading.Thread) workers by using the `th` module:
@@ -88,17 +88,18 @@ stage = io.filter(slow_gt3, stage, workers = 2)
 
 data = list(stage) # e.g. [5, 6, 9, 4, 8, 10, 7]
 ```
-While conceptually but everything is running in a single thread and Task workers are created dynamically.
+Conceptually similar but everything is running in a single thread and Task workers are created dynamically.
 
+For more information see the [Pypeline Guide](https://cgarciae.gitbook.io/pypeln).
 
 ## Benchmarks
 * [Making an Unlimited Number of Requests with Python aiohttp + pypeln](https://medium.com/@cgarciae/making-an-infinite-number-of-requests-with-python-aiohttp-pypeln-3a552b97dc95)
   * [Code](https://github.com/cgarciae/pypeln/tree/master/benchmarks/100_million_downloads)
 
 ## Resources
+* [Pypeline Guide](https://cgarciae.gitbook.io/pypeln)
+* [Pypeline API Documentation](https://cgarciae.github.io/pypeln/)
 
-* [Pypeline API Documentation](https://cgarciae.github.io/pypeln/) **[WORK IN PROGRESS]**
-* Pypeline Guide: **[COMMING SOON]**
 
 ## Related Stuff
 * [mpipe](https://vmlaker.github.io/mpipe/)

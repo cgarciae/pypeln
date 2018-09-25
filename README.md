@@ -90,6 +90,19 @@ data = list(stage) # e.g. [5, 6, 9, 4, 8, 10, 7]
 ```
 Conceptually similar but everything is running in a single thread and Task workers are created dynamically.
 
+
+
+## Mixed Pipelines
+You can create pipelines using different worker types such that each type is the best for its given task so you can get the maximum performance out of your code:
+```python
+data = get_iterable()
+data = aio.map(f1, data, workers = 100)
+data = th.flat_map(f2, data, workers = 10)
+data = filter(f3, data)
+data = pr.map(f4, data, workers = 5, maxsize = 200)
+```
+Notice that here we even used a regular python `filter`, since stages are iterables Pypeline integrates smoothly with any python code, just be aware of how each stage behaves.
+
 For more information see the [Pypeline Guide](https://cgarciae.gitbook.io/pypeln).
 
 ## Pipe Operator

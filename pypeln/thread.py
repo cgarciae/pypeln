@@ -39,7 +39,7 @@ def _get_namespace():
 # classes
 ####################
 
-class Stage(utils.BaseStage):
+class _Stage(utils.BaseStage):
 
     def __init__(self, worker_constructor, workers, maxsize, target, args, dependencies):
         self.worker_constructor = worker_constructor
@@ -53,7 +53,7 @@ class Stage(utils.BaseStage):
         return to_iterable(self)
 
     def __repr__(self):
-        return "Stage(worker_constructor = {worker_constructor}, workers = {workers}, maxsize = {maxsize}, target = {target}, args = {args}, dependencies = {dependencies})".format(
+        return "_Stage(worker_constructor = {worker_constructor}, workers = {workers}, maxsize = {maxsize}, target = {target}, args = {args}, dependencies = {dependencies})".format(
             worker_constructor = self.worker_constructor,
             workers = self.workers,
             maxsize = self.maxsize,
@@ -63,7 +63,7 @@ class Stage(utils.BaseStage):
         )
 
 
-class InputQueue(object):
+class _InputQueue(object):
 
     def __init__(self, maxsize, total_done, **kwargs):
         
@@ -102,7 +102,7 @@ class InputQueue(object):
         self.queue.put(x)
 
 
-class OutputQueues(list):
+class _OutputQueues(list):
 
     def put(self, x):
         for queue in self:
@@ -126,12 +126,17 @@ def _map(f, input_queue, output_queues):
     output_queues.done()
 
 
-@utils.maybe_partial(2)
-def map(f, stage = None, workers = 1, maxsize = 0):
+# @utils.maybe_partial(2)
+def map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0):
+    """
+    """
+
+    if utils.is_undefined(stage):
+        return utils.Partial(lambda stage: map(f, stage, workers=workers, maxsize=maxsize))
 
     stage = _to_stage(stage)
 
-    return Stage(
+    return _Stage(
         worker_constructor = WORKER,
         workers = workers,
         maxsize = maxsize,
@@ -153,12 +158,15 @@ def _flat_map(f, input_queue, output_queues):
     output_queues.done()
 
 
-@utils.maybe_partial(2)
-def flat_map(f, stage = None, workers = 1, maxsize = 0):
+# @utils.maybe_partial(2)
+def flat_map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0):
+
+    if utils.is_undefined(stage):
+        return utils.Partial(lambda stage: flat_map(f, stage, workers=workers, maxsize=maxsize))
 
     stage = _to_stage(stage)
 
-    return Stage(
+    return _Stage(
         worker_constructor = WORKER,
         workers = workers,
         maxsize = maxsize,
@@ -181,12 +189,15 @@ def _filter(f, input_queue, output_queues):
     output_queues.done()
 
 
-@utils.maybe_partial(2)
-def filter(f, stage = None, workers = 1, maxsize = 0):
+# @utils.maybe_partial(2)
+def filter(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0):
+
+    if utils.is_undefined(stage):
+        return utils.Partial(lambda stage: filter(f, stage, workers=workers, maxsize=maxsize))
 
     stage = _to_stage(stage)
 
-    return Stage(
+    return _Stage(
         worker_constructor = WORKER,
         workers = workers,
         maxsize = maxsize,
@@ -208,12 +219,15 @@ def _each(f, input_queue, output_queues):
     output_queues.done()
 
 
-@utils.maybe_partial(2)
-def each(f, stage = None, workers = 1, maxsize = 0, run = True):
+# @utils.maybe_partial(2)
+def each(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, run = True):
+
+    if utils.is_undefined(stage):
+        return utils.Partial(lambda stage: each(f, stage, workers=workers, maxsize=maxsize, run=run))
 
     stage = _to_stage(stage)
 
-    stage = Stage(
+    stage = _Stage(
         worker_constructor = WORKER,
         workers = workers,
         maxsize = maxsize,
@@ -245,7 +259,7 @@ def concat(stages, maxsize = 0):
 
     stages = [ _to_stage(s) for s in stages ]
 
-    return Stage(
+    return _Stage(
         worker_constructor = WORKER,
         workers = 1,
         maxsize = maxsize,
@@ -282,7 +296,7 @@ def run(stages, maxsize = 0):
 
 def _to_stage(obj):
 
-    if isinstance(obj, Stage):
+    if isinstance(obj, _Stage):
         return obj
 
     elif hasattr(obj, "__iter__"):
@@ -302,10 +316,13 @@ def _from_iterable(iterable, input_queue, output_queues):
     
     output_queues.done()
 
-@utils.maybe_partial(1)
-def from_iterable(iterable = None, worker_constructor = Thread):
+# @utils.maybe_partial(1)
+def from_iterable(iterable = utils.UNDEFINED, worker_constructor = Thread):
 
-    return Stage(
+    if utils.is_undefined(iterable):
+        return utils.Partial(lambda iterable: from_iterable(iterable, worker_constructor=worker_constructor))
+
+    return _Stage(
         worker_constructor = worker_constructor,
         workers = 1,
         maxsize = None,
@@ -328,13 +345,13 @@ def _build_queues(stage, stage_input_queue, stage_output_queues, visited):
     
     if len(stage.dependencies) > 0:
         total_done = sum([ s.workers for s in stage.dependencies ])
-        input_queue = InputQueue(stage.maxsize, total_done)
+        input_queue = _InputQueue(stage.maxsize, total_done)
         stage_input_queue[stage] = input_queue
 
         for _stage in stage.dependencies:
             
             if _stage not in stage_output_queues:
-                stage_output_queues[_stage] = OutputQueues([input_queue])
+                stage_output_queues[_stage] = _OutputQueues([input_queue])
             else:
                 stage_output_queues[_stage].append(input_queue)
 
@@ -357,10 +374,9 @@ def _create_worker(f, args, output_queues, input_queue):
 
     return WORKER(target = f, args = args, kwargs = kwargs)
 
-@utils.maybe_partial(1)
-def to_iterable(stage = None, maxsize = 0):
+def _to_iterable(stage, maxsize):
 
-    input_queue = InputQueue(maxsize, stage.workers)
+    input_queue = _InputQueue(maxsize, stage.workers)
 
     stage_input_queue, stage_output_queues = _build_queues(
         stage = stage,
@@ -369,7 +385,7 @@ def to_iterable(stage = None, maxsize = 0):
         visited = set(),
     )
 
-    stage_output_queues[stage] = OutputQueues([ input_queue ])
+    stage_output_queues[stage] = _OutputQueues([ input_queue ])
 
     processes = [
         _stage.worker_constructor(
@@ -394,6 +410,14 @@ def to_iterable(stage = None, maxsize = 0):
     
     for p in processes:
         p.join()
+
+def to_iterable(stage = utils.UNDEFINED, maxsize = 0):
+
+    if utils.is_undefined(stage):
+        return utils.Partial(lambda stage: _to_iterable(stage, maxsize))
+    else:
+        return _to_iterable(stage, maxsize)
+    
 
 if __name__ == '__main__':
     import time

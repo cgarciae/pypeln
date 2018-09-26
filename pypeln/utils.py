@@ -53,13 +53,26 @@ def is_done(x): return isinstance(x, Done)
 class Value(namedtuple("Value", "value")): pass
 def is_value(x): return isinstance(x, Value)
 
-class Continue(object): pass
+class Continue(object):
+    def __str__(self):
+        return "Continue"
 CONTINUE = Continue()
 def is_continue(x): return isinstance(x, Continue)
 
-class _None(object): pass
+class _None(object):
+    def __str__(self):
+        return "_None"
 NONE = _None()
 def is_none(x): return isinstance(x, _None)
+
+class Undefined(object):
+    def __str__(self):
+        return "Undefined"
+
+    def __repr__(self):
+        return "Undefined"
+UNDEFINED = Undefined()
+def is_undefined(x): return isinstance(x, Undefined)
 
 
 def chunks(n, l):

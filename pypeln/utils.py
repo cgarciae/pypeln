@@ -47,7 +47,25 @@ class StageStatus(object):
             active_workers = self.active_workers,
         )
 
-    
+class AsyncStageStatus(object):
+
+    def __init__(self):
+        pass
+
+    @property
+    def done(self):
+        return True
+
+    @property
+    def active_workers(self):
+        return 0
+
+
+    def __str__(self):
+        return "StageStatus(done = {done}, active_workers = {active_workers})".format(
+            done = self.done,
+            active_workers = self.active_workers,
+        )
 
 class Namespace(object):
     pass

@@ -7,17 +7,24 @@ import sys
 from . import utils
 from .task_pool import TaskPool
 import time
-from functools import reduce
+import functools
 
-def _WORKER(target, args, kwargs):
+def _WORKER(target, args, kwargs = None):
+    kwargs = kwargs if kwargs is not None else dict()
     return target(*args, **kwargs)
+
+
+def _get_namespace():
+    return utils.Namespace()
 
 class _Stage(utils.BaseStage):
 
-    def __init__(self, worker_constructor, workers, maxsize, target, args, dependencies):
+    def __init__(self, worker_constructor, workers, maxsize, on_start, on_done, target, args, dependencies):
         self.worker_constructor = worker_constructor
         self.workers = workers
         self.maxsize = maxsize
+        self.on_start = on_start
+        self.on_done = on_done
         self.target = target
         self.args = args
         self.dependencies = dependencies
@@ -38,6 +45,10 @@ class _Stage(utils.BaseStage):
             args = self.args,
             dependencies = len(self.dependencies),
         )
+
+class _StageParams(namedtuple("_StageParams",
+    ["workers", "input_queue", "output_queues", "on_start", "on_done"])):
+    pass
 
 class _InputQueue(asyncio.Queue):
 
@@ -96,39 +107,71 @@ class _OutputQueues(list):
         return self.done()
 
 
-async def _run_tasks(f_task, workers, input_queue, output_queues):
+def _with_runtime(f_task):
 
-    async with TaskPool(workers = workers) as tasks:
-        async for x in input_queue:
-            
-            task = f_task(x)
-            await tasks.put(task)
+    async def wrapper(*wrapper_args):
+        params = wrapper_args[-1]
 
-    # wait all tasks to finish
-    await output_queues.done()
+        args = params.on_start() if params.on_start is not None else None
+
+        if hasattr(args, "__await__"):
+            args = await args
+
+        if args is None:
+            args = ()
+        
+        elif not isinstance(args, tuple):
+            args = (args,)
+
+
+        async with TaskPool(workers = params.workers) as tasks:
+
+            if params.input_queue:
+
+                async for x in params.input_queue:
+
+                    task_args = wrapper_args + (x, args)
+                    task = f_task(*task_args)
+                    await tasks.put(task)
+
+            else:
+                task_args = wrapper_args + (args,)
+                task = f_task(*task_args)
+                await tasks.put(task)
+
+
+        await params.output_queues.done()
+
+        if params.on_done is not None:
+
+            stage_status = utils.AsyncStageStatus()
+
+            done_resp = params.on_done(stage_status, *args)
+
+            if hasattr(done_resp, "__await__"):
+                await done_resp
+    
+    return wrapper
 
 ########################
 # map
 ########################
+@_with_runtime
+async def _map(f, params, x, args):
 
-async def _map(f, workers, input_queue, output_queues):
+    y = f(x, *args)
 
-    async def f_task(x):
+    if hasattr(y, "__await__"):
+        y = await y
 
-        y = f(x)
-
-        if hasattr(y, "__await__"):
-            y = await y
-
-        await output_queues.put(y)
-
-    await _run_tasks(f_task, workers, input_queue, output_queues)
+    await params.output_queues.put(y)
 
 
-def map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0):
+
+def map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None):
 
     if utils.is_undefined(stage):
-        return utils.Partial(lambda stage: map(f, stage, workers=workers, maxsize=maxsize))
+        return utils.Partial(lambda stage: map(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
 
     stage = _to_stage(stage)
 
@@ -136,6 +179,8 @@ def map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0):
         worker_constructor = _WORKER,
         workers = workers,
         maxsize = maxsize,
+        on_start = on_start,
+        on_done = on_done,
         target = _map,
         args = (f,),
         dependencies = [stage],
@@ -146,29 +191,24 @@ def map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0):
 ########################
 # flat_map
 ########################
+@_with_runtime
+async def _flat_map(f, params, x, args):
 
-async def _flat_map(f, workers, input_queue, output_queues):
-    
+    ys = f(x, *args)
 
-    async def f_task(x):
-
-        ys = f(x)
-
-        if hasattr(ys, "__aiter__"):
-            async for y in ys:
-                await output_queues.put(y)
-            
-        elif hasattr(ys, "__iter__"):
-            for y in ys:
-                await output_queues.put(y)
-
-    await _run_tasks(f_task, workers, input_queue, output_queues)
+    if hasattr(ys, "__aiter__"):
+        async for y in ys:
+            await params.output_queues.put(y)
+        
+    elif hasattr(ys, "__iter__"):
+        for y in ys:
+            await params.output_queues.put(y)
 
 
-def flat_map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0):
+def flat_map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None):
 
     if utils.is_undefined(stage):
-        return utils.Partial(lambda stage: flat_map(f, stage, workers=workers, maxsize=maxsize))
+        return utils.Partial(lambda stage: flat_map(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
 
     stage = _to_stage(stage)
 
@@ -176,6 +216,8 @@ def flat_map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0):
         worker_constructor = _WORKER,
         workers = workers,
         maxsize = maxsize,
+        on_start = on_start,
+        on_done = on_done,
         target = _flat_map,
         args = (f,),
         dependencies = [stage],
@@ -184,26 +226,22 @@ def flat_map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0):
 ########################
 # filter
 ########################
-
-async def _filter(f, workers, input_queue, output_queues):
+@_with_runtime
+async def _filter(f, params, x, args):
     
-    async def f_task(x):
+    y = f(x)
 
-        y = f(x)
+    if hasattr(y, "__await__"):
+        y = await y
 
-        if hasattr(y, "__await__"):
-            y = await y
-
-        if y:
-            await output_queues.put(x)
-
-    await _run_tasks(f_task, workers, input_queue, output_queues)
+    if y:
+        await params.output_queues.put(x)
 
 
-def filter(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0):
+def filter(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None):
 
     if utils.is_undefined(stage):
-        return utils.Partial(lambda stage: filter(f, stage, workers=workers, maxsize=maxsize))
+        return utils.Partial(lambda stage: filter(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
 
     stage = _to_stage(stage)
 
@@ -211,6 +249,8 @@ def filter(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0):
         worker_constructor = _WORKER,
         workers = workers,
         maxsize = maxsize,
+        on_start = on_start,
+        on_done = on_done,
         target = _filter,
         args = (f,),
         dependencies = [stage],
@@ -221,23 +261,19 @@ def filter(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0):
 # each
 ########################
 
-
-async def _each(f, workers, input_queue, output_queues):
+@_with_runtime
+async def _each(f, params, x, args):
     
-    async def f_task(x):
+    y = f(x)
 
-        y = f(x)
-
-        if hasattr(y, "__await__"):
-            y = await y
-
-    await _run_tasks(f_task, workers, input_queue, output_queues)
+    if hasattr(y, "__await__"):
+        y = await y
 
 
-def each(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, run = True):
+def each(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None, run = False):
 
     if utils.is_undefined(stage):
-        return utils.Partial(lambda stage: each(f, stage, workers=workers, maxsize=maxsize))
+        return utils.Partial(lambda stage: each(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done, run=run))
 
     stage = _to_stage(stage)
 
@@ -245,7 +281,9 @@ def each(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, run = True):
         worker_constructor = _WORKER,
         workers = workers,
         maxsize = maxsize,
-        target = _each,
+        on_start = on_start,
+        on_done = on_done,
+        target = _filter,
         args = (f,),
         dependencies = [stage],
     )
@@ -259,16 +297,11 @@ def each(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, run = True):
 ########################
 # concat
 ########################
-
-async def _concat(workers, input_queue, output_queues):
-
-    async for x in input_queue:
-        await output_queues.put(x)
+@_with_runtime
+async def _concat(params, x, args):
+    await params.output_queues.put(x)
         
-    await output_queues.done()
     
-
-
 def concat(stages, maxsize = 0):
 
     stages = [ _to_stage(s) for s in stages ]
@@ -277,6 +310,8 @@ def concat(stages, maxsize = 0):
         worker_constructor = _WORKER,
         workers = 1,
         maxsize = maxsize,
+        on_start = None,
+        on_done = None,
         target = _concat,
         args = tuple(),
         dependencies = stages,
@@ -301,18 +336,25 @@ def _to_task(stage, maxsize):
 
     stage_output_queues[stage] = _OutputQueues([ input_queue ])
 
-    tasks = [
-        _stage.worker_constructor(
-            target = _stage.target,
-            args = _stage.args,
-            kwargs = dict(
-                workers = _stage.workers,
-                output_queues = stage_output_queues[_stage],
-                input_queue = stage_input_queue.get(_stage, None),
-            ),
+    tasks = []
+
+    for _stage in stage_output_queues:
+        
+        stage_params = _StageParams(
+            workers = _stage.workers,
+            input_queue = stage_input_queue.get(_stage, None),
+            output_queues = stage_output_queues[_stage],
+            on_start = _stage.on_start,
+            on_done = _stage.on_done,
         )
-        for _stage in stage_output_queues
-    ]
+
+        task = _stage.worker_constructor(
+            target = _stage.target,
+            args = _stage.args + (stage_params,),
+        )
+
+        tasks.append(task)
+        
 
     task = asyncio.gather(*tasks)
 
@@ -336,14 +378,12 @@ def _to_stage(obj):
 ########################
 # from_iterable
 ########################
-
-async def _from_iterable(iterable, workers, input_queue, output_queues):
+@_with_runtime
+async def _from_iterable(iterable, params, args):
 
     for x in iterable:
-        await output_queues.put(x)
+        await params.output_queues.put(x)
         
-    await output_queues.done()
-
 def from_iterable(iterable = utils.UNDEFINED, worker_constructor = None):
 
     if utils.is_undefined(iterable):
@@ -353,6 +393,8 @@ def from_iterable(iterable = utils.UNDEFINED, worker_constructor = None):
         worker_constructor = _WORKER,
         workers = 1,
         maxsize = None,
+        on_start = None,
+        on_done = None,
         target = _from_iterable,
         args = (iterable,),
         dependencies = [],
@@ -363,7 +405,6 @@ def from_iterable(iterable = utils.UNDEFINED, worker_constructor = None):
 ########################
 # to_iterable
 ########################
-
 
 def _build_queues(stage, stage_input_queue, stage_output_queues, visited):
 

@@ -1,6 +1,6 @@
 from __future__ import absolute_import, print_function
 
-from functools import reduce
+import functools
 from collections import namedtuple
 from . import utils
 
@@ -16,10 +16,10 @@ from . import utils
 # from collections import namedtuple
 # from . import utils
 
-# MANAGER = Manager()
+# _MANAGER = Manager()
 
 # def _get_namespace():
-#     return MANAGER.Namespace()
+#     return _MANAGER.Namespace()
 
 #############
 # imports th
@@ -41,10 +41,12 @@ def _get_namespace():
 
 class _Stage(utils.BaseStage):
 
-    def __init__(self, worker_constructor, workers, maxsize, target, args, dependencies):
+    def __init__(self, worker_constructor, workers, maxsize, on_start, on_done, target, args, dependencies):
         self.worker_constructor = worker_constructor
         self.workers = workers
         self.maxsize = maxsize
+        self.on_start = on_start
+        self.on_done = on_done
         self.target = target
         self.args = args
         self.dependencies = dependencies
@@ -62,6 +64,9 @@ class _Stage(utils.BaseStage):
             dependencies = len(self.dependencies),
         )
 
+class _StageParams(namedtuple("_StageParams",
+    ["input_queue", "output_queues", "on_start", "on_done", "stage_namespace", "stage_lock"])):
+    pass
 
 class _InputQueue(object):
 
@@ -112,27 +117,60 @@ class _OutputQueues(list):
         for queue in self:
             queue.put(utils.DONE)
 
+
+def _with_runtime(f_task):
+
+    @functools.wraps(f_task)
+    def wrapper(*wrapper_args):
+        params = wrapper_args[-1]
+
+        args = params.on_start() if params.on_start is not None else None
+
+        if args is None:
+            args = ()
+
+        elif not isinstance(args, tuple):
+            args = (args,)
+        
+        if params.input_queue:
+            for x in params.input_queue:
+                task_args = wrapper_args + (x, args)
+                f_task(*task_args)
+        else:
+            task_args = wrapper_args + (args,)
+            f_task(*task_args)
+
+        params.output_queues.done()
+
+        if params.on_done is not None:
+            with params.stage_lock:
+                params.stage_namespace.active_workers -= 1
+
+            stage_status = utils.StageStatus(
+                namespace = params.stage_namespace,
+                lock = params.stage_lock,
+            )
+
+            params.on_done(stage_status, *args)
+    
+    return wrapper
+
 ###########
 # map
 ###########
 
-def _map(f, input_queue, output_queues):
-
-    for x in input_queue:
-        y = f(x)
-        output_queues.put(y)
-
-
-    output_queues.done()
+@_with_runtime
+def _map(f, params, x, args):
+    y = f(x, *args)
+    params.output_queues.put(y)
 
 
-# @utils.maybe_partial(2)
-def map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0):
+def map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None):
     """
     """
 
     if utils.is_undefined(stage):
-        return utils.Partial(lambda stage: map(f, stage, workers=workers, maxsize=maxsize))
+        return utils.Partial(lambda stage: map(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
 
     stage = _to_stage(stage)
 
@@ -140,6 +178,8 @@ def map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0):
         worker_constructor = WORKER,
         workers = workers,
         maxsize = maxsize,
+        on_start = on_start,
+        on_done = on_done,
         target = _map,
         args = (f,),
         dependencies = [stage],
@@ -149,20 +189,18 @@ def map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0):
 # flat_map
 ###########
 
-def _flat_map(f, input_queue, output_queues):
-
-    for x in input_queue:
-        for y in f(x):
-            output_queues.put(y)
-
-    output_queues.done()
+@_with_runtime
+def _flat_map(f, params, x, args):
+    for y in f(x, *args):
+        params.output_queues.put(y)
 
 
-# @utils.maybe_partial(2)
-def flat_map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0):
+def flat_map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None):
+    """
+    """
 
     if utils.is_undefined(stage):
-        return utils.Partial(lambda stage: flat_map(f, stage, workers=workers, maxsize=maxsize))
+        return utils.Partial(lambda stage: flat_map(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
 
     stage = _to_stage(stage)
 
@@ -170,6 +208,8 @@ def flat_map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0):
         worker_constructor = WORKER,
         workers = workers,
         maxsize = maxsize,
+        on_start = on_start,
+        on_done = on_done,
         target = _flat_map,
         args = (f,),
         dependencies = [stage],
@@ -180,27 +220,27 @@ def flat_map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0):
 # filter
 ###########
 
-def _filter(f, input_queue, output_queues):
-
-    for x in input_queue:
-        if f(x):
-            output_queues.put(x)
-
-    output_queues.done()
+@_with_runtime
+def _filter(f, params, x, args):
+    if f(x, *args):
+        params.output_queues.put(x)
 
 
-# @utils.maybe_partial(2)
-def filter(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0):
+def filter(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None):
+    """
+    """
 
     if utils.is_undefined(stage):
-        return utils.Partial(lambda stage: filter(f, stage, workers=workers, maxsize=maxsize))
+        return utils.Partial(lambda stage: filter(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
 
     stage = _to_stage(stage)
-
+    
     return _Stage(
         worker_constructor = WORKER,
         workers = workers,
         maxsize = maxsize,
+        on_start = on_start,
+        on_done = on_done,
         target = _filter,
         args = (f,),
         dependencies = [stage],
@@ -211,19 +251,17 @@ def filter(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0):
 # each
 ###########
 
-def _each(f, input_queue, output_queues):
-
-    for x in input_queue:
-        f(x)
-
-    output_queues.done()
+@_with_runtime
+def _each(f, params, x, args):
+    f(x, *args)
 
 
-# @utils.maybe_partial(2)
-def each(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, run = True):
+def each(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None, run = False):
+    """
+    """
 
     if utils.is_undefined(stage):
-        return utils.Partial(lambda stage: each(f, stage, workers=workers, maxsize=maxsize, run=run))
+        return utils.Partial(lambda stage: each(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
 
     stage = _to_stage(stage)
 
@@ -231,6 +269,8 @@ def each(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, run = True):
         worker_constructor = WORKER,
         workers = workers,
         maxsize = maxsize,
+        on_start = on_start,
+        on_done = on_done,
         target = _each,
         args = (f,),
         dependencies = [stage],
@@ -246,13 +286,10 @@ def each(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, run = True):
 ###########
 # concat
 ###########
+@_with_runtime
+def _concat(params, x, args):
+    params.output_queues.put(x)
 
-def _concat(input_queue, output_queues):
-
-    for x in input_queue:
-        output_queues.put(x)
-
-    output_queues.done()
 
 
 def concat(stages, maxsize = 0):
@@ -263,6 +300,8 @@ def concat(stages, maxsize = 0):
         worker_constructor = WORKER,
         workers = 1,
         maxsize = maxsize,
+        on_start = None,
+        on_done = None,
         target = _concat,
         args = tuple(),
         dependencies = stages,
@@ -308,13 +347,12 @@ def _to_stage(obj):
 ################
 # from_iterable
 ################
-
-def _from_iterable(iterable, input_queue, output_queues):
+@_with_runtime
+def _from_iterable(iterable, params, args):
 
     for x in iterable:
-        output_queues.put(x)
+        params.output_queues.put(x)
     
-    output_queues.done()
 
 # @utils.maybe_partial(1)
 def from_iterable(iterable = utils.UNDEFINED, worker_constructor = Thread):
@@ -326,6 +364,8 @@ def from_iterable(iterable = utils.UNDEFINED, worker_constructor = Thread):
         worker_constructor = worker_constructor,
         workers = 1,
         maxsize = None,
+        on_start = None,
+        on_done = None,
         target = _from_iterable,
         args = (iterable,),
         dependencies = [],
@@ -386,19 +426,34 @@ def _to_iterable(stage, maxsize):
     )
 
     stage_output_queues[stage] = _OutputQueues([ input_queue ])
+    
+    processes = []
+    for _stage in stage_output_queues:
 
-    processes = [
-        _stage.worker_constructor(
-            target = _stage.target,
-            args = _stage.args,
-            kwargs = dict(
+        if _stage.on_done is not None:
+            stage_lock = Lock()
+            stage_namespace = _get_namespace()
+            stage_namespace.active_workers = _stage.workers
+        else:
+            stage_lock = None
+            stage_namespace = None
+
+        for _ in range(_stage.workers):
+
+            stage_params = _StageParams(
                 output_queues = stage_output_queues[_stage],
                 input_queue = stage_input_queue.get(_stage, None),
-            ),
-        )
-        for _stage in stage_output_queues
-        for _ in range(_stage.workers)
-    ]
+                on_start = _stage.on_start,
+                on_done = _stage.on_done,
+                stage_lock = stage_lock,
+                stage_namespace = stage_namespace
+            )
+            process = _stage.worker_constructor(
+                target = _stage.target,
+                args = _stage.args + (stage_params,)
+            )
+
+            processes.append(process)
 
     for p in processes:
         p.daemon = True

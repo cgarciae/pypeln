@@ -1,6 +1,6 @@
 from __future__ import absolute_import, print_function
 
-from functools import reduce
+import functools
 from collections import namedtuple
 from . import utils
 
@@ -117,36 +117,52 @@ class _OutputQueues(list):
         for queue in self:
             queue.put(utils.DONE)
 
+
+def _with_runtime(f_task):
+
+    @functools.wraps(f_task)
+    def wrapper(*wrapper_args):
+        params = wrapper_args[-1]
+
+        args = params.on_start() if params.on_start is not None else None
+
+        if args is None:
+            args = ()
+
+        elif not isinstance(args, tuple):
+            args = (args,)
+        
+        if params.input_queue:
+            for x in params.input_queue:
+                task_args = wrapper_args + (x, args)
+                f_task(*task_args)
+        else:
+            task_args = wrapper_args + (args,)
+            f_task(*task_args)
+
+        params.output_queues.done()
+
+        if params.on_done is not None:
+            with params.stage_lock:
+                params.stage_namespace.active_workers -= 1
+
+            stage_status = utils.StageStatus(
+                namespace = params.stage_namespace,
+                lock = params.stage_lock,
+            )
+
+            params.on_done(stage_status, *args)
+    
+    return wrapper
+
 ###########
 # map
 ###########
 
-def _map(f, params):
-
-    args = params.on_start() if params.on_start is not None else None
-
-    if args is None:
-        args = ()
-
-    elif not isinstance(args, tuple):
-        args = (args,)
-    
-    for x in params.input_queue:
-        y = f(x, *args)
-        params.output_queues.put(y)
-
-    params.output_queues.done()
-
-    if params.on_done is not None:
-        with params.stage_lock:
-            params.stage_namespace.active_workers -= 1
-
-        stage_status = utils.StageStatus(
-            namespace = params.stage_namespace,
-            lock = params.stage_lock,
-        )
-
-        params.on_done(stage_status, *args)
+@_with_runtime
+def _map(f, params, x, args):
+    y = f(x, *args)
+    params.output_queues.put(y)
 
 
 def map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None):
@@ -173,33 +189,10 @@ def map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, o
 # flat_map
 ###########
 
-
-def _flat_map(f, params):
-
-    args = params.on_start() if params.on_start is not None else None
-
-    if args is None:
-        args = ()
-
-    elif not isinstance(args, tuple):
-        args = (args,)
-    
-    for x in params.input_queue:
-        for y in f(x):
-            params.output_queues.put(y)
-
-    params.output_queues.done()
-
-    if params.on_done is not None:
-        with params.stage_lock:
-            params.stage_namespace.active_workers -= 1
-
-        stage_status = utils.StageStatus(
-            namespace = params.stage_namespace,
-            lock = params.stage_lock,
-        )
-
-        params.on_done(stage_status, *args)
+@_with_runtime
+def _flat_map(f, params, x, args):
+    for y in f(x, *args):
+        params.output_queues.put(y)
 
 
 def flat_map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None):
@@ -227,32 +220,10 @@ def flat_map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = No
 # filter
 ###########
 
-def _filter(f, params):
-
-    args = params.on_start() if params.on_start is not None else None
-
-    if args is None:
-        args = ()
-
-    elif not isinstance(args, tuple):
-        args = (args,)
-    
-    for x in params.input_queue:
-        if f(x, *args):
-            params.output_queues.put(x)
-
-    params.output_queues.done()
-
-    if params.on_done is not None:
-        with params.stage_lock:
-            params.stage_namespace.active_workers -= 1
-
-        stage_status = utils.StageStatus(
-            namespace = params.stage_namespace,
-            lock = params.stage_lock,
-        )
-
-        params.on_done(stage_status, *args)
+@_with_runtime
+def _filter(f, params, x, args):
+    if f(x, *args):
+        params.output_queues.put(x)
 
 
 def filter(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None):
@@ -280,31 +251,9 @@ def filter(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None
 # each
 ###########
 
-def _each(f, params):
-
-    args = params.on_start() if params.on_start is not None else None
-
-    if args is None:
-        args = ()
-
-    elif not isinstance(args, tuple):
-        args = (args,)
-    
-    for x in params.input_queue:
-        f(x, *args)
-
-    params.output_queues.done()
-
-    if params.on_done is not None:
-        with params.stage_lock:
-            params.stage_namespace.active_workers -= 1
-
-        stage_status = utils.StageStatus(
-            namespace = params.stage_namespace,
-            lock = params.stage_lock,
-        )
-
-        params.on_done(stage_status, *args)
+@_with_runtime
+def _each(f, params, x, args):
+    f(x, *args)
 
 
 def each(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None, run = False):
@@ -337,13 +286,10 @@ def each(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, 
 ###########
 # concat
 ###########
+@_with_runtime
+def _concat(params, x, args):
+    params.output_queues.put(x)
 
-def _concat(params):
-
-    for x in params.input_queue:
-        params.output_queues.put(x)
-
-    params.output_queues.done()
 
 
 def concat(stages, maxsize = 0):
@@ -401,13 +347,12 @@ def _to_stage(obj):
 ################
 # from_iterable
 ################
-
-def _from_iterable(iterable, params):
+@_with_runtime
+def _from_iterable(iterable, params, args):
 
     for x in iterable:
         params.output_queues.put(x)
     
-    params.output_queues.done()
 
 # @utils.maybe_partial(1)
 def from_iterable(iterable = utils.UNDEFINED, worker_constructor = Thread):

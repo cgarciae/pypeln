@@ -2,23 +2,6 @@ import functools
 import traceback
 from collections import namedtuple
 
-try:
-    from wrapt import decorator as wrapt_decorator
-except ImportError:
-    def wrapt_decorator(f):
-
-        @functools.wraps(f)
-        def wrapper_f(g):
-
-            @functools.wraps(g)
-            def wrapper_g(*args, **kwargs):
-                return f(g, None, args, kwargs)
-
-            return wrapper_g
-
-        return wrapper_f
-
-
 
 TIMEOUT = 0.0001
 
@@ -40,6 +23,29 @@ class BaseStage(object):
 
     def __or__(self, f):
         return f(self)
+
+class StageStatus(object):
+
+    def __init__(self, namespace, lock):
+        self._namespace = namespace
+        self._lock = lock
+
+    @property
+    def done(self):
+        with self._lock:
+            return self._namespace.active_workers == 0
+
+    @property
+    def active_workers(self):
+        with self._lock:
+            return self._namespace.active_workers
+
+
+    def __str__(self):
+        return "StageStatus(done = {done}, active_workers = {active_workers})".format(
+            done = self.done,
+            active_workers = self.active_workers,
+        )
 
     
 
@@ -82,21 +88,6 @@ def chunks(n, l):
             yield l[i:i + n]
 
 
-
-    
-def maybe_partial(n):
-
-    @wrapt_decorator
-    def wrapper(wrapped_f, instance, args, kwargs):
-
-        if len(args) < n:
-            return Partial(lambda s: wrapped_f(*(args + (s,)), **kwargs))
-        else:
-            return wrapped_f(*args, **kwargs)
-
-    return wrapper
-
-
 def print_error(f):
 
     @functools.wraps(f)
@@ -108,3 +99,32 @@ def print_error(f):
             raise e
 
     return _lambda
+
+
+# try:
+#     from wrapt import decorator as wrapt_decorator
+# except ImportError:
+#     def wrapt_decorator(f):
+
+#         @functools.wraps(f)
+#         def wrapper_f(g):
+
+#             @functools.wraps(g)
+#             def wrapper_g(*args, **kwargs):
+#                 return f(g, None, args, kwargs)
+
+#             return wrapper_g
+
+#         return wrapper_f
+
+# def maybe_partial(n):
+
+#     @wrapt_decorator
+#     def wrapper(wrapped_f, instance, args, kwargs):
+
+#         if len(args) < n:
+#             return Partial(lambda s: wrapped_f(*(args + (s,)), **kwargs))
+#         else:
+#             return wrapped_f(*args, **kwargs)
+
+#     return wrapper

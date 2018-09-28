@@ -5,7 +5,7 @@ import asyncio
 import threading
 import sys
 from . import utils
-from .task_pool import TaskPool
+from . import async_utils
 import time
 import functools
 
@@ -123,7 +123,7 @@ async def _run_task(f_task, params):
 
     if params.input_queue:
 
-        async with TaskPool(workers = params.workers) as tasks:
+        async with async_utils.TaskPool(workers = params.workers) as tasks:
 
             async for x in params.input_queue:
 
@@ -386,15 +386,12 @@ def _to_stage(obj):
 
 def _from_iterable(iterable, params):
 
+    if hasattr(iterable, "__iter__"):
+        iterable = async_utils.to_async_iterable(iterable)
+
     async def f_task(args):
-        if hasattr(iterable, "__iter__"):
-            for x in iterable:
-                await params.output_queues.put(x)
-        elif hasattr(iterable, "__aiter__"):
-            async for x in iterable:
-                await params.output_queues.put(x)
-        else:
-            raise ValueError("object not iterable or async iterable")
+        async for x in iterable:
+            await params.output_queues.put(x)
 
     return _run_task(f_task, params)
         

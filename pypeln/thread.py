@@ -118,51 +118,48 @@ class _OutputQueues(list):
             queue.put(utils.DONE)
 
 
-def _with_runtime(f_task):
+def _run_task(f_task, params):
 
-    @functools.wraps(f_task)
-    def wrapper(*wrapper_args):
-        params = wrapper_args[-1]
+    args = params.on_start() if params.on_start is not None else None
 
-        args = params.on_start() if params.on_start is not None else None
+    if args is None:
+        args = ()
 
-        if args is None:
-            args = ()
-
-        elif not isinstance(args, tuple):
-            args = (args,)
-        
-        if params.input_queue:
-            for x in params.input_queue:
-                task_args = wrapper_args + (x, args)
-                f_task(*task_args)
-        else:
-            task_args = wrapper_args + (args,)
-            f_task(*task_args)
-
-        params.output_queues.done()
-
-        if params.on_done is not None:
-            with params.stage_lock:
-                params.stage_namespace.active_workers -= 1
-
-            stage_status = utils.StageStatus(
-                namespace = params.stage_namespace,
-                lock = params.stage_lock,
-            )
-
-            params.on_done(stage_status, *args)
+    elif not isinstance(args, tuple):
+        args = (args,)
     
-    return wrapper
+    if params.input_queue:
+        for x in params.input_queue:
+            f_task(x, args)
+    else:
+        f_task(args)
+
+    params.output_queues.done()
+
+    if params.on_done is not None:
+        with params.stage_lock:
+            params.stage_namespace.active_workers -= 1
+
+        stage_status = utils.StageStatus(
+            namespace = params.stage_namespace,
+            lock = params.stage_lock,
+        )
+
+        params.on_done(stage_status, *args)
+    
 
 ###########
 # map
 ###########
 
-@_with_runtime
-def _map(f, params, x, args):
-    y = f(x, *args)
-    params.output_queues.put(y)
+
+def _map(f, params):
+
+    def f_task(x, args):
+        y = f(x, *args)
+        params.output_queues.put(y)
+
+    _run_task(f_task, params)
 
 
 def map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None):
@@ -189,10 +186,13 @@ def map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, o
 # flat_map
 ###########
 
-@_with_runtime
-def _flat_map(f, params, x, args):
-    for y in f(x, *args):
-        params.output_queues.put(y)
+def _flat_map(f, params):
+
+    def f_task(x, args):
+        for y in f(x, *args):
+            params.output_queues.put(y)
+
+    _run_task(f_task, params)
 
 
 def flat_map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None):
@@ -220,10 +220,13 @@ def flat_map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = No
 # filter
 ###########
 
-@_with_runtime
-def _filter(f, params, x, args):
-    if f(x, *args):
-        params.output_queues.put(x)
+def _filter(f, params):
+
+    def f_task(x, args):
+        if f(x, *args):
+            params.output_queues.put(x)
+
+    _run_task(f_task, params)
 
 
 def filter(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None):
@@ -251,9 +254,12 @@ def filter(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None
 # each
 ###########
 
-@_with_runtime
-def _each(f, params, x, args):
-    f(x, *args)
+def _each(f, params):
+
+    def f_task(x, args):
+        f(x, *args)
+
+    _run_task(f_task, params)
 
 
 def each(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None, run = False):
@@ -286,9 +292,13 @@ def each(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, 
 ###########
 # concat
 ###########
-@_with_runtime
-def _concat(params, x, args):
-    params.output_queues.put(x)
+
+def _concat(params):
+
+    def f_task(x, args):
+        params.output_queues.put(x)
+
+    _run_task(f_task, params)
 
 
 
@@ -347,11 +357,16 @@ def _to_stage(obj):
 ################
 # from_iterable
 ################
-@_with_runtime
-def _from_iterable(iterable, params, args):
 
-    for x in iterable:
-        params.output_queues.put(x)
+def _from_iterable(iterable, params):
+
+    def f_task(args):
+        for x in iterable:
+            params.output_queues.put(x)
+
+    _run_task(f_task, params)
+
+    
     
 
 # @utils.maybe_partial(1)

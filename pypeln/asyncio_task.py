@@ -107,64 +107,59 @@ class _OutputQueues(list):
         return self.done()
 
 
-def _with_runtime(f_task):
+async def _run_task(f_task, params):
 
-    async def wrapper(*wrapper_args):
-        params = wrapper_args[-1]
+    args = params.on_start() if params.on_start is not None else None
 
-        args = params.on_start() if params.on_start is not None else None
+    if hasattr(args, "__await__"):
+        args = await args
 
-        if hasattr(args, "__await__"):
-            args = await args
+    if args is None:
+        args = ()
+    
+    elif not isinstance(args, tuple):
+        args = (args,)
 
-        if args is None:
-            args = ()
-        
-        elif not isinstance(args, tuple):
-            args = (args,)
 
+    if params.input_queue:
 
         async with TaskPool(workers = params.workers) as tasks:
 
-            if params.input_queue:
+            async for x in params.input_queue:
 
-                async for x in params.input_queue:
-
-                    task_args = wrapper_args + (x, args)
-                    task = f_task(*task_args)
-                    await tasks.put(task)
-
-            else:
-                task_args = wrapper_args + (args,)
-                task = f_task(*task_args)
+                task = f_task(x, args)
                 await tasks.put(task)
 
+    else:
+        await f_task(args)
 
-        await params.output_queues.done()
 
-        if params.on_done is not None:
+    await params.output_queues.done()
 
-            stage_status = utils.AsyncStageStatus()
+    if params.on_done is not None:
 
-            done_resp = params.on_done(stage_status, *args)
+        stage_status = utils.AsyncStageStatus()
 
-            if hasattr(done_resp, "__await__"):
-                await done_resp
+        done_resp = params.on_done(stage_status, *args)
+
+        if hasattr(done_resp, "__await__"):
+            await done_resp
     
-    return wrapper
-
 ########################
 # map
 ########################
-@_with_runtime
-async def _map(f, params, x, args):
 
-    y = f(x, *args)
+def _map(f, params):
 
-    if hasattr(y, "__await__"):
-        y = await y
+    async def f_task(x, args):
+        y = f(x, *args)
 
-    await params.output_queues.put(y)
+        if hasattr(y, "__await__"):
+            y = await y
+
+        await params.output_queues.put(y)
+
+    return _run_task(f_task, params)
 
 
 
@@ -191,18 +186,20 @@ def map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, o
 ########################
 # flat_map
 ########################
-@_with_runtime
-async def _flat_map(f, params, x, args):
+def _flat_map(f, params):
 
-    ys = f(x, *args)
+    async def f_task(x, args):
+        ys = f(x, *args)
 
-    if hasattr(ys, "__aiter__"):
-        async for y in ys:
-            await params.output_queues.put(y)
-        
-    elif hasattr(ys, "__iter__"):
-        for y in ys:
-            await params.output_queues.put(y)
+        if hasattr(ys, "__aiter__"):
+            async for y in ys:
+                await params.output_queues.put(y)
+            
+        elif hasattr(ys, "__iter__"):
+            for y in ys:
+                await params.output_queues.put(y)
+
+    return _run_task(f_task, params)
 
 
 def flat_map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None):
@@ -226,16 +223,19 @@ def flat_map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = No
 ########################
 # filter
 ########################
-@_with_runtime
-async def _filter(f, params, x, args):
-    
-    y = f(x)
 
-    if hasattr(y, "__await__"):
-        y = await y
+def _filter(f, params):
 
-    if y:
-        await params.output_queues.put(x)
+    async def f_task(x, args):
+        y = f(x, *args)
+
+        if hasattr(y, "__await__"):
+            y = await y
+
+        if y:
+            await params.output_queues.put(x)
+
+    return _run_task(f_task, params)
 
 
 def filter(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None):
@@ -261,13 +261,15 @@ def filter(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None
 # each
 ########################
 
-@_with_runtime
-async def _each(f, params, x, args):
-    
-    y = f(x)
+def _each(f, params):
 
-    if hasattr(y, "__await__"):
-        y = await y
+    async def f_task(x, args):
+        y = f(x, *args)
+
+        if hasattr(y, "__await__"):
+            y = await y
+
+    return _run_task(f_task, params)
 
 
 def each(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None, run = False):
@@ -297,11 +299,14 @@ def each(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, 
 ########################
 # concat
 ########################
-@_with_runtime
-async def _concat(params, x, args):
-    await params.output_queues.put(x)
-        
-    
+
+def _concat(params):
+
+    async def f_task(x, args):
+        await params.output_queues.put(x)
+
+    return _run_task(f_task, params)
+
 def concat(stages, maxsize = 0):
 
     stages = [ _to_stage(s) for s in stages ]
@@ -378,11 +383,20 @@ def _to_stage(obj):
 ########################
 # from_iterable
 ########################
-@_with_runtime
-async def _from_iterable(iterable, params, args):
 
-    for x in iterable:
-        await params.output_queues.put(x)
+def _from_iterable(iterable, params):
+
+    async def f_task(args):
+        if hasattr(iterable, "__iter__"):
+            for x in iterable:
+                await params.output_queues.put(x)
+        elif hasattr(iterable, "__aiter__"):
+            async for x in iterable:
+                await params.output_queues.put(x)
+        else:
+            raise ValueError("object not iterable or async iterable")
+
+    return _run_task(f_task, params)
         
 def from_iterable(iterable = utils.UNDEFINED, worker_constructor = None):
 

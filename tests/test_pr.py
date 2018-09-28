@@ -79,6 +79,53 @@ def test_map_square(nums):
 
 @hp.given(nums = st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
+def test_map_square_event_start(nums):
+
+    
+    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = list(nums_py)
+
+
+    namespace = pr._get_namespace()
+    namespace.x = 0
+
+    def set_1():
+        namespace.x = 1
+
+    nums_pl = pr.map(lambda x: x ** 2, nums, on_start=set_1)
+    nums_pl = list(nums_pl)
+
+    assert nums_pl == nums_py
+    assert namespace.x == 1
+
+
+@hp.given(nums = st.lists(st.integers()))
+@hp.settings(max_examples=MAX_EXAMPLES)
+def test_map_square_event_end(nums):
+
+    namespace = pr._get_namespace()
+    namespace.x = 0
+    namespace.done = False
+    namespace.active_workers = -1
+
+    def set_1():
+        namespace.x = 1
+
+    def set_2(stage_status):
+        namespace.x = 2
+        namespace.active_workers = stage_status.active_workers
+        namespace.done = stage_status.done
+
+    nums_pl = pr.map(lambda x: x ** 2, nums, workers=3, on_start=set_1, on_done=set_2)
+    nums_pl = list(nums_pl)
+
+    assert namespace.x == 2
+    assert namespace.done == True
+    assert namespace.active_workers == 0
+
+
+@hp.given(nums = st.lists(st.integers()))
+@hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_square_workers(nums):
 
     nums_py = map(lambda x: x ** 2, nums)

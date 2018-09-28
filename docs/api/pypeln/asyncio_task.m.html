@@ -1079,19 +1079,26 @@ table {
 <span class="kn">import</span> <span class="nn">threading</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">utils</span>
-<span class="kn">from</span> <span class="nn">.task_pool</span> <span class="kn">import</span> <span class="n">TaskPool</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">async_utils</span>
 <span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="nb">reduce</span>
+<span class="kn">import</span> <span class="nn">functools</span>
 
-<span class="k">def</span> <span class="nf">_WORKER</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_WORKER</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="n">kwargs</span> <span class="k">if</span> <span class="n">kwargs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="k">else</span> <span class="nb">dict</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">target</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_get_namespace</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Namespace</span><span class="p">()</span>
 
 <span class="k">class</span> <span class="nc">_Stage</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">BaseStage</span><span class="p">):</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">dependencies</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">dependencies</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">worker_constructor</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">on_start</span> <span class="o">=</span> <span class="n">on_start</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">on_done</span> <span class="o">=</span> <span class="n">on_done</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="n">target</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span> <span class="o">=</span> <span class="n">dependencies</span>
@@ -1112,6 +1119,10 @@ table {
             <span class="n">args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span>
             <span class="n">dependencies</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">),</span>
         <span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">_StageParams</span><span class="p">(</span><span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;_StageParams&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="s2">&quot;workers&quot;</span><span class="p">,</span> <span class="s2">&quot;input_queue&quot;</span><span class="p">,</span> <span class="s2">&quot;output_queues&quot;</span><span class="p">,</span> <span class="s2">&quot;on_start&quot;</span><span class="p">,</span> <span class="s2">&quot;on_done&quot;</span><span class="p">])):</span>
+    <span class="k">pass</span>
 
 <span class="k">class</span> <span class="nc">_InputQueue</span><span class="p">(</span><span class="n">asyncio</span><span class="o">.</span><span class="n">Queue</span><span class="p">):</span>
 
@@ -1170,39 +1181,66 @@ table {
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">done</span><span class="p">()</span>
 
 
-<span class="n">async</span> <span class="k">def</span> <span class="nf">_run_tasks</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">):</span>
+<span class="n">async</span> <span class="k">def</span> <span class="nf">_run_task</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
 
-    <span class="n">async</span> <span class="k">with</span> <span class="n">TaskPool</span><span class="p">(</span><span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">)</span> <span class="k">as</span> <span class="n">tasks</span><span class="p">:</span>
-        <span class="n">async</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">input_queue</span><span class="p">:</span>
-            
-            <span class="n">task</span> <span class="o">=</span> <span class="n">f_task</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-            <span class="n">await</span> <span class="n">tasks</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">on_start</span><span class="p">()</span> <span class="k">if</span> <span class="n">params</span><span class="o">.</span><span class="n">on_start</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="k">else</span> <span class="bp">None</span>
 
-    <span class="c1"># wait all tasks to finish</span>
-    <span class="n">await</span> <span class="n">output_queues</span><span class="o">.</span><span class="n">done</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s2">&quot;__await__&quot;</span><span class="p">):</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="n">await</span> <span class="n">args</span>
 
+    <span class="k">if</span> <span class="n">args</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">()</span>
+    
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">args</span><span class="p">,)</span>
+
+
+    <span class="k">if</span> <span class="n">params</span><span class="o">.</span><span class="n">input_queue</span><span class="p">:</span>
+
+        <span class="n">async</span> <span class="k">with</span> <span class="n">async_utils</span><span class="o">.</span><span class="n">TaskPool</span><span class="p">(</span><span class="n">workers</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">workers</span><span class="p">)</span> <span class="k">as</span> <span class="n">tasks</span><span class="p">:</span>
+
+            <span class="n">async</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">input_queue</span><span class="p">:</span>
+
+                <span class="n">task</span> <span class="o">=</span> <span class="n">f_task</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+                <span class="n">await</span> <span class="n">tasks</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">await</span> <span class="n">f_task</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+
+
+    <span class="n">await</span> <span class="n">params</span><span class="o">.</span><span class="n">output_queues</span><span class="o">.</span><span class="n">done</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">params</span><span class="o">.</span><span class="n">on_done</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+
+        <span class="n">stage_status</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">AsyncStageStatus</span><span class="p">()</span>
+
+        <span class="n">done_resp</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">on_done</span><span class="p">(</span><span class="n">stage_status</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">done_resp</span><span class="p">,</span> <span class="s2">&quot;__await__&quot;</span><span class="p">):</span>
+            <span class="n">await</span> <span class="n">done_resp</span>
+    
 <span class="c1">########################</span>
 <span class="c1"># map</span>
 <span class="c1">########################</span>
 
-<span class="n">async</span> <span class="k">def</span> <span class="nf">_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
 
-    <span class="n">async</span> <span class="k">def</span> <span class="nf">f_task</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-
-        <span class="n">y</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">async</span> <span class="k">def</span> <span class="nf">f_task</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="s2">&quot;__await__&quot;</span><span class="p">):</span>
             <span class="n">y</span> <span class="o">=</span> <span class="n">await</span> <span class="n">y</span>
 
-        <span class="n">await</span> <span class="n">output_queues</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">await</span> <span class="n">params</span><span class="o">.</span><span class="n">output_queues</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
 
-    <span class="n">await</span> <span class="n">_run_tasks</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_run_task</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+
+<span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">on_done</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
@@ -1210,6 +1248,8 @@ table {
         <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">_WORKER</span><span class="p">,</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
+        <span class="n">on_start</span> <span class="o">=</span> <span class="n">on_start</span><span class="p">,</span>
+        <span class="n">on_done</span> <span class="o">=</span> <span class="n">on_done</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_map</span><span class="p">,</span>
         <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,),</span>
         <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stage</span><span class="p">],</span>
@@ -1220,29 +1260,26 @@ table {
 <span class="c1">########################</span>
 <span class="c1"># flat_map</span>
 <span class="c1">########################</span>
+<span class="k">def</span> <span class="nf">_flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
 
-<span class="n">async</span> <span class="k">def</span> <span class="nf">_flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">):</span>
-    
-
-    <span class="n">async</span> <span class="k">def</span> <span class="nf">f_task</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-
-        <span class="n">ys</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">async</span> <span class="k">def</span> <span class="nf">f_task</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="n">ys</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ys</span><span class="p">,</span> <span class="s2">&quot;__aiter__&quot;</span><span class="p">):</span>
             <span class="n">async</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">ys</span><span class="p">:</span>
-                <span class="n">await</span> <span class="n">output_queues</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+                <span class="n">await</span> <span class="n">params</span><span class="o">.</span><span class="n">output_queues</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
             
         <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ys</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">ys</span><span class="p">:</span>
-                <span class="n">await</span> <span class="n">output_queues</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+                <span class="n">await</span> <span class="n">params</span><span class="o">.</span><span class="n">output_queues</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
 
-    <span class="n">await</span> <span class="n">_run_tasks</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_run_task</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">on_done</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
@@ -1250,6 +1287,8 @@ table {
         <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">_WORKER</span><span class="p">,</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
+        <span class="n">on_start</span> <span class="o">=</span> <span class="n">on_start</span><span class="p">,</span>
+        <span class="n">on_done</span> <span class="o">=</span> <span class="n">on_done</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_flat_map</span><span class="p">,</span>
         <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,),</span>
         <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stage</span><span class="p">],</span>
@@ -1259,25 +1298,24 @@ table {
 <span class="c1"># filter</span>
 <span class="c1">########################</span>
 
-<span class="n">async</span> <span class="k">def</span> <span class="nf">_filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">):</span>
-    
-    <span class="n">async</span> <span class="k">def</span> <span class="nf">f_task</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
 
-        <span class="n">y</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">async</span> <span class="k">def</span> <span class="nf">f_task</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="s2">&quot;__await__&quot;</span><span class="p">):</span>
             <span class="n">y</span> <span class="o">=</span> <span class="n">await</span> <span class="n">y</span>
 
         <span class="k">if</span> <span class="n">y</span><span class="p">:</span>
-            <span class="n">await</span> <span class="n">output_queues</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">await</span> <span class="n">params</span><span class="o">.</span><span class="n">output_queues</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
-    <span class="n">await</span> <span class="n">_run_tasks</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_run_task</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">on_done</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
@@ -1285,6 +1323,8 @@ table {
         <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">_WORKER</span><span class="p">,</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
+        <span class="n">on_start</span> <span class="o">=</span> <span class="n">on_start</span><span class="p">,</span>
+        <span class="n">on_done</span> <span class="o">=</span> <span class="n">on_done</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_filter</span><span class="p">,</span>
         <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,),</span>
         <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stage</span><span class="p">],</span>
@@ -1295,23 +1335,21 @@ table {
 <span class="c1"># each</span>
 <span class="c1">########################</span>
 
+<span class="k">def</span> <span class="nf">_each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
 
-<span class="n">async</span> <span class="k">def</span> <span class="nf">_each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">):</span>
-    
-    <span class="n">async</span> <span class="k">def</span> <span class="nf">f_task</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-
-        <span class="n">y</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">async</span> <span class="k">def</span> <span class="nf">f_task</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="s2">&quot;__await__&quot;</span><span class="p">):</span>
             <span class="n">y</span> <span class="o">=</span> <span class="n">await</span> <span class="n">y</span>
 
-    <span class="n">await</span> <span class="n">_run_tasks</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_run_task</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">run</span> <span class="o">=</span> <span class="bp">True</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">on_done</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">run</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="n">run</span><span class="p">))</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
@@ -1319,7 +1357,9 @@ table {
         <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">_WORKER</span><span class="p">,</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
-        <span class="n">target</span> <span class="o">=</span> <span class="n">_each</span><span class="p">,</span>
+        <span class="n">on_start</span> <span class="o">=</span> <span class="n">on_start</span><span class="p">,</span>
+        <span class="n">on_done</span> <span class="o">=</span> <span class="n">on_done</span><span class="p">,</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">_filter</span><span class="p">,</span>
         <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,),</span>
         <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stage</span><span class="p">],</span>
     <span class="p">)</span>
@@ -1334,14 +1374,12 @@ table {
 <span class="c1"># concat</span>
 <span class="c1">########################</span>
 
-<span class="n">async</span> <span class="k">def</span> <span class="nf">_concat</span><span class="p">(</span><span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_concat</span><span class="p">(</span><span class="n">params</span><span class="p">):</span>
 
-    <span class="n">async</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">input_queue</span><span class="p">:</span>
-        <span class="n">await</span> <span class="n">output_queues</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        
-    <span class="n">await</span> <span class="n">output_queues</span><span class="o">.</span><span class="n">done</span><span class="p">()</span>
-    
+    <span class="n">async</span> <span class="k">def</span> <span class="nf">f_task</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="n">await</span> <span class="n">params</span><span class="o">.</span><span class="n">output_queues</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
+    <span class="k">return</span> <span class="n">_run_task</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
 
 <span class="k">def</span> <span class="nf">concat</span><span class="p">(</span><span class="n">stages</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
@@ -1351,6 +1389,8 @@ table {
         <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">_WORKER</span><span class="p">,</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
+        <span class="n">on_start</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+        <span class="n">on_done</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_concat</span><span class="p">,</span>
         <span class="n">args</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(),</span>
         <span class="n">dependencies</span> <span class="o">=</span> <span class="n">stages</span><span class="p">,</span>
@@ -1375,18 +1415,25 @@ table {
 
     <span class="n">stage_output_queues</span><span class="p">[</span><span class="n">stage</span><span class="p">]</span> <span class="o">=</span> <span class="n">_OutputQueues</span><span class="p">([</span> <span class="n">input_queue</span> <span class="p">])</span>
 
-    <span class="n">tasks</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">_stage</span><span class="o">.</span><span class="n">worker_constructor</span><span class="p">(</span>
-            <span class="n">target</span> <span class="o">=</span> <span class="n">_stage</span><span class="o">.</span><span class="n">target</span><span class="p">,</span>
-            <span class="n">args</span> <span class="o">=</span> <span class="n">_stage</span><span class="o">.</span><span class="n">args</span><span class="p">,</span>
-            <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
-                <span class="n">workers</span> <span class="o">=</span> <span class="n">_stage</span><span class="o">.</span><span class="n">workers</span><span class="p">,</span>
-                <span class="n">output_queues</span> <span class="o">=</span> <span class="n">stage_output_queues</span><span class="p">[</span><span class="n">_stage</span><span class="p">],</span>
-                <span class="n">input_queue</span> <span class="o">=</span> <span class="n">stage_input_queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_stage</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
-            <span class="p">),</span>
+    <span class="n">tasks</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">_stage</span> <span class="ow">in</span> <span class="n">stage_output_queues</span><span class="p">:</span>
+        
+        <span class="n">stage_params</span> <span class="o">=</span> <span class="n">_StageParams</span><span class="p">(</span>
+            <span class="n">workers</span> <span class="o">=</span> <span class="n">_stage</span><span class="o">.</span><span class="n">workers</span><span class="p">,</span>
+            <span class="n">input_queue</span> <span class="o">=</span> <span class="n">stage_input_queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_stage</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+            <span class="n">output_queues</span> <span class="o">=</span> <span class="n">stage_output_queues</span><span class="p">[</span><span class="n">_stage</span><span class="p">],</span>
+            <span class="n">on_start</span> <span class="o">=</span> <span class="n">_stage</span><span class="o">.</span><span class="n">on_start</span><span class="p">,</span>
+            <span class="n">on_done</span> <span class="o">=</span> <span class="n">_stage</span><span class="o">.</span><span class="n">on_done</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="k">for</span> <span class="n">_stage</span> <span class="ow">in</span> <span class="n">stage_output_queues</span>
-    <span class="p">]</span>
+
+        <span class="n">task</span> <span class="o">=</span> <span class="n">_stage</span><span class="o">.</span><span class="n">worker_constructor</span><span class="p">(</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="n">_stage</span><span class="o">.</span><span class="n">target</span><span class="p">,</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="n">_stage</span><span class="o">.</span><span class="n">args</span> <span class="o">+</span> <span class="p">(</span><span class="n">stage_params</span><span class="p">,),</span>
+        <span class="p">)</span>
+
+        <span class="n">tasks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+        
 
     <span class="n">task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="n">tasks</span><span class="p">)</span>
 
@@ -1411,22 +1458,28 @@ table {
 <span class="c1"># from_iterable</span>
 <span class="c1">########################</span>
 
-<span class="n">async</span> <span class="k">def</span> <span class="nf">_from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">workers</span><span class="p">,</span> <span class="n">input_queue</span><span class="p">,</span> <span class="n">output_queues</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
 
-    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">:</span>
-        <span class="n">await</span> <span class="n">output_queues</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">):</span>
+        <span class="n">iterable</span> <span class="o">=</span> <span class="n">async_utils</span><span class="o">.</span><span class="n">to_async_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">)</span>
+
+    <span class="n">async</span> <span class="k">def</span> <span class="nf">f_task</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+        <span class="n">async</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">:</span>
+            <span class="n">await</span> <span class="n">params</span><span class="o">.</span><span class="n">output_queues</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_run_task</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
         
-    <span class="n">await</span> <span class="n">output_queues</span><span class="o">.</span><span class="n">done</span><span class="p">()</span>
-
 <span class="k">def</span> <span class="nf">from_iterable</span><span class="p">(</span><span class="n">iterable</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">worker_constructor</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
 
-    <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="o">=</span><span class="n">worker_constructor</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">iterable</span><span class="p">:</span> <span class="n">from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="o">=</span><span class="n">worker_constructor</span><span class="p">))</span>
     
     <span class="k">return</span> <span class="n">_Stage</span><span class="p">(</span>
         <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">_WORKER</span><span class="p">,</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+        <span class="n">on_start</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+        <span class="n">on_done</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_from_iterable</span><span class="p">,</span>
         <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">iterable</span><span class="p">,),</span>
         <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[],</span>
@@ -1437,7 +1490,6 @@ table {
 <span class="c1">########################</span>
 <span class="c1"># to_iterable</span>
 <span class="c1">########################</span>
-
 
 <span class="k">def</span> <span class="nf">_build_queues</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">stage_input_queue</span><span class="p">,</span> <span class="n">stage_output_queues</span><span class="p">,</span> <span class="n">visited</span><span class="p">):</span>
 
@@ -1588,6 +1640,8 @@ table {
         <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">_WORKER</span><span class="p">,</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
+        <span class="n">on_start</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+        <span class="n">on_done</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_concat</span><span class="p">,</span>
         <span class="n">args</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(),</span>
         <span class="n">dependencies</span> <span class="o">=</span> <span class="n">stages</span><span class="p">,</span>
@@ -1602,7 +1656,7 @@ table {
       
   <div class="item">
     <div class="name def" id="pypeln.asyncio_task.each">
-    <p>def <span class="ident">each</span>(</p><p>f, stage=Undefined, workers=1, maxsize=0, run=True)</p>
+    <p>def <span class="ident">each</span>(</p><p>f, stage=Undefined, workers=1, maxsize=0, on_start=None, on_done=None, run=False)</p>
     </div>
     
 
@@ -1611,10 +1665,10 @@ table {
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.each', this);">Show source &equiv;</a></p>
   <div id="source-pypeln.asyncio_task.each" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">run</span> <span class="o">=</span> <span class="bp">True</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">on_done</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">run</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="n">run</span><span class="p">))</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
@@ -1622,7 +1676,9 @@ table {
         <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">_WORKER</span><span class="p">,</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
-        <span class="n">target</span> <span class="o">=</span> <span class="n">_each</span><span class="p">,</span>
+        <span class="n">on_start</span> <span class="o">=</span> <span class="n">on_start</span><span class="p">,</span>
+        <span class="n">on_done</span> <span class="o">=</span> <span class="n">on_done</span><span class="p">,</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">_filter</span><span class="p">,</span>
         <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,),</span>
         <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stage</span><span class="p">],</span>
     <span class="p">)</span>
@@ -1642,7 +1698,7 @@ table {
       
   <div class="item">
     <div class="name def" id="pypeln.asyncio_task.filter">
-    <p>def <span class="ident">filter</span>(</p><p>f, stage=Undefined, workers=1, maxsize=0)</p>
+    <p>def <span class="ident">filter</span>(</p><p>f, stage=Undefined, workers=1, maxsize=0, on_start=None, on_done=None)</p>
     </div>
     
 
@@ -1651,10 +1707,10 @@ table {
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.filter', this);">Show source &equiv;</a></p>
   <div id="source-pypeln.asyncio_task.filter" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">on_done</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
@@ -1662,6 +1718,8 @@ table {
         <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">_WORKER</span><span class="p">,</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
+        <span class="n">on_start</span> <span class="o">=</span> <span class="n">on_start</span><span class="p">,</span>
+        <span class="n">on_done</span> <span class="o">=</span> <span class="n">on_done</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_filter</span><span class="p">,</span>
         <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,),</span>
         <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stage</span><span class="p">],</span>
@@ -1676,7 +1734,7 @@ table {
       
   <div class="item">
     <div class="name def" id="pypeln.asyncio_task.flat_map">
-    <p>def <span class="ident">flat_map</span>(</p><p>f, stage=Undefined, workers=1, maxsize=0)</p>
+    <p>def <span class="ident">flat_map</span>(</p><p>f, stage=Undefined, workers=1, maxsize=0, on_start=None, on_done=None)</p>
     </div>
     
 
@@ -1685,10 +1743,10 @@ table {
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.flat_map', this);">Show source &equiv;</a></p>
   <div id="source-pypeln.asyncio_task.flat_map" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">on_done</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
@@ -1696,6 +1754,8 @@ table {
         <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">_WORKER</span><span class="p">,</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
+        <span class="n">on_start</span> <span class="o">=</span> <span class="n">on_start</span><span class="p">,</span>
+        <span class="n">on_done</span> <span class="o">=</span> <span class="n">on_done</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_flat_map</span><span class="p">,</span>
         <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,),</span>
         <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stage</span><span class="p">],</span>
@@ -1721,13 +1781,15 @@ table {
   <div id="source-pypeln.asyncio_task.from_iterable" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">from_iterable</span><span class="p">(</span><span class="n">iterable</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">worker_constructor</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
 
-    <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="o">=</span><span class="n">worker_constructor</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">iterable</span><span class="p">:</span> <span class="n">from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="o">=</span><span class="n">worker_constructor</span><span class="p">))</span>
     
     <span class="k">return</span> <span class="n">_Stage</span><span class="p">(</span>
         <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">_WORKER</span><span class="p">,</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+        <span class="n">on_start</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+        <span class="n">on_done</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_from_iterable</span><span class="p">,</span>
         <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">iterable</span><span class="p">,),</span>
         <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[],</span>
@@ -1742,7 +1804,7 @@ table {
       
   <div class="item">
     <div class="name def" id="pypeln.asyncio_task.map">
-    <p>def <span class="ident">map</span>(</p><p>f, stage=Undefined, workers=1, maxsize=0)</p>
+    <p>def <span class="ident">map</span>(</p><p>f, stage=Undefined, workers=1, maxsize=0, on_start=None, on_done=None)</p>
     </div>
     
 
@@ -1751,10 +1813,10 @@ table {
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.asyncio_task.map', this);">Show source &equiv;</a></p>
   <div id="source-pypeln.asyncio_task.map" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">on_done</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
@@ -1762,6 +1824,8 @@ table {
         <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">_WORKER</span><span class="p">,</span>
         <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span><span class="p">,</span>
         <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">,</span>
+        <span class="n">on_start</span> <span class="o">=</span> <span class="n">on_start</span><span class="p">,</span>
+        <span class="n">on_done</span> <span class="o">=</span> <span class="n">on_done</span><span class="p">,</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">_map</span><span class="p">,</span>
         <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,),</span>
         <span class="n">dependencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">stage</span><span class="p">],</span>

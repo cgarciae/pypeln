@@ -384,10 +384,10 @@ def _to_stage(obj):
 # from_iterable
 ########################
 
-def _from_iterable(iterable, params):
+def _from_iterable(iterable, maxsize, params):
 
     if hasattr(iterable, "__iter__"):
-        iterable = async_utils.to_async_iterable(iterable)
+        iterable = async_utils.to_async_iterable(iterable, maxsize=maxsize)
 
     async def f_task(args):
         async for x in iterable:
@@ -395,10 +395,10 @@ def _from_iterable(iterable, params):
 
     return _run_task(f_task, params)
         
-def from_iterable(iterable = utils.UNDEFINED, worker_constructor = None):
+def from_iterable(iterable = utils.UNDEFINED, maxsize = 0, worker_constructor = None):
 
     if utils.is_undefined(iterable):
-        return utils.Partial(lambda iterable: from_iterable(iterable, worker_constructor=worker_constructor))
+        return utils.Partial(lambda iterable: from_iterable(iterable, maxsize=maxsize, worker_constructor=worker_constructor))
     
     return _Stage(
         worker_constructor = _WORKER,
@@ -407,7 +407,7 @@ def from_iterable(iterable = utils.UNDEFINED, worker_constructor = None):
         on_start = None,
         on_done = None,
         target = _from_iterable,
-        args = (iterable,),
+        args = (iterable, maxsize),
         dependencies = [],
     )
 

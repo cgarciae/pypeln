@@ -369,11 +369,10 @@ def _from_iterable(iterable, params):
     
     
 
-# @utils.maybe_partial(1)
-def from_iterable(iterable = utils.UNDEFINED, worker_constructor = Thread):
+def from_iterable(iterable = utils.UNDEFINED, maxsize = None, worker_constructor = Thread):
 
     if utils.is_undefined(iterable):
-        return utils.Partial(lambda iterable: from_iterable(iterable, worker_constructor=worker_constructor))
+        return utils.Partial(lambda iterable: from_iterable(iterable, maxsize=maxsize, worker_constructor=worker_constructor))
 
     return _Stage(
         worker_constructor = worker_constructor,

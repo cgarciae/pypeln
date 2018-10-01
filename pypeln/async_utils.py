@@ -37,6 +37,10 @@ class TaskPool(object):
         return self.join()
 
 
+############################
+# to_async_iterable
+############################
+
 
 def _consume_iterable(loop, iterable, queue):
 
@@ -55,29 +59,49 @@ def _consume_iterable(loop, iterable, queue):
         else:
             time.sleep(utils.TIMEOUT)
 
+async def _trivial_async_iterable(iterable):
+
+    for i, x in enumerate(iterable):
+        yield x
+
+        if i % 1000 == 0:
+            await asyncio.sleep(0)
+
+async def _async_iterable(iterable, maxsize):
+
+    queue = asyncio.Queue(maxsize=maxsize)
+
+    loop = asyncio.get_event_loop()
+    task = loop.run_in_executor(None, lambda: _consume_iterable(loop, iterable, queue))
+
+
+    while True:
+        x = await queue.get()
+
+        if utils.is_done(x):
+            break
+        
+        else:
+            yield x
+
+    await task
+
 def to_async_iterable(iterable, maxsize = 0):
 
-    async def async_iterable():
-        queue = asyncio.Queue(maxsize=maxsize)
+    if hasattr(iterable, "__aiter__"):
+        return iterable
+    elif not hasattr(iterable, "__iter__"):
+        raise ValueError("Object {iterable} most be either iterable or async iterable.".format(iterable=iterable))
 
-        loop = asyncio.get_event_loop()
-        task = loop.run_in_executor(None, lambda: _consume_iterable(loop, iterable, queue))
+    if type(iterable) in (list, dict, tuple, set):
+        return _trivial_async_iterable(iterable)
 
+    else:
+        return _async_iterable(iterable, maxsize)
 
-        while True:
-            x = await queue.get()
-
-            if utils.is_done(x):
-                break
-            
-            else:
-                yield x
-
-        await task
-
-
-    return async_iterable()
-
+############################
+# to_sync_iterable
+############################
 
 def _run_coroutine(loop, async_iterable, queue):
 

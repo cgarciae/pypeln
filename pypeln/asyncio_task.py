@@ -186,18 +186,17 @@ def map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, o
 ########################
 # flat_map
 ########################
-def _flat_map(f, params):
+def _flat_map(f, maxsize, params):
 
     async def f_task(x, args):
         ys = f(x, *args)
 
-        if hasattr(ys, "__aiter__"):
-            async for y in ys:
-                await params.output_queues.put(y)
+        ys = async_utils.to_async_iterable(ys, maxsize=maxsize)
+
+        async for y in ys:
+            await params.output_queues.put(y)
             
-        elif hasattr(ys, "__iter__"):
-            for y in ys:
-                await params.output_queues.put(y)
+        
 
     return _run_task(f_task, params)
 
@@ -216,7 +215,7 @@ def flat_map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = No
         on_start = on_start,
         on_done = on_done,
         target = _flat_map,
-        args = (f,),
+        args = (f, maxsize),
         dependencies = [stage],
     )
 
@@ -374,7 +373,7 @@ def _to_stage(obj):
     if isinstance(obj, _Stage):
         return obj
 
-    elif hasattr(obj, "__iter__"):
+    elif hasattr(obj, "__iter__") or hasattr(obj, "__aiter__"):
         return from_iterable(obj)
 
     else:
@@ -384,10 +383,9 @@ def _to_stage(obj):
 # from_iterable
 ########################
 
-def _from_iterable(iterable, params):
+def _from_iterable(iterable, maxsize, params):
 
-    if hasattr(iterable, "__iter__"):
-        iterable = async_utils.to_async_iterable(iterable)
+    iterable = async_utils.to_async_iterable(iterable, maxsize=maxsize)
 
     async def f_task(args):
         async for x in iterable:
@@ -395,10 +393,10 @@ def _from_iterable(iterable, params):
 
     return _run_task(f_task, params)
         
-def from_iterable(iterable = utils.UNDEFINED, worker_constructor = None):
+def from_iterable(iterable = utils.UNDEFINED, maxsize = 0, worker_constructor = None):
 
     if utils.is_undefined(iterable):
-        return utils.Partial(lambda iterable: from_iterable(iterable, worker_constructor=worker_constructor))
+        return utils.Partial(lambda iterable: from_iterable(iterable, maxsize=maxsize, worker_constructor=worker_constructor))
     
     return _Stage(
         worker_constructor = _WORKER,
@@ -407,7 +405,7 @@ def from_iterable(iterable = utils.UNDEFINED, worker_constructor = None):
         on_start = None,
         on_done = None,
         target = _from_iterable,
-        args = (iterable,),
+        args = (iterable, maxsize),
         dependencies = [],
     )
 

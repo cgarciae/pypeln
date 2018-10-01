@@ -1444,11 +1444,10 @@ table {
     
     
 
-<span class="c1"># @utils.maybe_partial(1)</span>
-<span class="k">def</span> <span class="nf">from_iterable</span><span class="p">(</span><span class="n">iterable</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">Thread</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">from_iterable</span><span class="p">(</span><span class="n">iterable</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">Thread</span><span class="p">):</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">iterable</span><span class="p">:</span> <span class="n">from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="o">=</span><span class="n">worker_constructor</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">iterable</span><span class="p">:</span> <span class="n">from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="o">=</span><span class="n">worker_constructor</span><span class="p">))</span>
 
     <span class="k">return</span> <span class="n">_Stage</span><span class="p">(</span>
         <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">worker_constructor</span><span class="p">,</span>
@@ -1749,7 +1748,7 @@ table {
       
   <div class="item">
     <div class="name def" id="pypeln.process.from_iterable">
-    <p>def <span class="ident">from_iterable</span>(</p><p>iterable=Undefined, worker_constructor=&lt;class &#39;threading.Thread&#39;&gt;)</p>
+    <p>def <span class="ident">from_iterable</span>(</p><p>iterable=Undefined, maxsize=None, worker_constructor=&lt;class &#39;threading.Thread&#39;&gt;)</p>
     </div>
     
 
@@ -1758,10 +1757,10 @@ table {
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.process.from_iterable', this);">Show source &equiv;</a></p>
   <div id="source-pypeln.process.from_iterable" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">from_iterable</span><span class="p">(</span><span class="n">iterable</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">Thread</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">from_iterable</span><span class="p">(</span><span class="n">iterable</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">Thread</span><span class="p">):</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">iterable</span><span class="p">:</span> <span class="n">from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="o">=</span><span class="n">worker_constructor</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">iterable</span><span class="p">:</span> <span class="n">from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="o">=</span><span class="n">worker_constructor</span><span class="p">))</span>
 
     <span class="k">return</span> <span class="n">_Stage</span><span class="p">(</span>
         <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">worker_constructor</span><span class="p">,</span>

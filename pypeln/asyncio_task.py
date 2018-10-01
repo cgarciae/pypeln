@@ -186,18 +186,17 @@ def map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, o
 ########################
 # flat_map
 ########################
-def _flat_map(f, params):
+def _flat_map(f, maxsize, params):
 
     async def f_task(x, args):
         ys = f(x, *args)
 
-        if hasattr(ys, "__aiter__"):
-            async for y in ys:
-                await params.output_queues.put(y)
+        ys = async_utils.to_async_iterable(ys, maxsize=maxsize)
+
+        async for y in ys:
+            await params.output_queues.put(y)
             
-        elif hasattr(ys, "__iter__"):
-            for y in ys:
-                await params.output_queues.put(y)
+        
 
     return _run_task(f_task, params)
 
@@ -216,7 +215,7 @@ def flat_map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = No
         on_start = on_start,
         on_done = on_done,
         target = _flat_map,
-        args = (f,),
+        args = (f, maxsize),
         dependencies = [stage],
     )
 
@@ -374,7 +373,7 @@ def _to_stage(obj):
     if isinstance(obj, _Stage):
         return obj
 
-    elif hasattr(obj, "__iter__"):
+    elif hasattr(obj, "__iter__") or hasattr(obj, "__aiter__"):
         return from_iterable(obj)
 
     else:
@@ -386,8 +385,7 @@ def _to_stage(obj):
 
 def _from_iterable(iterable, maxsize, params):
 
-    if hasattr(iterable, "__iter__"):
-        iterable = async_utils.to_async_iterable(iterable, maxsize=maxsize)
+    iterable = async_utils.to_async_iterable(iterable, maxsize=maxsize)
 
     async def f_task(args):
         async for x in iterable:

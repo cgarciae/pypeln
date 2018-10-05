@@ -4,7 +4,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 
     <title>pypeln.process API documentation</title>
-    <meta name="description" content="" />
+    <meta name="description" content="The `process` module lets you create pipelines using objects from python's [multiprocessing](https:/..." />
 
   <link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300' rel='stylesheet' type='text/css'>
   
@@ -1069,11 +1069,48 @@ table {
 
   <header id="section-intro">
   <h1 class="title"><span class="name">pypeln.process</span> module</h1>
-  
+  <p>The <code>process</code> module lets you create pipelines using objects from python's <a href="https://docs.python.org/3.4/library/multiprocessing.html">multiprocessing</a> module according to Pypeline's general <a href="https://cgarciae.gitbook.io/pypeln/#architecture">architecture</a>. Use this module when you are in need of true parallelism for CPU heavy operations but be aware of its implications (continue reading).</p>
+<h3>Example</h3>
+<h2>Stage</h2>
+<p>All functions from this module return a private <code>pypeln.process._Stage</code> object. Stages are lazy, that is, a <code>_Stage</code> objects merely contains the information needed to perform the computation of itself and the Stages it depends on. To actually execute the pipeline you can directly iterable over a <code>_Stage</code> or iterate over the generator returned by <a href="#pypeln.process.to_iterable"><code>to_iterable</code></a> if you want to have more control. </p>
+<h2>Workers</h2>
+<p>The worker type of this module is a <a href="https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process">multiprocessing.Process</a>. Each worker process is instantiated with <code>daemon = True</code>. Creating each process is slow and consumes a lot of memory. Since processes are technically separate programs managed by the OS they are great for doing operations in parallel and avoiding the <a href="https://realpython.com/python-gil">GIL</a>.</p>
+<h2>Queue</h2>
+<p>The queue type of this module is a <a href="https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Queue">multiprocessing.Queue</a>. Since processes don't share memory, all information passed between them through these queues must first be serialized (which is slow), be aware of this and try to avoid sending large objects.</p>
+<h2>Recomendations</h2>
+<p>Creating processes and doing communication between them is expensive, therefore we recommend the following:</p>
+<ul>
+<li>Minimize the number of stages based on this module.</li>
+<li>If possible don't send large objects</li>
+<li>If you just need to perform a very simple task over a collection in parallel use the <a href="#pypeln.process.each"><code>each</code></a> function.</li>
+</ul>
   
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.process', this);">Show source &equiv;</a></p>
   <div id="source-pypeln.process" class="source">
-    <div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span>
+    <div class="codehilite"><pre><span></span><span class="sd">&quot;&quot;&quot; The `process` module lets you create pipelines using objects from python&#39;s [multiprocessing](https://docs.python.org/3.4/library/multiprocessing.html) module according to Pypeline&#39;s general [architecture](https://cgarciae.gitbook.io/pypeln/#architecture). Use this module when you are in need of true parallelism for CPU heavy operations but be aware of its implications (continue reading).</span>
+
+<span class="sd">### Example</span>
+
+
+<span class="sd">## Stage</span>
+<span class="sd">All functions from this module return a private `pypeln.process._Stage` object. Stages are lazy, that is, a `_Stage` objects merely contains the information needed to perform the computation of itself and the Stages it depends on. To actually execute the pipeline you can directly iterable over a `_Stage` or iterate over the generator returned by `pypeln.process.to_iterable` if you want to have more control. </span>
+
+<span class="sd">## Workers</span>
+<span class="sd">The worker type of this module is a [multiprocessing.Process](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process). Each worker process is instantiated with `daemon = True`. Creating each process is slow and consumes a lot of memory. Since processes are technically separate programs managed by the OS they are great for doing operations in parallel and avoiding the [GIL](https://realpython.com/python-gil).</span>
+
+<span class="sd">## Queue</span>
+<span class="sd">The queue type of this module is a [multiprocessing.Queue](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Queue). Since processes don&#39;t share memory, all information passed between them through these queues must first be serialized (which is slow), be aware of this and try to avoid sending large objects.</span>
+
+<span class="sd">## Recomendations</span>
+<span class="sd">Creating processes and doing communication between them is expensive, therefore we recommend the following:</span>
+
+<span class="sd">* Minimize the number of stages based on this module.</span>
+<span class="sd">* If possible don&#39;t send large objects</span>
+<span class="sd">* If you just need to perform a very simple task over a collection in parallel use the `pypeln.process.each` function. </span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span>
 
 <span class="kn">import</span> <span class="nn">functools</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>

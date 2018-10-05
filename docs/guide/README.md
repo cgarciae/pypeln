@@ -2,8 +2,7 @@
 
 _Pypeline is a python library for easily creating concurrent data pipelines._
 
-## Concept
-
+## Architecture
 
 When creating a program that performs several non-trivial operations over sequences in an efficient manner it common to end up doing the following:
 

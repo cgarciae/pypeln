@@ -1,3 +1,26 @@
+""" The `process` module lets you create pipelines using objects from python's [multiprocessing](https://docs.python.org/3.4/library/multiprocessing.html) module according to Pypeline's general [architecture](https://cgarciae.gitbook.io/pypeln/#architecture). Use this module when you are in need of true parallelism for CPU heavy operations but be aware of its implications (continue reading).
+
+### Example
+
+
+## Stage
+All functions from this module return a private `pypeln.process._Stage` object. Stages are lazy, that is, a `_Stage` objects merely contains the information needed to perform the computation of itself and the Stages it depends on. To actually execute the pipeline you can directly iterable over a `_Stage` or iterate over the generator returned by `pypeln.process.to_iterable` if you want to have more control. 
+
+## Workers
+The worker type of this module is a [multiprocessing.Process](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process). Each worker process is instantiated with `daemon = True`. Creating each process is slow and consumes a lot of memory. Since processes are technically separate programs managed by the OS they are great for doing operations in parallel and avoiding the [GIL](https://realpython.com/python-gil).
+
+## Queue
+The queue type of this module is a [multiprocessing.Queue](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Queue). Since processes don't share memory, all information passed between them through these queues must first be serialized (which is slow), be aware of this and try to avoid sending large objects.
+
+## Recomendations
+Creating processes and doing communication between them is expensive, therefore we recommend the following:
+
+* Minimize the number of stages based on this module.
+* If possible don't send large objects
+* If you just need to perform a very simple task over a collection in parallel use the `pypeln.process.each` function. 
+"""
+
+
 from __future__ import absolute_import, print_function
 
 import functools

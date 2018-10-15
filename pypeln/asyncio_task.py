@@ -34,8 +34,9 @@ class _Stage(utils.BaseStage):
         maxsize = 0
         pipeline_namespace = _get_namespace()
         pipeline_namespace.error = None
+        loop = asyncio.get_event_loop()
         
-        task, _input_queue = _to_task(self, maxsize, pipeline_namespace)
+        task, _input_queue = _to_task(self, maxsize, pipeline_namespace, loop)
 
         return task.__await__()
     

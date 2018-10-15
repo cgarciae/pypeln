@@ -11,6 +11,6 @@ from . import thread
 
 if sys.version_info >= (3, 5):
     from . import asyncio_task
-    from .async_utils import TaskPool
+    from .asyncio_task import TaskPool
 
 __all__ = ["process", "thread", "asyncio_task"]

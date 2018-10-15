@@ -5,7 +5,6 @@ import asyncio
 import threading
 import sys
 from . import utils
-from . import async_utils
 import time
 import functools
 
@@ -74,7 +73,7 @@ class _StageParams(namedtuple("_StageParams",
     [
         "workers", "input_queue", "output_queues", 
         "on_start", "on_done", "pipeline_namespace",
-        "loop",
+        "loop", "maxsize",
     ])):
     pass
 
@@ -122,6 +121,9 @@ class _InputQueue(asyncio.Queue):
 
     def is_done(self):
         return self.remaining == 0 # and self.empty()
+
+    async def done(self):
+        await self.put(utils.DONE)
 
 
 class _OutputQueues(list):
@@ -176,7 +178,7 @@ async def _run_task(f_task, params):
 
     if params.input_queue:
 
-        async with async_utils.TaskPool(params.workers, params.loop) as tasks:
+        async with TaskPool(params.workers, params.loop) as tasks:
 
             async for x in params.input_queue:
 
@@ -241,14 +243,14 @@ def map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, o
 ########################
 # flat_map
 ########################
-def _flat_map(f, maxsize, params):
+def _flat_map(f, params):
 
     @_handle_exceptions(params)
     async def f_task(x, args):
 
         ys = f(x, *args)
 
-        ys = async_utils.to_async_iterable(ys, params.loop, maxsize=maxsize)
+        ys = _to_async_iterable(ys, params)
 
         async for y in ys:
             await params.output_queues.put(y)
@@ -270,7 +272,7 @@ def flat_map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = No
         on_start = on_start,
         on_done = on_done,
         target = _flat_map,
-        args = (f, maxsize),
+        args = (f,),
         dependencies = [stage],
     )
 
@@ -412,6 +414,7 @@ def _to_task(stage, maxsize, pipeline_namespace, loop):
             on_done = _stage.on_done,
             pipeline_namespace = pipeline_namespace,
             loop = loop,
+            maxsize = _stage.maxsize,
         )
 
         task = _stage.worker_constructor(
@@ -445,13 +448,14 @@ def _to_stage(obj):
 # from_iterable
 ########################
 
-def _from_iterable(iterable, maxsize, params):
+def _from_iterable(iterable, params):
 
     # print("_from_iterable", iterable)
 
     if not hasattr(iterable, "__aiter__") and not hasattr(iterable, "__iter__"):
         raise ValueError()
 
+    @_handle_exceptions(params)
     async def f_task(args):
 
         # print("_from_iterable_task", iterable)
@@ -465,7 +469,7 @@ def _from_iterable(iterable, maxsize, params):
         #         await params.output_queues.put(x)
 
 
-        iterable_ = async_utils.to_async_iterable(iterable, params.loop, maxsize=maxsize)
+        iterable_ = _to_async_iterable(iterable, params)
 
         async for x in iterable_:
             await params.output_queues.put(x)
@@ -483,11 +487,11 @@ def from_iterable(iterable = utils.UNDEFINED, maxsize = 0, worker_constructor = 
     return _Stage(
         worker_constructor = _WORKER,
         workers = 1,
-        maxsize = None,
+        maxsize = maxsize,
         on_start = None,
         on_done = None,
         target = _from_iterable,
-        args = (iterable, maxsize),
+        args = (iterable,),
         dependencies = [],
     )
 
@@ -572,14 +576,13 @@ def _to_iterable(stage, maxsize):
     try:
         while not input_queue.is_done():
 
+            if pipeline_namespace.error is not None:
+                raise pipeline_namespace.error
+
             if input_queue.empty():
                 time.sleep(utils.TIMEOUT)
-
             else:
                 x = input_queue.get_nowait()
-
-                if pipeline_namespace.error is not None:
-                    raise pipeline_namespace.error
 
                 if not utils.is_continue(x):
                     yield x
@@ -600,6 +603,158 @@ def to_iterable(stage = utils.UNDEFINED, maxsize = 0):
     # print("to_iterable", stage.target)
 
     return _to_iterable(stage, maxsize)
+
+
+################
+################
+# UTILS
+################
+################
+
+############################
+# TaskPool
+############################
+
+class TaskPool(object):
+
+    def __init__(self, workers, loop):
+        self._semaphore = asyncio.Semaphore(workers, loop=loop)
+        self._tasks = set()
+        self._closed = False
+        self._loop = loop
+        
+
+    async def put(self, coro):
+
+        if self._closed:
+            raise RuntimeError("Trying put items into a closed TaskPool")
+        
+        await self._semaphore.acquire()
+        
+        task = asyncio.ensure_future(coro, loop=self._loop)
+        self._tasks.add(task)
+        task.add_done_callback(self._on_task_done)
+
+    def _on_task_done(self, task):
+        self._tasks.remove(task)
+        self._semaphore.release()
+
+    async def join(self):
+        await asyncio.gather(*self._tasks, loop=self._loop)
+        self._closed = True
+
+    async def __aenter__(self):
+        return self
+
+    def __aexit__(self, exc_type, exc, tb):
+        return self.join()
+
+
+############################
+# _to_async_iterable
+############################
+async def _trivial_async_iterable(iterable):
+
+    # print("_trivial_async_iterable", iterable)
+
+    for i, x in enumerate(iterable):
+        # print(x)
+        yield x
+
+        if i % 1000 == 0:
+            await asyncio.sleep(0)
+
+def _consume_iterable(params, iterable, queue):
+
+    try:
+        for x in iterable:
+            while True:
+                if not queue.full():
+                    params.loop.call_soon_threadsafe(queue.put_nowait, x)
+                    break
+                else:
+                    time.sleep(utils.TIMEOUT)
+        
+        while True:
+            if not queue.full():
+                params.loop.call_soon_threadsafe(queue.put_nowait, utils.DONE)
+                break
+            else:
+                time.sleep(utils.TIMEOUT)
+
+    except BaseException as e:
+        params.pipeline_namespace.error = e
+
+
+
+async def _async_iterable(iterable, params):
+
+    queue = _InputQueue(maxsize = params.maxsize, total_done = 1, pipeline_namespace = params.pipeline_namespace)
+
+    task = params.loop.run_in_executor(None, lambda: _consume_iterable(params, iterable, queue))
+
+    async for x in queue:
+        yield x
+
+    await task
+
+    
+
+def _to_async_iterable(iterable, params):
+
+    if hasattr(iterable, "__aiter__"):
+        return iterable
+    elif not hasattr(iterable, "__iter__"):
+        raise ValueError("Object {iterable} most be either iterable or async iterable.".format(iterable=iterable))
+
+    if type(iterable) in (list, dict, tuple, set):
+        return _trivial_async_iterable(iterable)
+
+    else:
+        return _async_iterable(iterable, params)
+
+############################
+# _to_sync_iterable
+############################
+
+def _run_coroutine(loop, async_iterable, queue):
+
+    loop.run_until_complete(_consume_async_iterable(async_iterable, queue))
+
+async def _consume_async_iterable(async_iterable, queue):
+
+    async for x in async_iterable:
+        await queue.put(x)
+
+    await queue.done()
+
+
+def _to_sync_iterable(async_iterable, params):
+
+    def sync_iterable():
+
+        queue = _InputQueue(params.maxsize, 1, params.pipeline_namespace)
+
+        t = threading.Thread(target=_run_coroutine, args=(params.loop, async_iterable, queue))
+        t.daemon = True
+        t.start()
+
+        while True:
+            if not queue.empty():
+                x = queue.get_nowait()
+                
+                if utils.is_done(x):
+                    break
+                else:
+                    yield x
+            else:
+                time.sleep(utils.TIMEOUT)
+
+        t.join()
+
+    return sync_iterable()
+
+
 
 
 if __name__ == '__main__':

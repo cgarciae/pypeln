@@ -152,6 +152,8 @@ def test_flat_map_square(nums):
         yield x + 1
         yield x + 2
 
+    print(nums)
+
     nums_py = map(lambda x: x ** 2, nums)
     nums_py = cz.mapcat(_generator, nums_py)
     nums_py = list(nums_py)

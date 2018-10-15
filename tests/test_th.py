@@ -267,3 +267,27 @@ def test_concat_multiple(nums):
     assert sorted(nums_py1) == sorted(list(nums_pl1))
     assert sorted(nums_py2) == sorted(list(nums_pl2))
 
+
+############
+# concat
+############
+
+class MyError(Exception):
+    pass
+
+def test_error_handling():
+
+    error = None
+
+    def raise_error(x):
+        raise MyError()
+
+    stage = th.map(raise_error, range(10))
+
+    try:
+        list(stage)
+    
+    except MyError as e:
+        error = e
+
+    assert isinstance(error, MyError) 

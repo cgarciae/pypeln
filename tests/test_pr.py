@@ -2,6 +2,7 @@
 import hypothesis as hp
 from hypothesis import strategies as st
 import cytoolz as cz
+import functools as ft
 
 from pypeln import process as pr
 
@@ -267,3 +268,51 @@ def test_concat_multiple(nums):
     assert sorted(nums_py1) == sorted(list(nums_pl1))
     assert sorted(nums_py2) == sorted(list(nums_pl2))
 
+
+############
+# error handling
+############
+
+class MyError(Exception):
+    pass
+
+def test_error_handling():
+
+    error = None
+
+    def raise_error(x):
+        raise MyError()
+
+    stage = pr.map(raise_error, range(10))
+
+    try:
+        list(stage)
+    
+    except MyError as e:
+        error = e
+
+    assert isinstance(error, MyError) 
+
+
+def test_batching():
+    
+    nums_pl = (
+        range(100)
+        | pr.from_iterable()
+        | ft.partial(cz.partition_all, 10)
+        | pr.map(sum)
+        | list
+    )
+
+    print(nums_pl)
+
+
+if __name__ == '__main__':
+    error = None
+
+    def raise_error(x):
+        raise MyError()
+
+    stage = pr.map(raise_error, range(10))
+
+    list(stage)

@@ -2,6 +2,7 @@
 import hypothesis as hp
 from hypothesis import strategies as st
 import cytoolz as cz
+import functools as ft
 
 from pypeln import asyncio_task as aio
 
@@ -267,3 +268,52 @@ def test_concat_multiple(nums):
     assert sorted(nums_py1) == sorted(list(nums_pl1))
     assert sorted(nums_py2) == sorted(list(nums_pl2))
 
+
+
+def test_batching():
+    
+
+    nums_pl = (
+        range(100)
+        | aio.from_iterable()
+        | (lambda stage: cz.partition_all(10, stage))
+        | aio.map(sum)
+        | list
+    )
+
+
+
+############
+# concat
+############
+
+class MyError(Exception):
+    pass
+
+def test_error_handling():
+
+    error = None
+
+    def raise_error(x):
+        raise MyError()
+
+    stage = aio.map(raise_error, range(10))
+
+    try:
+        list(stage)
+    
+    except MyError as e:
+        error = e
+
+    assert isinstance(error, MyError) 
+
+
+if __name__ == '__main__':
+    error = None
+
+    def raise_error(x):
+        raise MyError()
+
+    stage = aio.map(raise_error, range(10))
+
+    list(stage)

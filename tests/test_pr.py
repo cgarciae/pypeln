@@ -3,6 +3,7 @@ import hypothesis as hp
 from hypothesis import strategies as st
 import cytoolz as cz
 import functools as ft
+import time
 
 from pypeln import process as pr
 
@@ -269,9 +270,9 @@ def test_concat_multiple(nums):
     assert sorted(nums_py2) == sorted(list(nums_pl2))
 
 
-############
+###################
 # error handling
-############
+###################
 
 class MyError(Exception):
     pass
@@ -294,17 +295,26 @@ def test_error_handling():
     assert isinstance(error, MyError) 
 
 
-def test_batching():
+###################
+# from_to_iterable
+###################
+@hp.given(nums = st.lists(st.integers()))
+@hp.settings(max_examples=MAX_EXAMPLES)
+def test_from_to_iterable(nums):
     
-    nums_pl = (
-        range(100)
-        | pr.from_iterable()
-        | ft.partial(cz.partition_all, 10)
-        | pr.map(sum)
-        | list
-    )
+    nums_pl = nums
+    nums_pl = pr.from_iterable(nums_pl)
+    nums_pl = cz.partition_all(10, nums_pl)
+    nums_pl = pr.map(sum, nums_pl)
+    nums_pl = list(nums_pl)
 
-    print(nums_pl)
+    nums_py = nums
+    nums_py = cz.partition_all(10, nums_py)
+    nums_py = map(sum, nums_py)
+    nums_py = list(nums_py)
+
+    assert nums_py == nums_pl
+
 
 
 if __name__ == '__main__':

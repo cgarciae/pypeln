@@ -95,7 +95,10 @@ async def _async_iterable(iterable, maxsize, loop):
 
     await task
 
-def to_async_iterable(iterable, loop, maxsize = 0):
+def to_async_iterable(iterable, loop = None, maxsize = 0):
+
+    if loop is None:
+        loop = asyncio.get_event_loop()
 
     if hasattr(iterable, "__aiter__"):
         return iterable
@@ -124,14 +127,18 @@ async def _consume_async_iterable(async_iterable, queue):
     await queue.put(utils.DONE)
 
 
-def to_sync_iterable(async_iterable, maxsize = 0):
+def to_sync_iterable(async_iterable, maxsize = 0, loop = None):
 
     def sync_iterable():
 
         queue = asyncio.Queue(maxsize=maxsize)
-        loop = asyncio.get_event_loop()
 
-        t = threading.Thread(target=_run_coroutine, args=(loop, async_iterable, queue))
+        if loop is None:
+            loop_ = asyncio.get_event_loop()
+        else:
+            loop_ = loop
+
+        t = threading.Thread(target=_run_coroutine, args=(loop_, async_iterable, queue))
         t.daemon = True
         t.start()
 

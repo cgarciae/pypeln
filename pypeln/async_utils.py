@@ -5,10 +5,11 @@ from . import utils
 
 class TaskPool(object):
 
-    def __init__(self, workers):
-        self._semaphore = asyncio.Semaphore(workers)
+    def __init__(self, workers, loop):
+        self._semaphore = asyncio.Semaphore(workers, loop=loop)
         self._tasks = set()
         self._closed = False
+        self._loop = loop
         
 
     async def put(self, coro):
@@ -18,7 +19,7 @@ class TaskPool(object):
         
         await self._semaphore.acquire()
         
-        task = asyncio.ensure_future(coro)
+        task = asyncio.ensure_future(coro, loop=self._loop)
         self._tasks.add(task)
         task.add_done_callback(self._on_task_done)
 
@@ -27,7 +28,7 @@ class TaskPool(object):
         self._semaphore.release()
 
     async def join(self):
-        await asyncio.gather(*self._tasks)
+        await asyncio.gather(*self._tasks, loop=self._loop)
         self._closed = True
 
     async def __aenter__(self):
@@ -43,6 +44,8 @@ class TaskPool(object):
 
 
 def _consume_iterable(loop, iterable, queue):
+
+    # print("_consume_iterable", iterable)
 
     for x in iterable:
         while True:
@@ -61,19 +64,25 @@ def _consume_iterable(loop, iterable, queue):
 
 async def _trivial_async_iterable(iterable):
 
+    # print("_trivial_async_iterable", iterable)
+
     for i, x in enumerate(iterable):
+        # print(x)
         yield x
 
         if i % 1000 == 0:
             await asyncio.sleep(0)
 
-async def _async_iterable(iterable, maxsize):
+async def _async_iterable(iterable, maxsize, loop):
+
+    # print("_async_iterable", iterable)
 
     queue = asyncio.Queue(maxsize=maxsize)
 
-    loop = asyncio.get_event_loop()
     task = loop.run_in_executor(None, lambda: _consume_iterable(loop, iterable, queue))
-
+    # t = threading.Thread(target = _consume_iterable, args = (loop, iterable, queue))
+    # t.daemon = True
+    # t.start()
 
     while True:
         x = await queue.get()
@@ -86,7 +95,7 @@ async def _async_iterable(iterable, maxsize):
 
     await task
 
-def to_async_iterable(iterable, maxsize = 0):
+def to_async_iterable(iterable, loop, maxsize = 0):
 
     if hasattr(iterable, "__aiter__"):
         return iterable
@@ -97,7 +106,7 @@ def to_async_iterable(iterable, maxsize = 0):
         return _trivial_async_iterable(iterable)
 
     else:
-        return _async_iterable(iterable, maxsize)
+        return _async_iterable(iterable, maxsize, loop)
 
 ############################
 # to_sync_iterable

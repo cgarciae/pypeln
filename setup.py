@@ -7,7 +7,7 @@ install_requires = [
 
 setup(
     name = "pypeln",
-    version = "0.1.3",
+    version = "0.1.4",
     author = "Cristian Garcia",
     author_email = "cgarcia.e88@gmail.com",
     description = (""),

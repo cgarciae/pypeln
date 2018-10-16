@@ -1072,7 +1072,23 @@ table {
   <p>The <code>process</code> module lets you create pipelines using objects from python's <a href="https://docs.python.org/3.4/library/multiprocessing.html">multiprocessing</a> module according to Pypeline's general <a href="https://cgarciae.gitbook.io/pypeln/#architecture">architecture</a>. Use this module when you are in need of true parallelism for CPU heavy operations but be aware of its implications (continue reading).</p>
 <h3>Example</h3>
 <h2>Stage</h2>
-<p>All functions from this module return a private <code>pypeln.process._Stage</code> object. Stages are lazy, that is, a <code>_Stage</code> objects merely contains the information needed to perform the computation of itself and the Stages it depends on. To actually execute the pipeline you can directly iterable over a <code>_Stage</code> or iterate over the generator returned by <a href="#pypeln.process.to_iterable"><code>to_iterable</code></a> if you want to have more control. </p>
+<p>All functions from this module return a private <code>pypeln.process._Stage</code> object. Stages are lazy, that is, a <code>_Stage</code> objects merely contains the information needed to perform the computation of itself and the Stages it depends on. Stages are <a href="https://docs.python.org/3/glossary.html#term-iterable">iterables</a>, to actually execute the pipeline you can directly iterable them or iterate over the generator returned by <a href="#pypeln.process.to_iterable"><code>to_iterable</code></a> which gives you more control.</p>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">pypeln</span> <span class="kn">import</span> <span class="n">process</span> <span class="k">as</span> <span class="n">pr</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">random</span>
+
+<span class="k">def</span> <span class="nf">slow_add1</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="p">())</span> <span class="c1"># &lt;= some slow computation</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="c1"># [0, 1, 2, ..., 9]</span>
+<span class="n">stage</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">slow_add1</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">4</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">stage</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="c1"># e.g. 2, 1, 5, 6, 3, 4, 7, 8, 9, 10</span>
+</pre></div>
+
+
 <h2>Workers</h2>
 <p>The worker type of this module is a <a href="https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process">multiprocessing.Process</a>. Each worker process is instantiated with <code>daemon = True</code>. Creating each process is slow and consumes a lot of memory. Since processes are technically separate programs managed by the OS they are great for doing operations in parallel and avoiding the <a href="https://realpython.com/python-gil">GIL</a>.</p>
 <h2>Queue</h2>
@@ -1092,14 +1108,31 @@ table {
 <span class="sd">### Example</span>
 
 
+
 <span class="sd">## Stage</span>
-<span class="sd">All functions from this module return a private `pypeln.process._Stage` object. Stages are lazy, that is, a `_Stage` objects merely contains the information needed to perform the computation of itself and the Stages it depends on. To actually execute the pipeline you can directly iterable over a `_Stage` or iterate over the generator returned by `pypeln.process.to_iterable` if you want to have more control. </span>
+<span class="sd">All functions from this module return a private `pypeln.process._Stage` object. Stages are lazy, that is, a `_Stage` objects merely contains the information needed to perform the computation of itself and the Stages it depends on. Stages are [iterables](https://docs.python.org/3/glossary.html#term-iterable), to actually execute the pipeline you can directly iterable them or iterate over the generator returned by `pypeln.process.to_iterable` which gives you more control.</span>
+
+<span class="sd">    from pypeln import process as pr</span>
+<span class="sd">    import time</span>
+<span class="sd">    from random import random</span>
+
+<span class="sd">    def slow_add1(x):</span>
+<span class="sd">        time.sleep(random()) # &lt;= some slow computation</span>
+<span class="sd">        return x + 1</span>
+
+<span class="sd">    data = range(10) # [0, 1, 2, ..., 9]</span>
+<span class="sd">    stage = pr.map(slow_add1, data, workers = 3, maxsize = 4)</span>
+
+<span class="sd">    for x in stage:</span>
+<span class="sd">        print(x) # e.g. 2, 1, 5, 6, 3, 4, 7, 8, 9, 10</span>
+
 
 <span class="sd">## Workers</span>
 <span class="sd">The worker type of this module is a [multiprocessing.Process](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process). Each worker process is instantiated with `daemon = True`. Creating each process is slow and consumes a lot of memory. Since processes are technically separate programs managed by the OS they are great for doing operations in parallel and avoiding the [GIL](https://realpython.com/python-gil).</span>
 
 <span class="sd">## Queue</span>
 <span class="sd">The queue type of this module is a [multiprocessing.Queue](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Queue). Since processes don&#39;t share memory, all information passed between them through these queues must first be serialized (which is slow), be aware of this and try to avoid sending large objects.</span>
+
 
 <span class="sd">## Recomendations</span>
 <span class="sd">Creating processes and doing communication between them is expensive, therefore we recommend the following:</span>

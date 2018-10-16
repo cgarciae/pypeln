@@ -3,21 +3,46 @@
 ### Example
 
 
+
 ## Stage
-All functions from this module return a private `pypeln.process._Stage` object. Stages are lazy, that is, a `_Stage` objects merely contains the information needed to perform the computation of itself and the Stages it depends on. To actually execute the pipeline you can directly iterable over a `_Stage` or iterate over the generator returned by `pypeln.process.to_iterable` if you want to have more control. 
+All functions from this module return a private `pypeln.process._Stage` object. Stages are lazy, that is, a `_Stage` objects merely contains the information needed to perform the computation of itself and the Stages it depends on. Stages are [iterables](https://docs.python.org/3/glossary.html#term-iterable) i.e. they implement `__iter__`, to actually execute the pipeline you can directly iterable them or iterate over the generator returned by `pypeln.process.to_iterable` which gives you more control.
+
+    from pypeln import process as pr
+    import time
+    from random import random
+
+    def slow_add1(x):
+        time.sleep(random()) # <= some slow computation
+        return x + 1
+
+    data = range(10) # [0, 1, 2, ..., 9]
+    stage = pr.map(slow_add1, data, workers = 3, maxsize = 4)
+
+    for x in stage:
+        print(x) # e.g. 2, 1, 5, 6, 3, 4, 7, 8, 9, 10
+
+This iterable API makes Pypeline a very intuitive/pythonic to use and compatible with most other python code. 
 
 ## Workers
-The worker type of this module is a [multiprocessing.Process](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process). Each worker process is instantiated with `daemon = True`. Creating each process is slow and consumes a lot of memory. Since processes are technically separate programs managed by the OS they are great for doing operations in parallel and avoiding the [GIL](https://realpython.com/python-gil).
+The worker type of this module is a [multiprocessing.Process](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process). Each worker process is instantiated with `daemon = True`. Creating each process is slow and consumes a lot of memory. Since processes are technically separate programs managed by the OS they are great for doing operations in parallel by avoiding the [GIL](https://realpython.com/python-gil) (or rather having their separate GIL).
+
+The number of workers on each stage can usually be controled by the `workers` parameter on `pypeln.process`'s various functions. Try not to create more processes than the number of cores you have on your machine or else they will end up fighting for resources and computation will be suboptimal.
 
 ## Queue
-The queue type of this module is a [multiprocessing.Queue](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Queue). Since processes don't share memory, all information passed between them through these queues must first be serialized (which is slow), be aware of this and try to avoid sending large objects.
+The queue type of this module is a [multiprocessing.Queue](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Queue). Since processes don't share memory, all information passed between them through these queues must first be serialized (pickled) which is slow, be aware of this and try to avoid sending large objects.
+
+The number of elements each stage can hold usually be controled by the `maxsize` parameter on `pypeln.process`'s various functions. When passed this parameter sets a maximum size for the input Queue of the stage, this serves as a [backpressure](https://www.quora.com/What-is-backpressure-in-the-context-of-data-streaming) mechanism because any stages pushing data to a Queue that becomes full (reaches its `maxsize`) will have to stop their computation until space becomes available, thus, potentially preveting `OutOfMemeory` errors due to overpressure from faster stages.
+
+## Resource Management
 
 ## Recomendations
-Creating processes and doing communication between them is expensive, therefore we recommend the following:
+Creating processes and doing Inter-Process Communication (IPC) is expensive, therefore we recommend the following:
 
 * Minimize the number of stages based on this module.
-* If possible don't send large objects
-* If you just need to perform a very simple task over a collection in parallel use the `pypeln.process.each` function. 
+* Tune the number of workers based on the number of cores.
+* When processing large datasets set the maxsize of the stage to prevent `OutOfMemory` errors.
+* If possible don't send large objects.
+* If you just need a single stage to perform a task over a collection in parallel use the `pypeln.process.each` function. 
 """
 
 

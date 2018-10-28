@@ -1056,6 +1056,19 @@ table {
 
     </li>
 
+    <li class="set"><h3><a href="#header-classes">Classes</a></h3>
+      <ul>
+        <li class="mono">
+        <span class="class_name"><a href="#pypeln.process.StageStatus">StageStatus</a></span>
+        
+          
+  <ul>
+    <li class="mono"><a href="#pypeln.process.StageStatus.__init__">__init__</a></li>
+  </ul>
+
+        </li>
+      </ul>
+    </li>
 
     </ul>
   </div>
@@ -1070,9 +1083,29 @@ table {
   <header id="section-intro">
   <h1 class="title"><span class="name">pypeln.process</span> module</h1>
   <p>The <code>process</code> module lets you create pipelines using objects from python's <a href="https://docs.python.org/3.4/library/multiprocessing.html">multiprocessing</a> module according to Pypeline's general <a href="https://cgarciae.gitbook.io/pypeln/#architecture">architecture</a>. Use this module when you are in need of true parallelism for CPU heavy operations but be aware of its implications (continue reading).</p>
-<h3>Example</h3>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">pypeln</span> <span class="kn">import</span> <span class="n">process</span> <span class="k">as</span> <span class="n">pr</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">random</span>
+
+<span class="k">def</span> <span class="nf">slow_add1</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="p">())</span> <span class="c1"># &lt;= some slow computation</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+
+<span class="k">def</span> <span class="nf">slow_gt3</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="p">())</span> <span class="c1"># &lt;= some slow computation</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">3</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="c1"># [0, 1, 2, ..., 9]</span>
+
+<span class="n">stage</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">slow_add1</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">4</span><span class="p">)</span>
+<span class="n">stage</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">slow_gt3</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span> <span class="c1"># e.g. [5, 6, 9, 4, 8, 10, 7]</span>
+</pre></div>
+
+
 <h2>Stage</h2>
-<p>All functions from this module return a private <code>pypeln.process._Stage</code> object. Stages are lazy, that is, a <code>_Stage</code> objects merely contains the information needed to perform the computation of itself and the Stages it depends on. Stages are <a href="https://docs.python.org/3/glossary.html#term-iterable">iterables</a>, to actually execute the pipeline you can directly iterable them or iterate over the generator returned by <a href="#pypeln.process.to_iterable"><code>to_iterable</code></a> which gives you more control.</p>
+<p>All functions from this module return a private <code>pypeln.process._Stage</code> object. Stages are lazy, that is, a <code>_Stage</code> objects merely contains the information needed to perform the computation of itself and the Stages it depends on. Stages are <a href="https://docs.python.org/3/glossary.html#term-iterable">iterables</a> i.e. they implement <code>__iter__</code>, to actually execute the pipeline you can directly iterable them or iterate over the generator returned by <a href="#pypeln.process.to_iterable"><code>to_iterable</code></a> which gives you more control.</p>
 <div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">pypeln</span> <span class="kn">import</span> <span class="n">process</span> <span class="k">as</span> <span class="n">pr</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">random</span>
@@ -1089,28 +1122,100 @@ table {
 </pre></div>
 
 
+<p>This iterable API makes Pypeline a very intuitive/pythonic to use and compatible with most other python code. </p>
 <h2>Workers</h2>
-<p>The worker type of this module is a <a href="https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process">multiprocessing.Process</a>. Each worker process is instantiated with <code>daemon = True</code>. Creating each process is slow and consumes a lot of memory. Since processes are technically separate programs managed by the OS they are great for doing operations in parallel and avoiding the <a href="https://realpython.com/python-gil">GIL</a>.</p>
+<p>The worker type of this module is a <a href="https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process">multiprocessing.Process</a>. Each worker process is instantiated with <code>daemon = True</code>. Creating each process is slow and consumes a lot of memory. Since processes are technically separate programs managed by the OS they are great for doing operations in parallel by avoiding the <a href="https://realpython.com/python-gil">GIL</a> (or rather having their separate GIL).</p>
+<p>The number of workers on each stage can usually be controled by the <code>workers</code> parameter on <code>pypeln.process</code>'s various functions. Try not to create more processes than the number of cores you have on your machine or else they will end up fighting for resources and computation will be suboptimal.</p>
 <h2>Queue</h2>
-<p>The queue type of this module is a <a href="https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Queue">multiprocessing.Queue</a>. Since processes don't share memory, all information passed between them through these queues must first be serialized (which is slow), be aware of this and try to avoid sending large objects.</p>
+<p>The queue type of this module is a <a href="https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Queue">multiprocessing.Queue</a>. Since processes don't share memory, all information passed between them through these queues must first be serialized (pickled) which is slow, be aware of this and try to avoid sending large objects.</p>
+<p>The number of elements each stage can hold usually be controled by the <code>maxsize</code> parameter on <code>pypeln.process</code>'s various functions. When passed this parameter sets a maximum size for the input Queue of the stage, this serves as a <a href="https://www.quora.com/What-is-backpressure-in-the-context-of-data-streaming">backpressure</a> mechanism because any stages pushing data to a Queue that becomes full (reaches its <code>maxsize</code>) will have to stop their computation until space becomes available, thus, potentially preveting <code>OutOfMemeory</code> errors due to overpressure from faster stages.</p>
+<h2>Resource Management</h2>
+<p>There are many occasions where you need to create some resource objects (e.g. http or database sessions) that for efficiency are expected to last the whole lifespan of each worker. To handle such objects many functions have the <code>on_start</code> and <code>on_done</code> arguments which expect some callback functions. </p>
+<p>When a worker is created it calls the <code>on_start</code> function, this functions should create and return the resource objects. These object will be passed as extra arguments to the main function and also to the <code>on_end</code> function.</p>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">pypeln</span> <span class="kn">import</span> <span class="n">process</span> <span class="k">as</span> <span class="n">pr</span>
+
+<span class="k">def</span> <span class="nf">on_start</span><span class="p">():</span>
+    <span class="n">http_session</span> <span class="o">=</span> <span class="n">get_http_session</span><span class="p">()</span>
+    <span class="n">db_session</span> <span class="o">=</span> <span class="n">get_db_session</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">http_session</span><span class="p">,</span> <span class="n">db_session</span>
+
+<span class="k">def</span> <span class="nf">on_end</span><span class="p">(</span><span class="n">_stage_status</span><span class="p">,</span> <span class="n">http_session</span><span class="p">,</span> <span class="n">db_session</span><span class="p">):</span>
+    <span class="n">http_session</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">db_session</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">http_session</span><span class="p">,</span> <span class="n">db_session</span><span class="p">):</span>
+    <span class="c1"># some logic</span>
+    <span class="k">return</span> <span class="n">y</span>
+
+<span class="n">stage</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">on_start</span> <span class="o">=</span> <span class="n">on_start</span><span class="p">)</span>
+</pre></div>
+
+
+<p>A few notes:</p>
+<ul>
+<li>The resource objects are created per worker.</li>
+<li><code>on_start</code> should return a object other that <code>None</code> or a tuple of resource objects.</li>
+<li>If <code>on_start</code> returns some arguments then they must be accepted by <code>f</code> and <code>on_end</code>.</li>
+<li><code>on_end</code> receives a <a href="#pypeln.process.StageStatus"><code>StageStatus</code></a> object followed by the resource objects created by <code>on_start</code>.</li>
+</ul>
+<h2>Pipe Operator</h2>
+<p>Functions that accept a <code>stage</code> parameter return a <a href="https://cgarciae.github.io/pypeln/pipe.m.html#pypeln.pipe.Partial">Partial</a> instead of a new stage when <code>stage</code> is not given. These <code>Partial</code>s are callables that accept the missing <code>stage</code> parameter and return the full output of the original function. For example</p>
+<div class="codehilite"><pre><span></span>pr.map(f, stage, **kwargs) = pr.map(f, **kwargs)(stage)
+</pre></div>
+
+
+<p>The important thing about partials is that they implement the pipe <code>|</code> operator as</p>
+<div class="codehilite"><pre><span></span>x | partial = partial(x)
+</pre></div>
+
+
+<p>This allows you to define pipelines in the following way:</p>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">pypenl</span> <span class="kn">import</span> <span class="n">process</span> <span class="k">as</span> <span class="n">pr</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+    <span class="o">|</span> <span class="n">pr</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">slow_add1</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="o">|</span> <span class="n">pr</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">slow_gt3</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="o">|</span> <span class="nb">list</span>
+<span class="p">)</span>
+</pre></div>
+
+
 <h2>Recomendations</h2>
-<p>Creating processes and doing communication between them is expensive, therefore we recommend the following:</p>
+<p>Creating processes and doing Inter-Process Communication (IPC) is expensive, therefore we recommend the following:</p>
 <ul>
 <li>Minimize the number of stages based on this module.</li>
-<li>If possible don't send large objects</li>
-<li>If you just need to perform a very simple task over a collection in parallel use the <a href="#pypeln.process.each"><code>each</code></a> function.</li>
+<li>Tune the number of workers based on the number of cores.</li>
+<li>When processing large datasets set the maxsize of the stage to prevent <code>OutOfMemory</code> errors.</li>
+<li>If possible don't send large objects.</li>
+<li>If you just need a single stage to perform a task over a collection in parallel use the <a href="#pypeln.process.each"><code>each</code></a> function.</li>
 </ul>
   
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.process', this);">Show source &equiv;</a></p>
   <div id="source-pypeln.process" class="source">
     <div class="codehilite"><pre><span></span><span class="sd">&quot;&quot;&quot; The `process` module lets you create pipelines using objects from python&#39;s [multiprocessing](https://docs.python.org/3.4/library/multiprocessing.html) module according to Pypeline&#39;s general [architecture](https://cgarciae.gitbook.io/pypeln/#architecture). Use this module when you are in need of true parallelism for CPU heavy operations but be aware of its implications (continue reading).</span>
 
-<span class="sd">### Example</span>
+<span class="sd">    from pypeln import process as pr</span>
+<span class="sd">    import time</span>
+<span class="sd">    from random import random</span>
 
+<span class="sd">    def slow_add1(x):</span>
+<span class="sd">        time.sleep(random()) # &lt;= some slow computation</span>
+<span class="sd">        return x + 1</span>
 
+<span class="sd">    def slow_gt3(x):</span>
+<span class="sd">        time.sleep(random()) # &lt;= some slow computation</span>
+<span class="sd">        return x &gt; 3</span>
+
+<span class="sd">    data = range(10) # [0, 1, 2, ..., 9] </span>
+
+<span class="sd">    stage = pr.map(slow_add1, data, workers = 3, maxsize = 4)</span>
+<span class="sd">    stage = pr.filter(slow_gt3, stage, workers = 2)</span>
+
+<span class="sd">    data = list(stage) # e.g. [5, 6, 9, 4, 8, 10, 7]</span>
 
 <span class="sd">## Stage</span>
-<span class="sd">All functions from this module return a private `pypeln.process._Stage` object. Stages are lazy, that is, a `_Stage` objects merely contains the information needed to perform the computation of itself and the Stages it depends on. Stages are [iterables](https://docs.python.org/3/glossary.html#term-iterable), to actually execute the pipeline you can directly iterable them or iterate over the generator returned by `pypeln.process.to_iterable` which gives you more control.</span>
+<span class="sd">All functions from this module return a private `pypeln.process._Stage` object. Stages are lazy, that is, a `_Stage` objects merely contains the information needed to perform the computation of itself and the Stages it depends on. Stages are [iterables](https://docs.python.org/3/glossary.html#term-iterable) i.e. they implement `__iter__`, to actually execute the pipeline you can directly iterable them or iterate over the generator returned by `pypeln.process.to_iterable` which gives you more control.</span>
 
 <span class="sd">    from pypeln import process as pr</span>
 <span class="sd">    import time</span>
@@ -1126,20 +1231,75 @@ table {
 <span class="sd">    for x in stage:</span>
 <span class="sd">        print(x) # e.g. 2, 1, 5, 6, 3, 4, 7, 8, 9, 10</span>
 
+<span class="sd">This iterable API makes Pypeline a very intuitive/pythonic to use and compatible with most other python code. </span>
 
 <span class="sd">## Workers</span>
-<span class="sd">The worker type of this module is a [multiprocessing.Process](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process). Each worker process is instantiated with `daemon = True`. Creating each process is slow and consumes a lot of memory. Since processes are technically separate programs managed by the OS they are great for doing operations in parallel and avoiding the [GIL](https://realpython.com/python-gil).</span>
+<span class="sd">The worker type of this module is a [multiprocessing.Process](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process). Each worker process is instantiated with `daemon = True`. Creating each process is slow and consumes a lot of memory. Since processes are technically separate programs managed by the OS they are great for doing operations in parallel by avoiding the [GIL](https://realpython.com/python-gil) (or rather having their separate GIL).</span>
+
+<span class="sd">The number of workers on each stage can usually be controled by the `workers` parameter on `pypeln.process`&#39;s various functions. Try not to create more processes than the number of cores you have on your machine or else they will end up fighting for resources and computation will be suboptimal.</span>
 
 <span class="sd">## Queue</span>
-<span class="sd">The queue type of this module is a [multiprocessing.Queue](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Queue). Since processes don&#39;t share memory, all information passed between them through these queues must first be serialized (which is slow), be aware of this and try to avoid sending large objects.</span>
+<span class="sd">The queue type of this module is a [multiprocessing.Queue](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Queue). Since processes don&#39;t share memory, all information passed between them through these queues must first be serialized (pickled) which is slow, be aware of this and try to avoid sending large objects.</span>
 
+<span class="sd">The number of elements each stage can hold usually be controled by the `maxsize` parameter on `pypeln.process`&#39;s various functions. When passed this parameter sets a maximum size for the input Queue of the stage, this serves as a [backpressure](https://www.quora.com/What-is-backpressure-in-the-context-of-data-streaming) mechanism because any stages pushing data to a Queue that becomes full (reaches its `maxsize`) will have to stop their computation until space becomes available, thus, potentially preveting `OutOfMemeory` errors due to overpressure from faster stages.</span>
+
+<span class="sd">## Resource Management</span>
+<span class="sd">There are many occasions where you need to create some resource objects (e.g. http or database sessions) that for efficiency are expected to last the whole lifespan of each worker. To handle such objects many functions have the `on_start` and `on_done` arguments which expect some callback functions. </span>
+
+<span class="sd">When a worker is created it calls the `on_start` function, this functions should create and return the resource objects. These object will be passed as extra arguments to the main function and also to the `on_end` function.</span>
+
+<span class="sd">    from pypeln import process as pr</span>
+
+<span class="sd">    def on_start():</span>
+<span class="sd">        http_session = get_http_session()</span>
+<span class="sd">        db_session = get_db_session()</span>
+<span class="sd">        return http_session, db_session</span>
+
+<span class="sd">    def on_end(_stage_status, http_session, db_session):</span>
+<span class="sd">        http_session.close()</span>
+<span class="sd">        db_session.close()</span>
+
+<span class="sd">    def f(x, http_session, db_session):</span>
+<span class="sd">        # some logic</span>
+<span class="sd">        return y</span>
+
+<span class="sd">    stage = pr.map(f, stage, workers = 3, on_start = on_start)</span>
+
+<span class="sd">A few notes:</span>
+
+<span class="sd">* The resource objects are created per worker.</span>
+<span class="sd">* `on_start` should return a object other that `None` or a tuple of resource objects.</span>
+<span class="sd">* If `on_start` returns some arguments then they must be accepted by `f` and `on_end`.</span>
+<span class="sd">* `on_end` receives a `pypeln.process.StageStatus` object followed by the resource objects created by `on_start`.</span>
+
+<span class="sd">## Pipe Operator</span>
+<span class="sd">Functions that accept a `stage` parameter return a [Partial](https://cgarciae.github.io/pypeln/pipe.m.html#pypeln.pipe.Partial) instead of a new stage when `stage` is not given. These `Partial`s are callables that accept the missing `stage` parameter and return the full output of the original function. For example</span>
+
+<span class="sd">    pr.map(f, stage, **kwargs) = pr.map(f, **kwargs)(stage)</span>
+
+<span class="sd">The important thing about partials is that they implement the pipe `|` operator as</span>
+
+<span class="sd">    x | partial = partial(x)</span>
+
+<span class="sd">This allows you to define pipelines in the following way:</span>
+
+<span class="sd">    from pypenl import process as pr</span>
+
+<span class="sd">    data = (</span>
+<span class="sd">        range(10)</span>
+<span class="sd">        | pr.map(slow_add1, workers = 3, maxsize = 4)</span>
+<span class="sd">        | pr.filter(slow_gt3, workers = 2)</span>
+<span class="sd">        | list</span>
+<span class="sd">    )</span>
 
 <span class="sd">## Recomendations</span>
-<span class="sd">Creating processes and doing communication between them is expensive, therefore we recommend the following:</span>
+<span class="sd">Creating processes and doing Inter-Process Communication (IPC) is expensive, therefore we recommend the following:</span>
 
 <span class="sd">* Minimize the number of stages based on this module.</span>
-<span class="sd">* If possible don&#39;t send large objects</span>
-<span class="sd">* If you just need to perform a very simple task over a collection in parallel use the `pypeln.process.each` function. </span>
+<span class="sd">* Tune the number of workers based on the number of cores.</span>
+<span class="sd">* When processing large datasets set the maxsize of the stage to prevent `OutOfMemory` errors.</span>
+<span class="sd">* If possible don&#39;t send large objects.</span>
+<span class="sd">* If you just need a single stage to perform a task over a collection in parallel use the `pypeln.process.each` function. </span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 
@@ -1150,6 +1310,7 @@ table {
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">utils</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">traceback</span>
+<span class="kn">from</span> <span class="nn">.pipe</span> <span class="kn">import</span> <span class="n">Partial</span>
 
 <span class="c1">#############</span>
 <span class="c1"># imports pr</span>
@@ -1218,6 +1379,29 @@ table {
         <span class="s2">&quot;pipeline_namespace&quot;</span><span class="p">,</span> <span class="s2">&quot;pipeline_error_queue&quot;</span><span class="p">,</span>
     <span class="p">])):</span>
     <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">StageStatus</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">lock</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_namespace</span> <span class="o">=</span> <span class="n">namespace</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span> <span class="o">=</span> <span class="n">lock</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">done</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_namespace</span><span class="o">.</span><span class="n">active_workers</span> <span class="o">==</span> <span class="mi">0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">active_workers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_namespace</span><span class="o">.</span><span class="n">active_workers</span>
+
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;StageStatus(done = {done}, active_workers = {active_workers})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">done</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">done</span><span class="p">,</span>
+            <span class="n">active_workers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_workers</span><span class="p">,</span>
+        <span class="p">)</span>
 
 <span class="k">class</span> <span class="nc">_InputQueue</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
@@ -1292,7 +1476,6 @@ table {
     <span class="k">return</span> <span class="n">handle_exceptions</span>
 
 
-
 <span class="k">def</span> <span class="nf">_run_task</span><span class="p">(</span><span class="n">f_task</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
 
     <span class="n">args</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">on_start</span><span class="p">()</span> <span class="k">if</span> <span class="n">params</span><span class="o">.</span><span class="n">on_start</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="k">else</span> <span class="bp">None</span>
@@ -1315,7 +1498,7 @@ table {
         <span class="k">with</span> <span class="n">params</span><span class="o">.</span><span class="n">stage_lock</span><span class="p">:</span>
             <span class="n">params</span><span class="o">.</span><span class="n">stage_namespace</span><span class="o">.</span><span class="n">active_workers</span> <span class="o">-=</span> <span class="mi">1</span>
 
-        <span class="n">stage_status</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">StageStatus</span><span class="p">(</span>
+        <span class="n">stage_status</span> <span class="o">=</span> <span class="n">StageStatus</span><span class="p">(</span>
             <span class="n">namespace</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">stage_namespace</span><span class="p">,</span>
             <span class="n">lock</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">stage_lock</span><span class="p">,</span>
         <span class="p">)</span>
@@ -1340,10 +1523,37 @@ table {
 
 <span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">on_done</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a stage that maps a function `f` over the data. Its intended to behave like python&#39;s built-in `map` function but with the added concurrency.</span>
+
+<span class="sd">        from pypeln import process as pr</span>
+<span class="sd">        import time</span>
+<span class="sd">        from random import random</span>
+
+<span class="sd">        def slow_add1(x):</span>
+<span class="sd">            time.sleep(random()) # &lt;= some slow computation</span>
+<span class="sd">            return x + 1</span>
+
+<span class="sd">        data = range(10) # [0, 1, 2, ..., 9]</span>
+<span class="sd">        stage = pr.map(slow_add1, data, workers = 3, maxsize = 4)</span>
+
+<span class="sd">        data = list(stage) # e.g. [2, 1, 5, 6, 3, 4, 7, 8, 9, 10]</span>
+
+<span class="sd">    Note that because of concurrency order is not guaranteed.</span>
+
+<span class="sd">    # **Args**</span>
+<span class="sd">    * **`f`** : a function with signature `f(x, *args) -&gt; y`, where `args` is the return of `on_start` if present, else the signature is just `f(x)`. </span>
+<span class="sd">    * **`stage = Undefined`** : a stage or iterable.</span>
+<span class="sd">    * **`workers = 1`** : the number of workers the stage should contain.</span>
+<span class="sd">    * **`maxsize = 0`** : the maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.</span>
+<span class="sd">    * **`on_start = None`** : a function with signature `on_start() -&gt; args`, where `args` can be any object different than `None` or a tuple of objects. The returned `args` are passed to `f` and `on_done`. This function is executed once per worker at the beggining.</span>
+<span class="sd">    * **`on_done = None`** : a function with signature `on_done(stage_status, *args)`, where `args` is the return of `on_start` if present, else the signature is just `on_done(stage_status)`, and `stage_status` is of type `pypeln.process.StageStatus`. This function is executed once per worker when the worker is done.</span>
+
+<span class="sd">    # **Returns**</span>
+<span class="sd">    * If the `stage` parameters is given then this function returns a new stage, else it returns a [Partial](https://cgarciae.github.io/pypeln/pipe.m.html#pypeln.pipe.Partial).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
@@ -1377,7 +1587,7 @@ table {
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
@@ -1412,7 +1622,7 @@ table {
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
     
@@ -1446,7 +1656,7 @@ table {
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
@@ -1551,7 +1761,7 @@ table {
 <span class="k">def</span> <span class="nf">from_iterable</span><span class="p">(</span><span class="n">iterable</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">Thread</span><span class="p">):</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">iterable</span><span class="p">:</span> <span class="n">from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="o">=</span><span class="n">worker_constructor</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">iterable</span><span class="p">:</span> <span class="n">from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="o">=</span><span class="n">worker_constructor</span><span class="p">))</span>
 
     <span class="k">return</span> <span class="n">_Stage</span><span class="p">(</span>
         <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">worker_constructor</span><span class="p">,</span>
@@ -1676,7 +1886,7 @@ table {
 <span class="k">def</span> <span class="nf">to_iterable</span><span class="p">(</span><span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">_to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">_to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">_to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">)</span>
     
@@ -1760,7 +1970,7 @@ table {
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
@@ -1804,7 +2014,7 @@ table {
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
     
@@ -1842,7 +2052,7 @@ table {
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
@@ -1878,7 +2088,7 @@ table {
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">from_iterable</span><span class="p">(</span><span class="n">iterable</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">Thread</span><span class="p">):</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">iterable</span><span class="p">:</span> <span class="n">from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="o">=</span><span class="n">worker_constructor</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">iterable</span><span class="p">:</span> <span class="n">from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="o">=</span><span class="n">worker_constructor</span><span class="p">))</span>
 
     <span class="k">return</span> <span class="n">_Stage</span><span class="p">(</span>
         <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">worker_constructor</span><span class="p">,</span>
@@ -1906,15 +2116,72 @@ table {
 
     
   
+    <div class="desc"><p>Creates a stage that maps a function <code>f</code> over the data. Its intended to behave like python's built-in <code>map</code> function but with the added concurrency.</p>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">pypeln</span> <span class="kn">import</span> <span class="n">process</span> <span class="k">as</span> <span class="n">pr</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">random</span>
+
+<span class="k">def</span> <span class="nf">slow_add1</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="p">())</span> <span class="c1"># &lt;= some slow computation</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="c1"># [0, 1, 2, ..., 9]</span>
+<span class="n">stage</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">slow_add1</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">4</span><span class="p">)</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span> <span class="c1"># e.g. [2, 1, 5, 6, 3, 4, 7, 8, 9, 10]</span>
+</pre></div>
+
+
+<p>Note that because of concurrency order is not guaranteed.</p>
+<h1><strong>Args</strong></h1>
+<ul>
+<li><strong><code>f</code></strong> : a function with signature <code>f(x, *args) -&gt; y</code>, where <code>args</code> is the return of <code>on_start</code> if present, else the signature is just <code>f(x)</code>. </li>
+<li><strong><code>stage = Undefined</code></strong> : a stage or iterable.</li>
+<li><strong><code>workers = 1</code></strong> : the number of workers the stage should contain.</li>
+<li><strong><code>maxsize = 0</code></strong> : the maximum number of objects the stage can hold simultaneously, if set to <code>0</code> (default) then the stage can grow unbounded.</li>
+<li><strong><code>on_start = None</code></strong> : a function with signature <code>on_start() -&gt; args</code>, where <code>args</code> can be any object different than <code>None</code> or a tuple of objects. The returned <code>args</code> are passed to <code>f</code> and <code>on_done</code>. This function is executed once per worker at the beggining.</li>
+<li><strong><code>on_done = None</code></strong> : a function with signature <code>on_done(stage_status, *args)</code>, where <code>args</code> is the return of <code>on_start</code> if present, else the signature is just <code>on_done(stage_status)</code>, and <code>stage_status</code> is of type <a href="#pypeln.process.StageStatus"><code>StageStatus</code></a>. This function is executed once per worker when the worker is done.</li>
+</ul>
+<h1><strong>Returns</strong></h1>
+<ul>
+<li>If the <code>stage</code> parameters is given then this function returns a new stage, else it returns a <a href="https://cgarciae.github.io/pypeln/pipe.m.html#pypeln.pipe.Partial">Partial</a>.</li>
+</ul></div>
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.process.map', this);">Show source &equiv;</a></p>
   <div id="source-pypeln.process.map" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">on_done</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a stage that maps a function `f` over the data. Its intended to behave like python&#39;s built-in `map` function but with the added concurrency.</span>
+
+<span class="sd">        from pypeln import process as pr</span>
+<span class="sd">        import time</span>
+<span class="sd">        from random import random</span>
+
+<span class="sd">        def slow_add1(x):</span>
+<span class="sd">            time.sleep(random()) # &lt;= some slow computation</span>
+<span class="sd">            return x + 1</span>
+
+<span class="sd">        data = range(10) # [0, 1, 2, ..., 9]</span>
+<span class="sd">        stage = pr.map(slow_add1, data, workers = 3, maxsize = 4)</span>
+
+<span class="sd">        data = list(stage) # e.g. [2, 1, 5, 6, 3, 4, 7, 8, 9, 10]</span>
+
+<span class="sd">    Note that because of concurrency order is not guaranteed.</span>
+
+<span class="sd">    # **Args**</span>
+<span class="sd">    * **`f`** : a function with signature `f(x, *args) -&gt; y`, where `args` is the return of `on_start` if present, else the signature is just `f(x)`. </span>
+<span class="sd">    * **`stage = Undefined`** : a stage or iterable.</span>
+<span class="sd">    * **`workers = 1`** : the number of workers the stage should contain.</span>
+<span class="sd">    * **`maxsize = 0`** : the maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.</span>
+<span class="sd">    * **`on_start = None`** : a function with signature `on_start() -&gt; args`, where `args` can be any object different than `None` or a tuple of objects. The returned `args` are passed to `f` and `on_done`. This function is executed once per worker at the beggining.</span>
+<span class="sd">    * **`on_done = None`** : a function with signature `on_done(stage_status, *args)`, where `args` is the return of `on_start` if present, else the signature is just `on_done(stage_status)`, and `stage_status` is of type `pypeln.process.StageStatus`. This function is executed once per worker when the worker is done.</span>
+
+<span class="sd">    # **Returns**</span>
+<span class="sd">    * If the `stage` parameters is given then this function returns a new stage, else it returns a [Partial](https://cgarciae.github.io/pypeln/pipe.m.html#pypeln.pipe.Partial).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
@@ -1984,7 +2251,7 @@ table {
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">to_iterable</span><span class="p">(</span><span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">_to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">_to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">_to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">)</span>
 </pre></div>
@@ -1995,6 +2262,96 @@ table {
   </div>
   
 
+    <h2 class="section-title" id="header-classes">Classes</h2>
+      
+      <div class="item">
+      <p id="pypeln.process.StageStatus" class="name">class <span class="ident">StageStatus</span></p>
+      
+  
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.process.StageStatus', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.process.StageStatus" class="source">
+    <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">StageStatus</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">lock</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_namespace</span> <span class="o">=</span> <span class="n">namespace</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span> <span class="o">=</span> <span class="n">lock</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">done</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_namespace</span><span class="o">.</span><span class="n">active_workers</span> <span class="o">==</span> <span class="mi">0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">active_workers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_namespace</span><span class="o">.</span><span class="n">active_workers</span>
+
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;StageStatus(done = {done}, active_workers = {active_workers})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">done</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">done</span><span class="p">,</span>
+            <span class="n">active_workers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_workers</span><span class="p">,</span>
+        <span class="p">)</span>
+</pre></div>
+
+  </div>
+</div>
+
+
+      <div class="class">
+          <h3>Ancestors (in MRO)</h3>
+          <ul class="class_list">
+          <li><a href="#pypeln.process.StageStatus">StageStatus</a></li>
+          <li>builtins.object</li>
+          </ul>
+          <h3>Static methods</h3>
+            
+  <div class="item">
+    <div class="name def" id="pypeln.process.StageStatus.__init__">
+    <p>def <span class="ident">__init__</span>(</p><p>self, namespace, lock)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Initialize self.  See help(type(self)) for accurate signature.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.process.StageStatus.__init__', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.process.StageStatus.__init__" class="source">
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">lock</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_namespace</span> <span class="o">=</span> <span class="n">namespace</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span> <span class="o">=</span> <span class="n">lock</span>
+</pre></div>
+
+  </div>
+</div>
+
+  </div>
+  
+          <h3>Instance variables</h3>
+            <div class="item">
+            <p id="pypeln.process.StageStatus.active_workers" class="name">var <span class="ident">active_workers</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="pypeln.process.StageStatus.done" class="name">var <span class="ident">done</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+      </div>
+      </div>
 
   </section>
 

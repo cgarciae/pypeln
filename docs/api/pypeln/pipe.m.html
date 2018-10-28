@@ -3,7 +3,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 
-    <title>pypeln API documentation</title>
+    <title>pypeln.pipe API documentation</title>
     <meta name="description" content="" />
 
   <link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300' rel='stylesheet' type='text/css'>
@@ -1042,15 +1042,20 @@ table {
     <ul id="index">
 
 
-
-    <li class="set"><h3><a href="#header-submodules">Sub-modules</a></h3>
+    <li class="set"><h3><a href="#header-classes">Classes</a></h3>
       <ul>
-        <li class="mono"><a href="asyncio_task.m.html">pypeln.asyncio_task</a></li>
-        <li class="mono"><a href="pipe.m.html">pypeln.pipe</a></li>
-        <li class="mono"><a href="process.m.html">pypeln.process</a></li>
-        <li class="mono"><a href="thread.m.html">pypeln.thread</a></li>
+        <li class="mono">
+        <span class="class_name"><a href="#pypeln.pipe.Partial">Partial</a></span>
+        
+          
+  <ul>
+    <li class="mono"><a href="#pypeln.pipe.Partial.__init__">__init__</a></li>
+  </ul>
+
+        </li>
       </ul>
     </li>
+
     </ul>
   </div>
 
@@ -1062,28 +1067,20 @@ table {
 
 
   <header id="section-intro">
-  <h1 class="title"><span class="name">pypeln</span> module</h1>
+  <h1 class="title"><span class="name">pypeln.pipe</span> module</h1>
   
   
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln', this);">Show source &equiv;</a></p>
-  <div id="source-pypeln" class="source">
-    <div class="codehilite"><pre><span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">&quot;&quot;&quot;</span>
-
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span>
-
-
-
-<span class="kn">import</span> <span class="nn">sys</span>
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">process</span>
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">thread</span>
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">pipe</span>
-
-<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">):</span>
-    <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">asyncio_task</span>
-    <span class="kn">from</span> <span class="nn">.asyncio_task</span> <span class="kn">import</span> <span class="n">TaskPool</span>
-
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;process&quot;</span><span class="p">,</span> <span class="s2">&quot;thread&quot;</span><span class="p">,</span> <span class="s2">&quot;asyncio_task&quot;</span><span class="p">,</span> <span class="s2">&quot;pipe&quot;</span><span class="p">]</span>
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.pipe', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.pipe" class="source">
+    <div class="codehilite"><pre><span></span><span class="n">lass</span> <span class="n">Partial</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+   <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+       <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="n">f</span>
+   <span class="k">def</span> <span class="fm">__or__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stage</span><span class="p">):</span>
+       <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
+   <span class="k">def</span> <span class="fm">__ror__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stage</span><span class="p">):</span>
+       <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
+   <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stage</span><span class="p">):</span>
+       <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 </pre></div>
 
   </div>
@@ -1093,34 +1090,77 @@ table {
   <section id="section-items">
 
 
-
-    <h2 class="section-title" id="header-submodules">Sub-modules</h2>
+    <h2 class="section-title" id="header-classes">Classes</h2>
+      
       <div class="item">
-      <p class="name"><a href="asyncio_task.m.html">pypeln.asyncio_task</a></p>
+      <p id="pypeln.pipe.Partial" class="name">class <span class="ident">Partial</span></p>
       
   
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.pipe.Partial', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.pipe.Partial" class="source">
+    <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">Partial</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
-      </div>
-      <div class="item">
-      <p class="name"><a href="pipe.m.html">pypeln.pipe</a></p>
-      
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="n">f</span>
+
+    <span class="k">def</span> <span class="fm">__or__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stage</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__ror__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stage</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stage</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
+</pre></div>
+
+  </div>
+</div>
+
+
+      <div class="class">
+          <h3>Ancestors (in MRO)</h3>
+          <ul class="class_list">
+          <li><a href="#pypeln.pipe.Partial">Partial</a></li>
+          <li>builtins.object</li>
+          </ul>
+          <h3>Static methods</h3>
+            
+  <div class="item">
+    <div class="name def" id="pypeln.pipe.Partial.__init__">
+    <p>def <span class="ident">__init__</span>(</p><p>self, f)</p>
+    </div>
+    
+
+    
   
+    <div class="desc"><p>Initialize self.  See help(type(self)) for accurate signature.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.pipe.Partial.__init__', this);">Show source &equiv;</a></p>
+  <div id="source-pypeln.pipe.Partial.__init__" class="source">
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="n">f</span>
+</pre></div>
 
-      </div>
-      <div class="item">
-      <p class="name"><a href="process.m.html">pypeln.process</a></p>
-      
+  </div>
+</div>
+
+  </div>
   
-    <div class="desc"><p>The <code>process</code> module lets you create pipelines using objects from python's <a href="https://docs.python.org/3.4/library/multiprocessing.html">multiprocessing</a> module according to Pypeline's general <a href="https://cgarciae.gitbook.io/pypeln/#architecture">architecture</a>. Use this module when you are in need of true...</p></div>
+          <h3>Instance variables</h3>
+            <div class="item">
+            <p id="pypeln.pipe.Partial.f" class="name">var <span class="ident">f</span></p>
+            
 
-      </div>
-      <div class="item">
-      <p class="name"><a href="thread.m.html">pypeln.thread</a></p>
-      
+            
   
-    <div class="desc"><p>The <code>process</code> module lets you create pipelines using objects from python's <a href="https://docs.python.org/3.4/library/multiprocessing.html">multiprocessing</a> module according to Pypeline's general <a href="https://cgarciae.gitbook.io/pypeln/#architecture">architecture</a>. Use this module when you are in need of true...</p></div>
+  <div class="source_cont">
+</div>
 
+            </div>
       </div>
+      </div>
+
   </section>
 
     </article>

@@ -1,23 +1,110 @@
 """ The `process` module lets you create pipelines using objects from python's [multiprocessing](https://docs.python.org/3.4/library/multiprocessing.html) module according to Pypeline's general [architecture](https://cgarciae.gitbook.io/pypeln/#architecture). Use this module when you are in need of true parallelism for CPU heavy operations but be aware of its implications (continue reading).
 
-### Example
+    from pypeln import process as pr
+    import time
+    from random import random
 
+    def slow_add1(x):
+        time.sleep(random()) # <= some slow computation
+        return x + 1
+
+    def slow_gt3(x):
+        time.sleep(random()) # <= some slow computation
+        return x > 3
+
+    data = range(10) # [0, 1, 2, ..., 9] 
+
+    stage = pr.map(slow_add1, data, workers = 3, maxsize = 4)
+    stage = pr.filter(slow_gt3, stage, workers = 2)
+
+    data = list(stage) # e.g. [5, 6, 9, 4, 8, 10, 7]
 
 ## Stage
-All functions from this module return a private `pypeln.process._Stage` object. Stages are lazy, that is, a `_Stage` objects merely contains the information needed to perform the computation of itself and the Stages it depends on. To actually execute the pipeline you can directly iterable over a `_Stage` or iterate over the generator returned by `pypeln.process.to_iterable` if you want to have more control. 
+All functions from this module return a private `pypeln.process._Stage` object. Stages are lazy, that is, a `_Stage` objects merely contains the information needed to perform the computation of itself and the Stages it depends on. Stages are [iterables](https://docs.python.org/3/glossary.html#term-iterable) i.e. they implement `__iter__`, to actually execute the pipeline you can directly iterable them or iterate over the generator returned by `pypeln.process.to_iterable` which gives you more control.
+
+    from pypeln import process as pr
+    import time
+    from random import random
+
+    def slow_add1(x):
+        time.sleep(random()) # <= some slow computation
+        return x + 1
+
+    data = range(10) # [0, 1, 2, ..., 9]
+    stage = pr.map(slow_add1, data, workers = 3, maxsize = 4)
+
+    for x in stage:
+        print(x) # e.g. 2, 1, 5, 6, 3, 4, 7, 8, 9, 10
+
+This iterable API makes Pypeline a very intuitive/pythonic to use and compatible with most other python code. 
 
 ## Workers
-The worker type of this module is a [multiprocessing.Process](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process). Each worker process is instantiated with `daemon = True`. Creating each process is slow and consumes a lot of memory. Since processes are technically separate programs managed by the OS they are great for doing operations in parallel and avoiding the [GIL](https://realpython.com/python-gil).
+The worker type of this module is a [multiprocessing.Process](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process). Each worker process is instantiated with `daemon = True`. Creating each process is slow and consumes a lot of memory. Since processes are technically separate programs managed by the OS they are great for doing operations in parallel by avoiding the [GIL](https://realpython.com/python-gil) (or rather having their separate GIL).
+
+The number of workers on each stage can usually be controled by the `workers` parameter on `pypeln.process`'s various functions. Try not to create more processes than the number of cores you have on your machine or else they will end up fighting for resources and computation will be suboptimal.
 
 ## Queue
-The queue type of this module is a [multiprocessing.Queue](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Queue). Since processes don't share memory, all information passed between them through these queues must first be serialized (which is slow), be aware of this and try to avoid sending large objects.
+The queue type of this module is a [multiprocessing.Queue](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Queue). Since processes don't share memory, all information passed between them through these queues must first be serialized (pickled) which is slow, be aware of this and try to avoid sending large objects.
+
+The number of elements each stage can hold usually be controled by the `maxsize` parameter on `pypeln.process`'s various functions. When passed this parameter sets a maximum size for the input Queue of the stage, this serves as a [backpressure](https://www.quora.com/What-is-backpressure-in-the-context-of-data-streaming) mechanism because any stages pushing data to a Queue that becomes full (reaches its `maxsize`) will have to stop their computation until space becomes available, thus, potentially preveting `OutOfMemeory` errors due to overpressure from faster stages.
+
+## Resource Management
+There are many occasions where you need to create some resource objects (e.g. http or database sessions) that for efficiency are expected to last the whole lifespan of each worker. To handle such objects many functions have the `on_start` and `on_done` arguments which expect some callback functions. 
+
+When a worker is created it calls the `on_start` function, this functions should create and return the resource objects. These object will be passed as extra arguments to the main function and also to the `on_end` function.
+
+    from pypeln import process as pr
+
+    def on_start():
+        http_session = get_http_session()
+        db_session = get_db_session()
+        return http_session, db_session
+
+    def on_end(_stage_status, http_session, db_session):
+        http_session.close()
+        db_session.close()
+
+    def f(x, http_session, db_session):
+        # some logic
+        return y
+
+    stage = pr.map(f, stage, workers = 3, on_start = on_start)
+
+A few notes:
+
+* The resource objects are created per worker.
+* `on_start` should return a object other that `None` or a tuple of resource objects.
+* If `on_start` returns some arguments then they must be accepted by `f` and `on_end`.
+* `on_end` receives a `pypeln.process.StageStatus` object followed by the resource objects created by `on_start`.
+
+## Pipe Operator
+Functions that accept a `stage` parameter return a [Partial](https://cgarciae.github.io/pypeln/pipe.m.html#pypeln.pipe.Partial) instead of a new stage when `stage` is not given. These `Partial`s are callables that accept the missing `stage` parameter and return the full output of the original function. For example
+
+    pr.map(f, stage, **kwargs) = pr.map(f, **kwargs)(stage)
+
+The important thing about partials is that they implement the pipe `|` operator as
+
+    x | partial = partial(x)
+
+This allows you to define pipelines in the following way:
+
+    from pypenl import process as pr
+
+    data = (
+        range(10)
+        | pr.map(slow_add1, workers = 3, maxsize = 4)
+        | pr.filter(slow_gt3, workers = 2)
+        | list
+    )
 
 ## Recomendations
-Creating processes and doing communication between them is expensive, therefore we recommend the following:
+Creating processes and doing Inter-Process Communication (IPC) is expensive, therefore we recommend the following:
 
 * Minimize the number of stages based on this module.
-* If possible don't send large objects
-* If you just need to perform a very simple task over a collection in parallel use the `pypeln.process.each` function. 
+* Tune the number of workers based on the number of cores.
+* When processing large datasets set the maxsize of the stage to prevent `OutOfMemory` errors.
+* If possible don't send large objects.
+* If you just need a single stage to perform a task over a collection in parallel use the `pypeln.process.each` function. 
 """
 
 
@@ -27,8 +114,8 @@ import functools
 from collections import namedtuple
 from . import utils
 import sys
-from six import reraise as raise_
 import traceback
+from .pipe import Partial
 
 #############
 # imports pr
@@ -97,6 +184,29 @@ class _StageParams(namedtuple("_StageParams",
         "pipeline_namespace", "pipeline_error_queue",
     ])):
     pass
+
+class StageStatus(object):
+
+    def __init__(self, namespace, lock):
+        self._namespace = namespace
+        self._lock = lock
+
+    @property
+    def done(self):
+        with self._lock:
+            return self._namespace.active_workers == 0
+
+    @property
+    def active_workers(self):
+        with self._lock:
+            return self._namespace.active_workers
+
+
+    def __str__(self):
+        return "StageStatus(done = {done}, active_workers = {active_workers})".format(
+            done = self.done,
+            active_workers = self.active_workers,
+        )
 
 class _InputQueue(object):
 
@@ -171,7 +281,6 @@ def _handle_exceptions(params):
     return handle_exceptions
 
 
-
 def _run_task(f_task, params):
 
     args = params.on_start() if params.on_start is not None else None
@@ -194,7 +303,7 @@ def _run_task(f_task, params):
         with params.stage_lock:
             params.stage_namespace.active_workers -= 1
 
-        stage_status = utils.StageStatus(
+        stage_status = StageStatus(
             namespace = params.stage_namespace,
             lock = params.stage_lock,
         )
@@ -219,10 +328,37 @@ def _map(f, params):
 
 def map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None):
     """
+    Creates a stage that maps a function `f` over the data. Its intended to behave like python's built-in `map` function but with the added concurrency.
+
+        from pypeln import process as pr
+        import time
+        from random import random
+
+        def slow_add1(x):
+            time.sleep(random()) # <= some slow computation
+            return x + 1
+
+        data = range(10) # [0, 1, 2, ..., 9]
+        stage = pr.map(slow_add1, data, workers = 3, maxsize = 4)
+
+        data = list(stage) # e.g. [2, 1, 5, 6, 3, 4, 7, 8, 9, 10]
+
+    Note that because of concurrency order is not guaranteed.
+
+    # **Args**
+    * **`f`** : a function with signature `f(x, *args) -> y`, where `args` is the return of `on_start` if present, else the signature is just `f(x)`. 
+    * **`stage = Undefined`** : a stage or iterable.
+    * **`workers = 1`** : the number of workers the stage should contain.
+    * **`maxsize = 0`** : the maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+    * **`on_start = None`** : a function with signature `on_start() -> args`, where `args` can be any object different than `None` or a tuple of objects. The returned `args` are passed to `f` and `on_done`. This function is executed once per worker at the beggining.
+    * **`on_done = None`** : a function with signature `on_done(stage_status, *args)`, where `args` is the return of `on_start` if present, else the signature is just `on_done(stage_status)`, and `stage_status` is of type `pypeln.process.StageStatus`. This function is executed once per worker when the worker is done.
+
+    # **Returns**
+    * If the `stage` parameters is given then this function returns a new stage, else it returns a [Partial](https://cgarciae.github.io/pypeln/pipe.m.html#pypeln.pipe.Partial).
     """
 
     if utils.is_undefined(stage):
-        return utils.Partial(lambda stage: map(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
+        return Partial(lambda stage: map(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
 
     stage = _to_stage(stage)
 
@@ -256,7 +392,7 @@ def flat_map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = No
     """
 
     if utils.is_undefined(stage):
-        return utils.Partial(lambda stage: flat_map(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
+        return Partial(lambda stage: flat_map(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
 
     stage = _to_stage(stage)
 
@@ -291,7 +427,7 @@ def filter(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None
     """
 
     if utils.is_undefined(stage):
-        return utils.Partial(lambda stage: filter(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
+        return Partial(lambda stage: filter(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
 
     stage = _to_stage(stage)
     
@@ -325,7 +461,7 @@ def each(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, 
     """
 
     if utils.is_undefined(stage):
-        return utils.Partial(lambda stage: each(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
+        return Partial(lambda stage: each(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
 
     stage = _to_stage(stage)
 
@@ -430,7 +566,7 @@ def _from_iterable(iterable, params):
 def from_iterable(iterable = utils.UNDEFINED, maxsize = None, worker_constructor = Thread):
 
     if utils.is_undefined(iterable):
-        return utils.Partial(lambda iterable: from_iterable(iterable, maxsize=maxsize, worker_constructor=worker_constructor))
+        return Partial(lambda iterable: from_iterable(iterable, maxsize=maxsize, worker_constructor=worker_constructor))
 
     return _Stage(
         worker_constructor = worker_constructor,
@@ -492,6 +628,7 @@ def _to_iterable(stage, maxsize):
     pipeline_namespace = _get_namespace()
     pipeline_namespace.error = False
     pipeline_error_queue = Queue()
+    
 
 
     input_queue = _InputQueue(maxsize, stage.workers, pipeline_namespace)
@@ -554,7 +691,7 @@ def _to_iterable(stage, maxsize):
 def to_iterable(stage = utils.UNDEFINED, maxsize = 0):
 
     if utils.is_undefined(stage):
-        return utils.Partial(lambda stage: _to_iterable(stage, maxsize))
+        return Partial(lambda stage: _to_iterable(stage, maxsize))
     else:
         return _to_iterable(stage, maxsize)
     

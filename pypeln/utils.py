@@ -5,67 +5,13 @@ from collections import namedtuple
 
 TIMEOUT = 0.0001
 
-class Partial(object):
 
-    def __init__(self, f):
-        self.f = f
-
-    def __or__(self, stage):
-        return self.f(stage)
-
-    def __ror__(self, stage):
-        return self.f(stage)
-
-    def __call__(self, stage):
-        return self.f(stage)
 
 class BaseStage(object):
 
     def __or__(self, f):
         return f(self)
 
-class StageStatus(object):
-
-    def __init__(self, namespace, lock):
-        self._namespace = namespace
-        self._lock = lock
-
-    @property
-    def done(self):
-        with self._lock:
-            return self._namespace.active_workers == 0
-
-    @property
-    def active_workers(self):
-        with self._lock:
-            return self._namespace.active_workers
-
-
-    def __str__(self):
-        return "StageStatus(done = {done}, active_workers = {active_workers})".format(
-            done = self.done,
-            active_workers = self.active_workers,
-        )
-
-class AsyncStageStatus(object):
-
-    def __init__(self):
-        pass
-
-    @property
-    def done(self):
-        return True
-
-    @property
-    def active_workers(self):
-        return 0
-
-
-    def __str__(self):
-        return "StageStatus(done = {done}, active_workers = {active_workers})".format(
-            done = self.done,
-            active_workers = self.active_workers,
-        )
 
 class Namespace(object):
     pass

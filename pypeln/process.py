@@ -78,7 +78,7 @@ A few notes:
 * `on_end` receives a `pypeln.process.StageStatus` object followed by the resource objects created by `on_start`.
 
 ## Pipe Operator
-Functions that accept a `stage` parameter return a [Partial](https://cgarciae.github.io/pypeln/pipe.m.html#pypeln.pipe.Partial) instead of a new stage when `stage` is not given. These `Partial`s are callables that accept the missing `stage` parameter and return the full output of the original function. For example
+Functions that accept a `stage` parameter return a `Partial` instead of a new stage when `stage` is not given. These `Partial`s are callables that accept the missing `stage` parameter and return the full output of the original function. For example
 
     pr.map(f, stage, **kwargs) = pr.map(f, **kwargs)(stage)
 
@@ -115,7 +115,6 @@ from collections import namedtuple
 from . import utils
 import sys
 import traceback
-from .pipe import Partial
 
 #############
 # imports pr
@@ -354,11 +353,11 @@ def map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, o
     * **`on_done = None`** : a function with signature `on_done(stage_status, *args)`, where `args` is the return of `on_start` if present, else the signature is just `on_done(stage_status)`, and `stage_status` is of type `pypeln.process.StageStatus`. This function is executed once per worker when the worker is done.
 
     # **Returns**
-    * If the `stage` parameters is given then this function returns a new stage, else it returns a [Partial](https://cgarciae.github.io/pypeln/pipe.m.html#pypeln.pipe.Partial).
+    * If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.
     """
 
     if utils.is_undefined(stage):
-        return Partial(lambda stage: map(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
+        return utils.Partial(lambda stage: map(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
 
     stage = _to_stage(stage)
 
@@ -392,7 +391,7 @@ def flat_map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = No
     """
 
     if utils.is_undefined(stage):
-        return Partial(lambda stage: flat_map(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
+        return utils.Partial(lambda stage: flat_map(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
 
     stage = _to_stage(stage)
 
@@ -424,10 +423,37 @@ def _filter(f, params):
 
 def filter(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None):
     """
+    Creates a stage that filter the data given a predicate function `f`. Its intended to behave like python's built-in `filter` function but with the added concurrency.
+
+        from pypeln import process as pr
+        import time
+        from random import random
+
+        def slow_gt3(x):
+            time.sleep(random()) # <= some slow computation
+            return x > 3
+
+        data = range(10) # [0, 1, 2, ..., 9]
+        stage = pr.filter(slow_gt3, data, workers = 3, maxsize = 4)
+
+        data = list(stage) # e.g. [5, 6, 3, 4, 7, 8, 9]
+
+    Note that because of concurrency order is not guaranteed.
+
+    # **Args**
+    * **`f`** : a function with signature `f(x, *args) -> bool`, where `args` is the return of `on_start` if present, else the signature is just `f(x)`. 
+    * **`stage = Undefined`** : a stage or iterable.
+    * **`workers = 1`** : the number of workers the stage should contain.
+    * **`maxsize = 0`** : the maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+    * **`on_start = None`** : a function with signature `on_start() -> args`, where `args` can be any object different than `None` or a tuple of objects. The returned `args` are passed to `f` and `on_done`. This function is executed once per worker at the beggining.
+    * **`on_done = None`** : a function with signature `on_done(stage_status, *args)`, where `args` is the return of `on_start` if present, else the signature is just `on_done(stage_status)`, and `stage_status` is of type `pypeln.process.StageStatus`. This function is executed once per worker when the worker is done.
+
+    # **Returns**
+    * If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.
     """
 
     if utils.is_undefined(stage):
-        return Partial(lambda stage: filter(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
+        return utils.Partial(lambda stage: filter(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
 
     stage = _to_stage(stage)
     
@@ -458,10 +484,26 @@ def _each(f, params):
 
 def each(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None, run = False):
     """
+    Creates a stage that runs the function `f` for each element in the data but the stage itself yields no elements. Its useful for sink stages that perform certain actions such as writting to disk, saving to a database, etc, and dont produce any results.
+
+    #TODO: CREATE_EXAMPLE
+
+    Note that because of concurrency order is not guaranteed.
+
+    # **Args**
+    * **`f`** : a function with signature `f(x, *args) -> None`, where `args` is the return of `on_start` if present, else the signature is just `f(x)`. 
+    * **`stage = Undefined`** : a stage or iterable.
+    * **`workers = 1`** : the number of workers the stage should contain.
+    * **`maxsize = 0`** : the maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+    * **`on_start = None`** : a function with signature `on_start() -> args`, where `args` can be any object different than `None` or a tuple of objects. The returned `args` are passed to `f` and `on_done`. This function is executed once per worker at the beggining.
+    * **`on_done = None`** : a function with signature `on_done(stage_status, *args)`, where `args` is the return of `on_start` if present, else the signature is just `on_done(stage_status)`, and `stage_status` is of type `pypeln.process.StageStatus`. This function is executed once per worker when the worker is done.
+
+    # **Returns**
+    * If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.
     """
 
     if utils.is_undefined(stage):
-        return Partial(lambda stage: each(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
+        return utils.Partial(lambda stage: each(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
 
     stage = _to_stage(stage)
 
@@ -566,7 +608,7 @@ def _from_iterable(iterable, params):
 def from_iterable(iterable = utils.UNDEFINED, maxsize = None, worker_constructor = Thread):
 
     if utils.is_undefined(iterable):
-        return Partial(lambda iterable: from_iterable(iterable, maxsize=maxsize, worker_constructor=worker_constructor))
+        return utils.Partial(lambda iterable: from_iterable(iterable, maxsize=maxsize, worker_constructor=worker_constructor))
 
     return _Stage(
         worker_constructor = worker_constructor,
@@ -691,7 +733,7 @@ def _to_iterable(stage, maxsize):
 def to_iterable(stage = utils.UNDEFINED, maxsize = 0):
 
     if utils.is_undefined(stage):
-        return Partial(lambda stage: _to_iterable(stage, maxsize))
+        return utils.Partial(lambda stage: _to_iterable(stage, maxsize))
     else:
         return _to_iterable(stage, maxsize)
     

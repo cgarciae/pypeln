@@ -7,7 +7,6 @@ import sys
 from . import utils
 import time
 import functools
-from .pipe import Partial
 
 def _WORKER(target, args, kwargs = None):
     kwargs = kwargs if kwargs is not None else dict()
@@ -244,7 +243,7 @@ def _map(f, params):
 def map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None):
 
     if utils.is_undefined(stage):
-        return Partial(lambda stage: map(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
+        return utils.Partial(lambda stage: map(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
 
     stage = _to_stage(stage)
 
@@ -282,7 +281,7 @@ def _flat_map(f, params):
 def flat_map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None):
 
     if utils.is_undefined(stage):
-        return Partial(lambda stage: flat_map(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
+        return utils.Partial(lambda stage: flat_map(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
 
     stage = _to_stage(stage)
 
@@ -320,7 +319,7 @@ def _filter(f, params):
 def filter(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None):
 
     if utils.is_undefined(stage):
-        return Partial(lambda stage: filter(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
+        return utils.Partial(lambda stage: filter(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
 
     stage = _to_stage(stage)
 
@@ -356,7 +355,7 @@ def _each(f, params):
 def each(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None, run = False):
 
     if utils.is_undefined(stage):
-        return Partial(lambda stage: each(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done, run=run))
+        return utils.Partial(lambda stage: each(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done, run=run))
 
     stage = _to_stage(stage)
 
@@ -500,7 +499,7 @@ def _from_iterable(iterable, params):
 def from_iterable(iterable = utils.UNDEFINED, maxsize = 0, worker_constructor = None):
 
     if utils.is_undefined(iterable):
-        return Partial(lambda iterable: from_iterable(iterable, maxsize=maxsize, worker_constructor=worker_constructor))
+        return utils.Partial(lambda iterable: from_iterable(iterable, maxsize=maxsize, worker_constructor=worker_constructor))
     
 
     # print("from_iterable", iterable)
@@ -619,7 +618,7 @@ def _to_iterable(stage, maxsize):
 def to_iterable(stage = utils.UNDEFINED, maxsize = 0):
 
     if utils.is_undefined(stage):
-        return Partial(lambda stage: to_iterable(stage, maxsize = maxsize))
+        return utils.Partial(lambda stage: to_iterable(stage, maxsize = maxsize))
     
     # print("to_iterable", stage.target)
 

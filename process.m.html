@@ -1159,7 +1159,7 @@ table {
 <li><code>on_end</code> receives a <a href="#pypeln.process.StageStatus"><code>StageStatus</code></a> object followed by the resource objects created by <code>on_start</code>.</li>
 </ul>
 <h2>Pipe Operator</h2>
-<p>Functions that accept a <code>stage</code> parameter return a <a href="https://cgarciae.github.io/pypeln/pipe.m.html#pypeln.pipe.Partial">Partial</a> instead of a new stage when <code>stage</code> is not given. These <code>Partial</code>s are callables that accept the missing <code>stage</code> parameter and return the full output of the original function. For example</p>
+<p>Functions that accept a <code>stage</code> parameter return a <code>Partial</code> instead of a new stage when <code>stage</code> is not given. These <code>Partial</code>s are callables that accept the missing <code>stage</code> parameter and return the full output of the original function. For example</p>
 <div class="codehilite"><pre><span></span>pr.map(f, stage, **kwargs) = pr.map(f, **kwargs)(stage)
 </pre></div>
 
@@ -1273,7 +1273,7 @@ table {
 <span class="sd">* `on_end` receives a `pypeln.process.StageStatus` object followed by the resource objects created by `on_start`.</span>
 
 <span class="sd">## Pipe Operator</span>
-<span class="sd">Functions that accept a `stage` parameter return a [Partial](https://cgarciae.github.io/pypeln/pipe.m.html#pypeln.pipe.Partial) instead of a new stage when `stage` is not given. These `Partial`s are callables that accept the missing `stage` parameter and return the full output of the original function. For example</span>
+<span class="sd">Functions that accept a `stage` parameter return a `Partial` instead of a new stage when `stage` is not given. These `Partial`s are callables that accept the missing `stage` parameter and return the full output of the original function. For example</span>
 
 <span class="sd">    pr.map(f, stage, **kwargs) = pr.map(f, **kwargs)(stage)</span>
 
@@ -1310,7 +1310,6 @@ table {
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">utils</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">traceback</span>
-<span class="kn">from</span> <span class="nn">.pipe</span> <span class="kn">import</span> <span class="n">Partial</span>
 
 <span class="c1">#############</span>
 <span class="c1"># imports pr</span>
@@ -1549,11 +1548,11 @@ table {
 <span class="sd">    * **`on_done = None`** : a function with signature `on_done(stage_status, *args)`, where `args` is the return of `on_start` if present, else the signature is just `on_done(stage_status)`, and `stage_status` is of type `pypeln.process.StageStatus`. This function is executed once per worker when the worker is done.</span>
 
 <span class="sd">    # **Returns**</span>
-<span class="sd">    * If the `stage` parameters is given then this function returns a new stage, else it returns a [Partial](https://cgarciae.github.io/pypeln/pipe.m.html#pypeln.pipe.Partial).</span>
+<span class="sd">    * If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
@@ -1587,7 +1586,7 @@ table {
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
@@ -1619,10 +1618,37 @@ table {
 
 <span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">on_done</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a stage that filter the data given a predicate function `f`. Its intended to behave like python&#39;s built-in `filter` function but with the added concurrency.</span>
+
+<span class="sd">        from pypeln import process as pr</span>
+<span class="sd">        import time</span>
+<span class="sd">        from random import random</span>
+
+<span class="sd">        def slow_gt3(x):</span>
+<span class="sd">            time.sleep(random()) # &lt;= some slow computation</span>
+<span class="sd">            return x &gt; 3</span>
+
+<span class="sd">        data = range(10) # [0, 1, 2, ..., 9]</span>
+<span class="sd">        stage = pr.filter(slow_gt3, data, workers = 3, maxsize = 4)</span>
+
+<span class="sd">        data = list(stage) # e.g. [5, 6, 3, 4, 7, 8, 9]</span>
+
+<span class="sd">    Note that because of concurrency order is not guaranteed.</span>
+
+<span class="sd">    # **Args**</span>
+<span class="sd">    * **`f`** : a function with signature `f(x, *args) -&gt; bool`, where `args` is the return of `on_start` if present, else the signature is just `f(x)`. </span>
+<span class="sd">    * **`stage = Undefined`** : a stage or iterable.</span>
+<span class="sd">    * **`workers = 1`** : the number of workers the stage should contain.</span>
+<span class="sd">    * **`maxsize = 0`** : the maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.</span>
+<span class="sd">    * **`on_start = None`** : a function with signature `on_start() -&gt; args`, where `args` can be any object different than `None` or a tuple of objects. The returned `args` are passed to `f` and `on_done`. This function is executed once per worker at the beggining.</span>
+<span class="sd">    * **`on_done = None`** : a function with signature `on_done(stage_status, *args)`, where `args` is the return of `on_start` if present, else the signature is just `on_done(stage_status)`, and `stage_status` is of type `pypeln.process.StageStatus`. This function is executed once per worker when the worker is done.</span>
+
+<span class="sd">    # **Returns**</span>
+<span class="sd">    * If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
     
@@ -1653,10 +1679,26 @@ table {
 
 <span class="k">def</span> <span class="nf">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">on_done</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">run</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a stage that runs the function `f` for each element in the data but the stage itself yields no elements. Its useful for sink stages that perform certain actions such as writting to disk, saving to a database, etc, and dont produce any results.</span>
+
+<span class="sd">    #TODO: CREATE_EXAMPLE</span>
+
+<span class="sd">    Note that because of concurrency order is not guaranteed.</span>
+
+<span class="sd">    # **Args**</span>
+<span class="sd">    * **`f`** : a function with signature `f(x, *args) -&gt; None`, where `args` is the return of `on_start` if present, else the signature is just `f(x)`. </span>
+<span class="sd">    * **`stage = Undefined`** : a stage or iterable.</span>
+<span class="sd">    * **`workers = 1`** : the number of workers the stage should contain.</span>
+<span class="sd">    * **`maxsize = 0`** : the maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.</span>
+<span class="sd">    * **`on_start = None`** : a function with signature `on_start() -&gt; args`, where `args` can be any object different than `None` or a tuple of objects. The returned `args` are passed to `f` and `on_done`. This function is executed once per worker at the beggining.</span>
+<span class="sd">    * **`on_done = None`** : a function with signature `on_done(stage_status, *args)`, where `args` is the return of `on_start` if present, else the signature is just `on_done(stage_status)`, and `stage_status` is of type `pypeln.process.StageStatus`. This function is executed once per worker when the worker is done.</span>
+
+<span class="sd">    # **Returns**</span>
+<span class="sd">    * If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
@@ -1761,7 +1803,7 @@ table {
 <span class="k">def</span> <span class="nf">from_iterable</span><span class="p">(</span><span class="n">iterable</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">Thread</span><span class="p">):</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">iterable</span><span class="p">:</span> <span class="n">from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="o">=</span><span class="n">worker_constructor</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">iterable</span><span class="p">:</span> <span class="n">from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="o">=</span><span class="n">worker_constructor</span><span class="p">))</span>
 
     <span class="k">return</span> <span class="n">_Stage</span><span class="p">(</span>
         <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">worker_constructor</span><span class="p">,</span>
@@ -1886,7 +1928,7 @@ table {
 <span class="k">def</span> <span class="nf">to_iterable</span><span class="p">(</span><span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">_to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">_to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">_to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">)</span>
     
@@ -1962,15 +2004,47 @@ table {
 
     
   
+    <div class="desc"><p>Creates a stage that runs the function <code>f</code> for each element in the data but the stage itself yields no elements. Its useful for sink stages that perform certain actions such as writting to disk, saving to a database, etc, and dont produce any results.</p>
+<h1>TODO: CREATE_EXAMPLE</h1>
+<p>Note that because of concurrency order is not guaranteed.</p>
+<h1><strong>Args</strong></h1>
+<ul>
+<li><strong><code>f</code></strong> : a function with signature <code>f(x, *args) -&gt; None</code>, where <code>args</code> is the return of <code>on_start</code> if present, else the signature is just <code>f(x)</code>. </li>
+<li><strong><code>stage = Undefined</code></strong> : a stage or iterable.</li>
+<li><strong><code>workers = 1</code></strong> : the number of workers the stage should contain.</li>
+<li><strong><code>maxsize = 0</code></strong> : the maximum number of objects the stage can hold simultaneously, if set to <code>0</code> (default) then the stage can grow unbounded.</li>
+<li><strong><code>on_start = None</code></strong> : a function with signature <code>on_start() -&gt; args</code>, where <code>args</code> can be any object different than <code>None</code> or a tuple of objects. The returned <code>args</code> are passed to <code>f</code> and <code>on_done</code>. This function is executed once per worker at the beggining.</li>
+<li><strong><code>on_done = None</code></strong> : a function with signature <code>on_done(stage_status, *args)</code>, where <code>args</code> is the return of <code>on_start</code> if present, else the signature is just <code>on_done(stage_status)</code>, and <code>stage_status</code> is of type <a href="#pypeln.process.StageStatus"><code>StageStatus</code></a>. This function is executed once per worker when the worker is done.</li>
+</ul>
+<h1><strong>Returns</strong></h1>
+<ul>
+<li>If the <code>stage</code> parameters is given then this function returns a new stage, else it returns a <code>Partial</code>.</li>
+</ul></div>
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.process.each', this);">Show source &equiv;</a></p>
   <div id="source-pypeln.process.each" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">on_done</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">run</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a stage that runs the function `f` for each element in the data but the stage itself yields no elements. Its useful for sink stages that perform certain actions such as writting to disk, saving to a database, etc, and dont produce any results.</span>
+
+<span class="sd">    #TODO: CREATE_EXAMPLE</span>
+
+<span class="sd">    Note that because of concurrency order is not guaranteed.</span>
+
+<span class="sd">    # **Args**</span>
+<span class="sd">    * **`f`** : a function with signature `f(x, *args) -&gt; None`, where `args` is the return of `on_start` if present, else the signature is just `f(x)`. </span>
+<span class="sd">    * **`stage = Undefined`** : a stage or iterable.</span>
+<span class="sd">    * **`workers = 1`** : the number of workers the stage should contain.</span>
+<span class="sd">    * **`maxsize = 0`** : the maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.</span>
+<span class="sd">    * **`on_start = None`** : a function with signature `on_start() -&gt; args`, where `args` can be any object different than `None` or a tuple of objects. The returned `args` are passed to `f` and `on_done`. This function is executed once per worker at the beggining.</span>
+<span class="sd">    * **`on_done = None`** : a function with signature `on_done(stage_status, *args)`, where `args` is the return of `on_start` if present, else the signature is just `on_done(stage_status)`, and `stage_status` is of type `pypeln.process.StageStatus`. This function is executed once per worker when the worker is done.</span>
+
+<span class="sd">    # **Returns**</span>
+<span class="sd">    * If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
@@ -2006,15 +2080,72 @@ table {
 
     
   
+    <div class="desc"><p>Creates a stage that filter the data given a predicate function <code>f</code>. Its intended to behave like python's built-in <code>filter</code> function but with the added concurrency.</p>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">pypeln</span> <span class="kn">import</span> <span class="n">process</span> <span class="k">as</span> <span class="n">pr</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">random</span>
+
+<span class="k">def</span> <span class="nf">slow_gt3</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="p">())</span> <span class="c1"># &lt;= some slow computation</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">3</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="c1"># [0, 1, 2, ..., 9]</span>
+<span class="n">stage</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">slow_gt3</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">4</span><span class="p">)</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span> <span class="c1"># e.g. [5, 6, 3, 4, 7, 8, 9]</span>
+</pre></div>
+
+
+<p>Note that because of concurrency order is not guaranteed.</p>
+<h1><strong>Args</strong></h1>
+<ul>
+<li><strong><code>f</code></strong> : a function with signature <code>f(x, *args) -&gt; bool</code>, where <code>args</code> is the return of <code>on_start</code> if present, else the signature is just <code>f(x)</code>. </li>
+<li><strong><code>stage = Undefined</code></strong> : a stage or iterable.</li>
+<li><strong><code>workers = 1</code></strong> : the number of workers the stage should contain.</li>
+<li><strong><code>maxsize = 0</code></strong> : the maximum number of objects the stage can hold simultaneously, if set to <code>0</code> (default) then the stage can grow unbounded.</li>
+<li><strong><code>on_start = None</code></strong> : a function with signature <code>on_start() -&gt; args</code>, where <code>args</code> can be any object different than <code>None</code> or a tuple of objects. The returned <code>args</code> are passed to <code>f</code> and <code>on_done</code>. This function is executed once per worker at the beggining.</li>
+<li><strong><code>on_done = None</code></strong> : a function with signature <code>on_done(stage_status, *args)</code>, where <code>args</code> is the return of <code>on_start</code> if present, else the signature is just <code>on_done(stage_status)</code>, and <code>stage_status</code> is of type <a href="#pypeln.process.StageStatus"><code>StageStatus</code></a>. This function is executed once per worker when the worker is done.</li>
+</ul>
+<h1><strong>Returns</strong></h1>
+<ul>
+<li>If the <code>stage</code> parameters is given then this function returns a new stage, else it returns a <code>Partial</code>.</li>
+</ul></div>
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.process.filter', this);">Show source &equiv;</a></p>
   <div id="source-pypeln.process.filter" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">on_done</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a stage that filter the data given a predicate function `f`. Its intended to behave like python&#39;s built-in `filter` function but with the added concurrency.</span>
+
+<span class="sd">        from pypeln import process as pr</span>
+<span class="sd">        import time</span>
+<span class="sd">        from random import random</span>
+
+<span class="sd">        def slow_gt3(x):</span>
+<span class="sd">            time.sleep(random()) # &lt;= some slow computation</span>
+<span class="sd">            return x &gt; 3</span>
+
+<span class="sd">        data = range(10) # [0, 1, 2, ..., 9]</span>
+<span class="sd">        stage = pr.filter(slow_gt3, data, workers = 3, maxsize = 4)</span>
+
+<span class="sd">        data = list(stage) # e.g. [5, 6, 3, 4, 7, 8, 9]</span>
+
+<span class="sd">    Note that because of concurrency order is not guaranteed.</span>
+
+<span class="sd">    # **Args**</span>
+<span class="sd">    * **`f`** : a function with signature `f(x, *args) -&gt; bool`, where `args` is the return of `on_start` if present, else the signature is just `f(x)`. </span>
+<span class="sd">    * **`stage = Undefined`** : a stage or iterable.</span>
+<span class="sd">    * **`workers = 1`** : the number of workers the stage should contain.</span>
+<span class="sd">    * **`maxsize = 0`** : the maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.</span>
+<span class="sd">    * **`on_start = None`** : a function with signature `on_start() -&gt; args`, where `args` can be any object different than `None` or a tuple of objects. The returned `args` are passed to `f` and `on_done`. This function is executed once per worker at the beggining.</span>
+<span class="sd">    * **`on_done = None`** : a function with signature `on_done(stage_status, *args)`, where `args` is the return of `on_start` if present, else the signature is just `on_done(stage_status)`, and `stage_status` is of type `pypeln.process.StageStatus`. This function is executed once per worker when the worker is done.</span>
+
+<span class="sd">    # **Returns**</span>
+<span class="sd">    * If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
     
@@ -2052,7 +2183,7 @@ table {
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
@@ -2088,7 +2219,7 @@ table {
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">from_iterable</span><span class="p">(</span><span class="n">iterable</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">Thread</span><span class="p">):</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">iterable</span><span class="p">:</span> <span class="n">from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="o">=</span><span class="n">worker_constructor</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">iterable</span><span class="p">:</span> <span class="n">from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="o">=</span><span class="n">worker_constructor</span><span class="p">))</span>
 
     <span class="k">return</span> <span class="n">_Stage</span><span class="p">(</span>
         <span class="n">worker_constructor</span> <span class="o">=</span> <span class="n">worker_constructor</span><span class="p">,</span>
@@ -2144,7 +2275,7 @@ table {
 </ul>
 <h1><strong>Returns</strong></h1>
 <ul>
-<li>If the <code>stage</code> parameters is given then this function returns a new stage, else it returns a <a href="https://cgarciae.github.io/pypeln/pipe.m.html#pypeln.pipe.Partial">Partial</a>.</li>
+<li>If the <code>stage</code> parameters is given then this function returns a new stage, else it returns a <code>Partial</code>.</li>
 </ul></div>
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.process.map', this);">Show source &equiv;</a></p>
@@ -2177,11 +2308,11 @@ table {
 <span class="sd">    * **`on_done = None`** : a function with signature `on_done(stage_status, *args)`, where `args` is the return of `on_start` if present, else the signature is just `on_done(stage_status)`, and `stage_status` is of type `pypeln.process.StageStatus`. This function is executed once per worker when the worker is done.</span>
 
 <span class="sd">    # **Returns**</span>
-<span class="sd">    * If the `stage` parameters is given then this function returns a new stage, else it returns a [Partial](https://cgarciae.github.io/pypeln/pipe.m.html#pypeln.pipe.Partial).</span>
+<span class="sd">    * If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">))</span>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">_to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
@@ -2251,7 +2382,7 @@ table {
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">to_iterable</span><span class="p">(</span><span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">_to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">_to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">_to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">)</span>
 </pre></div>

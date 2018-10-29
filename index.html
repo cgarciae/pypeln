@@ -1046,7 +1046,6 @@ table {
     <li class="set"><h3><a href="#header-submodules">Sub-modules</a></h3>
       <ul>
         <li class="mono"><a href="asyncio_task.m.html">pypeln.asyncio_task</a></li>
-        <li class="mono"><a href="pipe.m.html">pypeln.pipe</a></li>
         <li class="mono"><a href="process.m.html">pypeln.process</a></li>
         <li class="mono"><a href="thread.m.html">pypeln.thread</a></li>
       </ul>
@@ -1077,13 +1076,12 @@ table {
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">process</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">thread</span>
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">pipe</span>
 
 <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">):</span>
     <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">asyncio_task</span>
     <span class="kn">from</span> <span class="nn">.asyncio_task</span> <span class="kn">import</span> <span class="n">TaskPool</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;process&quot;</span><span class="p">,</span> <span class="s2">&quot;thread&quot;</span><span class="p">,</span> <span class="s2">&quot;asyncio_task&quot;</span><span class="p">,</span> <span class="s2">&quot;pipe&quot;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;process&quot;</span><span class="p">,</span> <span class="s2">&quot;thread&quot;</span><span class="p">,</span> <span class="s2">&quot;asyncio_task&quot;</span><span class="p">]</span>
 </pre></div>
 
   </div>
@@ -1097,12 +1095,6 @@ table {
     <h2 class="section-title" id="header-submodules">Sub-modules</h2>
       <div class="item">
       <p class="name"><a href="asyncio_task.m.html">pypeln.asyncio_task</a></p>
-      
-  
-
-      </div>
-      <div class="item">
-      <p class="name"><a href="pipe.m.html">pypeln.pipe</a></p>
       
   
 

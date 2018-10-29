@@ -1679,9 +1679,23 @@ table {
 
 <span class="k">def</span> <span class="nf">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">on_done</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">run</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Creates a stage that runs the function `f` for each element in the data but the stage itself yields no elements. Its useful for sink stages that perform certain actions such as writting to disk, saving to a database, etc, and dont produce any results.</span>
+<span class="sd">    Creates a stage that runs the function `f` for each element in the data but the stage itself yields no elements. Its useful for sink stages that perform certain actions such as writting to disk, saving to a database, etc, and dont produce any results. For example:</span>
 
-<span class="sd">    #TODO: CREATE_EXAMPLE</span>
+<span class="sd">        from pypeln import process as pr</span>
+
+<span class="sd">        def process_image(image_path):</span>
+<span class="sd">            image = load_image(image_path)</span>
+<span class="sd">            image = transform_image(image)</span>
+<span class="sd">            save_image(image_path, image)</span>
+
+<span class="sd">        files_paths = get_file_paths()</span>
+<span class="sd">        stage = pr.each(process_image, file_paths, workers = 4)</span>
+<span class="sd">        pr.run(stage)</span>
+
+<span class="sd">    or alternatively</span>
+
+<span class="sd">        files_paths = get_file_paths()</span>
+<span class="sd">        pr.each(process_image, file_paths, workers = 4, run = True)</span>
 
 <span class="sd">    Note that because of concurrency order is not guaranteed.</span>
 
@@ -1692,9 +1706,10 @@ table {
 <span class="sd">    * **`maxsize = 0`** : the maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.</span>
 <span class="sd">    * **`on_start = None`** : a function with signature `on_start() -&gt; args`, where `args` can be any object different than `None` or a tuple of objects. The returned `args` are passed to `f` and `on_done`. This function is executed once per worker at the beggining.</span>
 <span class="sd">    * **`on_done = None`** : a function with signature `on_done(stage_status, *args)`, where `args` is the return of `on_start` if present, else the signature is just `on_done(stage_status)`, and `stage_status` is of type `pypeln.process.StageStatus`. This function is executed once per worker when the worker is done.</span>
+<span class="sd">    * **`run = False`** : specify whether to run the stage immediately.</span>
 
 <span class="sd">    # **Returns**</span>
-<span class="sd">    * If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.</span>
+<span class="sd">    * If the `stage` parameters is not given then this function returns a `Partial`, else if `return = False` (default) it return a new stage, if `run = True` then it runs the stage and returns `None`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
@@ -1755,7 +1770,7 @@ table {
 <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">stages</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
     
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stages</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">stages</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Expected atleast stage to run&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Expected at least 1 stage to run&quot;</span><span class="p">)</span>
 
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stages</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
         <span class="n">stage</span> <span class="o">=</span> <span class="n">concat</span><span class="p">(</span><span class="n">stages</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">)</span>
@@ -2004,8 +2019,26 @@ table {
 
     
   
-    <div class="desc"><p>Creates a stage that runs the function <code>f</code> for each element in the data but the stage itself yields no elements. Its useful for sink stages that perform certain actions such as writting to disk, saving to a database, etc, and dont produce any results.</p>
-<h1>TODO: CREATE_EXAMPLE</h1>
+    <div class="desc"><p>Creates a stage that runs the function <code>f</code> for each element in the data but the stage itself yields no elements. Its useful for sink stages that perform certain actions such as writting to disk, saving to a database, etc, and dont produce any results. For example:</p>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">pypeln</span> <span class="kn">import</span> <span class="n">process</span> <span class="k">as</span> <span class="n">pr</span>
+
+<span class="k">def</span> <span class="nf">process_image</span><span class="p">(</span><span class="n">image_path</span><span class="p">):</span>
+    <span class="n">image</span> <span class="o">=</span> <span class="n">load_image</span><span class="p">(</span><span class="n">image_path</span><span class="p">)</span>
+    <span class="n">image</span> <span class="o">=</span> <span class="n">transform_image</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+    <span class="n">save_image</span><span class="p">(</span><span class="n">image_path</span><span class="p">,</span> <span class="n">image</span><span class="p">)</span>
+
+<span class="n">files_paths</span> <span class="o">=</span> <span class="n">get_file_paths</span><span class="p">()</span>
+<span class="n">stage</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">each</span><span class="p">(</span><span class="n">process_image</span><span class="p">,</span> <span class="n">file_paths</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">4</span><span class="p">)</span>
+<span class="n">pr</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
+</pre></div>
+
+
+<p>or alternatively</p>
+<div class="codehilite"><pre><span></span>files_paths = get_file_paths()
+pr.each(process_image, file_paths, workers = 4, run = True)
+</pre></div>
+
+
 <p>Note that because of concurrency order is not guaranteed.</p>
 <h1><strong>Args</strong></h1>
 <ul>
@@ -2015,19 +2048,34 @@ table {
 <li><strong><code>maxsize = 0</code></strong> : the maximum number of objects the stage can hold simultaneously, if set to <code>0</code> (default) then the stage can grow unbounded.</li>
 <li><strong><code>on_start = None</code></strong> : a function with signature <code>on_start() -&gt; args</code>, where <code>args</code> can be any object different than <code>None</code> or a tuple of objects. The returned <code>args</code> are passed to <code>f</code> and <code>on_done</code>. This function is executed once per worker at the beggining.</li>
 <li><strong><code>on_done = None</code></strong> : a function with signature <code>on_done(stage_status, *args)</code>, where <code>args</code> is the return of <code>on_start</code> if present, else the signature is just <code>on_done(stage_status)</code>, and <code>stage_status</code> is of type <a href="#pypeln.process.StageStatus"><code>StageStatus</code></a>. This function is executed once per worker when the worker is done.</li>
+<li><strong><code>run = False</code></strong> : specify whether to run the stage immediately.</li>
 </ul>
 <h1><strong>Returns</strong></h1>
 <ul>
-<li>If the <code>stage</code> parameters is given then this function returns a new stage, else it returns a <code>Partial</code>.</li>
+<li>If the <code>stage</code> parameters is not given then this function returns a <code>Partial</code>, else if <code>return = False</code> (default) it return a new stage, if <code>run = True</code> then it runs the stage and returns <code>None</code>.</li>
 </ul></div>
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln.process.each', this);">Show source &equiv;</a></p>
   <div id="source-pypeln.process.each" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">on_done</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">run</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Creates a stage that runs the function `f` for each element in the data but the stage itself yields no elements. Its useful for sink stages that perform certain actions such as writting to disk, saving to a database, etc, and dont produce any results.</span>
+<span class="sd">    Creates a stage that runs the function `f` for each element in the data but the stage itself yields no elements. Its useful for sink stages that perform certain actions such as writting to disk, saving to a database, etc, and dont produce any results. For example:</span>
 
-<span class="sd">    #TODO: CREATE_EXAMPLE</span>
+<span class="sd">        from pypeln import process as pr</span>
+
+<span class="sd">        def process_image(image_path):</span>
+<span class="sd">            image = load_image(image_path)</span>
+<span class="sd">            image = transform_image(image)</span>
+<span class="sd">            save_image(image_path, image)</span>
+
+<span class="sd">        files_paths = get_file_paths()</span>
+<span class="sd">        stage = pr.each(process_image, file_paths, workers = 4)</span>
+<span class="sd">        pr.run(stage)</span>
+
+<span class="sd">    or alternatively</span>
+
+<span class="sd">        files_paths = get_file_paths()</span>
+<span class="sd">        pr.each(process_image, file_paths, workers = 4, run = True)</span>
 
 <span class="sd">    Note that because of concurrency order is not guaranteed.</span>
 
@@ -2038,9 +2086,10 @@ table {
 <span class="sd">    * **`maxsize = 0`** : the maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.</span>
 <span class="sd">    * **`on_start = None`** : a function with signature `on_start() -&gt; args`, where `args` can be any object different than `None` or a tuple of objects. The returned `args` are passed to `f` and `on_done`. This function is executed once per worker at the beggining.</span>
 <span class="sd">    * **`on_done = None`** : a function with signature `on_done(stage_status, *args)`, where `args` is the return of `on_start` if present, else the signature is just `on_done(stage_status)`, and `stage_status` is of type `pypeln.process.StageStatus`. This function is executed once per worker when the worker is done.</span>
+<span class="sd">    * **`run = False`** : specify whether to run the stage immediately.</span>
 
 <span class="sd">    # **Returns**</span>
-<span class="sd">    * If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.</span>
+<span class="sd">    * If the `stage` parameters is not given then this function returns a `Partial`, else if `return = False` (default) it return a new stage, if `run = True` then it runs the stage and returns `None`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
@@ -2348,7 +2397,7 @@ table {
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">stages</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
     
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stages</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">stages</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Expected atleast stage to run&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Expected at least 1 stage to run&quot;</span><span class="p">)</span>
 
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stages</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
         <span class="n">stage</span> <span class="o">=</span> <span class="n">concat</span><span class="p">(</span><span class="n">stages</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="n">maxsize</span><span class="p">)</span>

@@ -484,9 +484,23 @@ def _each(f, params):
 
 def each(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None, run = False):
     """
-    Creates a stage that runs the function `f` for each element in the data but the stage itself yields no elements. Its useful for sink stages that perform certain actions such as writting to disk, saving to a database, etc, and dont produce any results.
+    Creates a stage that runs the function `f` for each element in the data but the stage itself yields no elements. Its useful for sink stages that perform certain actions such as writting to disk, saving to a database, etc, and dont produce any results. For example:
 
-    #TODO: CREATE_EXAMPLE
+        from pypeln import process as pr
+
+        def process_image(image_path):
+            image = load_image(image_path)
+            image = transform_image(image)
+            save_image(image_path, image)
+
+        files_paths = get_file_paths()
+        stage = pr.each(process_image, file_paths, workers = 4)
+        pr.run(stage)
+
+    or alternatively
+
+        files_paths = get_file_paths()
+        pr.each(process_image, file_paths, workers = 4, run = True)
 
     Note that because of concurrency order is not guaranteed.
 
@@ -497,9 +511,10 @@ def each(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, 
     * **`maxsize = 0`** : the maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
     * **`on_start = None`** : a function with signature `on_start() -> args`, where `args` can be any object different than `None` or a tuple of objects. The returned `args` are passed to `f` and `on_done`. This function is executed once per worker at the beggining.
     * **`on_done = None`** : a function with signature `on_done(stage_status, *args)`, where `args` is the return of `on_start` if present, else the signature is just `on_done(stage_status)`, and `stage_status` is of type `pypeln.process.StageStatus`. This function is executed once per worker when the worker is done.
+    * **`run = False`** : specify whether to run the stage immediately.
 
     # **Returns**
-    * If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.
+    * If the `stage` parameters is not given then this function returns a `Partial`, else if `return = False` (default) it return a new stage, if `run = True` then it runs the stage and returns `None`.
     """
 
     if utils.is_undefined(stage):
@@ -560,7 +575,7 @@ def concat(stages, maxsize = 0):
 def run(stages, maxsize = 0):
     
     if isinstance(stages, list) and len(stages) == 0:
-        raise ValueError("Expected atleast stage to run")
+        raise ValueError("Expected at least 1 stage to run")
 
     elif isinstance(stages, list):
         stage = concat(stages, maxsize = maxsize)

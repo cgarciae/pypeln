@@ -4,7 +4,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 
     <title>pypeln API documentation</title>
-    <meta name="description" content="" />
+    <meta name="description" content="# Pypeline
+
+_Pypeline is a simple yet powerful python library for creating concurrent data pipelines..." />
 
   <link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300' rel='stylesheet' type='text/css'>
   
@@ -1062,11 +1064,297 @@ table {
 
   <header id="section-intro">
   <h1 class="title"><span class="name">pypeln</span> module</h1>
-  
+  <h1>Pypeline</h1>
+<p><em>Pypeline is a simple yet powerful python library for creating concurrent data pipelines.</em></p>
+<ul>
+<li>Pypeline was designed to solve simple <em>medium</em> data tasks that require concurrency and parallelism but where using frameworks like Spark or Dask feel exaggerated or unnatural.</li>
+<li>Pypeline exposes an easy to use, familiar, functional API.</li>
+<li>Pypeline enables you to build pipelines using Processes, Threads and asyncio.Tasks via the exact same API.</li>
+<li>Pypeline allows you to have control over the memory and cpu resources used at each stage of your pipeline.</li>
+</ul>
+<h2>Installation</h2>
+<p>Install Pypeline using pip:</p>
+<div class="codehilite"><pre><span></span>pip install pypeln
+</pre></div>
+
+
+<h2>Basic Usage</h2>
+<p>With Pypeline you can easily create multi-stage data pipelines using 3 type of workers:</p>
+<h3>Processes</h3>
+<p>You can create a pipeline based on <a href="https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process">multiprocessing.Process</a> workers by using the <code>process</code> module:</p>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">pypeln</span> <span class="kn">import</span> <span class="n">process</span> <span class="k">as</span> <span class="n">pr</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">random</span>
+
+<span class="k">def</span> <span class="nf">slow_add1</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="p">())</span> <span class="c1"># &lt;= some slow computation</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+
+<span class="k">def</span> <span class="nf">slow_gt3</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="p">())</span> <span class="c1"># &lt;= some slow computation</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">3</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="c1"># [0, 1, 2, ..., 9]</span>
+
+<span class="n">stage</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">slow_add1</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">4</span><span class="p">)</span>
+<span class="n">stage</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">slow_gt3</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span> <span class="c1"># e.g. [5, 6, 9, 4, 8, 10, 7]</span>
+</pre></div>
+
+
+<p>At each stage the you can specify the numbers of <code>workers</code>. The <code>maxsize</code> parameter limits the maximum amount of elements that the stage can hold simultaneously.</p>
+<h3>Threads</h3>
+<p>You can create a pipeline based on <a href="https://docs.python.org/3/library/threading.html#threading.Thread">threading.Thread</a> workers by using the <code>thread</code> module:</p>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">pypeln</span> <span class="kn">import</span> <span class="n">thread</span> <span class="k">as</span> <span class="n">th</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">random</span>
+
+<span class="k">def</span> <span class="nf">slow_add1</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="p">())</span> <span class="c1"># &lt;= some slow computation</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+
+<span class="k">def</span> <span class="nf">slow_gt3</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="p">())</span> <span class="c1"># &lt;= some slow computation</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">3</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="c1"># [0, 1, 2, ..., 9]</span>
+
+<span class="n">stage</span> <span class="o">=</span> <span class="n">th</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">slow_add1</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">4</span><span class="p">)</span>
+<span class="n">stage</span> <span class="o">=</span> <span class="n">th</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">slow_gt3</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span> <span class="c1"># e.g. [5, 6, 9, 4, 8, 10, 7]</span>
+</pre></div>
+
+
+<p>Here we have the exact same situation as in the previous case except that the worker are Threads.</p>
+<h3>Tasks</h3>
+<p>You can create a pipeline based on <a href="https://docs.python.org/3.4/library/asyncio-task.html#asyncio.Task">asyncio.Task</a> workers by using the <code>asyncio_task</code> module:</p>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">pypeln</span> <span class="kn">import</span> <span class="n">asyncio_task</span> <span class="k">as</span> <span class="n">aio</span>
+<span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">random</span>
+
+<span class="n">async</span> <span class="k">def</span> <span class="nf">slow_add1</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="p">())</span> <span class="c1"># &lt;= some slow computation</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+
+<span class="n">async</span> <span class="k">def</span> <span class="nf">slow_gt3</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="p">())</span> <span class="c1"># &lt;= some slow computation</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">3</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="c1"># [0, 1, 2, ..., 9]</span>
+
+<span class="n">stage</span> <span class="o">=</span> <span class="n">aio</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">slow_add1</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">4</span><span class="p">)</span>
+<span class="n">stage</span> <span class="o">=</span> <span class="n">aio</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">slow_gt3</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span> <span class="c1"># e.g. [5, 6, 9, 4, 8, 10, 7]</span>
+</pre></div>
+
+
+<p>Conceptually similar but everything is running in a single thread and Task workers are created dynamically.</p>
+<h2>Mixed Pipelines</h2>
+<p>You can create pipelines using different worker types such that each type is the best for its given task so you can get the maximum performance out of your code:</p>
+<div class="codehilite"><pre><span></span>data = get_iterable()
+data = aio.map(f1, data, workers = 100)
+data = th.flat_map(f2, data, workers = 10)
+data = filter(f3, data)
+data = pr.map(f4, data, workers = 5, maxsize = 200)
+</pre></div>
+
+
+<p>Notice that here we even used a regular python <code>filter</code>, since stages are iterables Pypeline integrates smoothly with any python code, just be aware of how each stage behaves.</p>
+<h2>Pipe Operator</h2>
+<p>In the spirit of being a true pipeline library, Pypeline also lets you create your pipelines using the pipe <code>|</code> operator:</p>
+<div class="codehilite"><pre><span></span>data = (
+    range(10)
+    | pr.map(slow_add1, workers = 3, maxsize = 4)
+    | pr.filter(slow_gt3, workers = 2)
+    | list
+)
+</pre></div>
+
+
+<h2>Architecture</h2>
+<p>A Pypeline pipeline has the following structure:</p>
+<p><img alt="diagram" src="https://github.com/cgarciae/pypeln/raw/master/docs/guide/diagram_small.png" title="=250x250" /></p>
+<ul>
+<li>Its composed of several concurrent <strong>stages</strong></li>
+<li>At each stage it contains on or more <strong>worker</strong> entities that perform a task.</li>
+<li>Related stages are connected by a <strong>queue</strong>, workers from one stage <em>put</em> items into it, and workers from the other stage <em>get</em> items from it.</li>
+<li>Source stages consume iterables.</li>
+<li>Sink stages can be converted into iterables which 
+consume them.</li>
+</ul>
+<h2>Resources</h2>
+<p><!-- * <a href="https://cgarciae.gitbook.io/pypeln">Pypeline Guide</a> -->
+* <a href="https://cgarciae.github.io/pypeln/">Pypeline API Documentation</a></p>
+<h2>Benchmarks</h2>
+<ul>
+<li><a href="https://medium.com/@cgarciae/making-an-infinite-number-of-requests-with-python-aiohttp-pypeln-3a552b97dc95">Making an Unlimited Number of Requests with Python aiohttp + pypeln</a></li>
+<li><a href="https://github.com/cgarciae/pypeln/tree/master/benchmarks/100_million_downloads">Code</a></li>
+</ul>
+<h2>Related Stuff</h2>
+<ul>
+<li><a href="https://vmlaker.github.io/mpipe/">mpipe</a></li>
+<li><a href="https://docs.python.org/3.4/library/multiprocessing.html?highlight=process#module-multiprocessing.pool">Process Pools</a></li>
+<li><a href="https://www.artificialworlds.net/blog/2017/06/12/making-100-million-requests-with-python-aiohttp/">Making 100 million requests with Python aiohttp</a></li>
+<li><a href="https://stackoverflow.com/questions/52286527/python-multiprocessing-queue-memory-management/52286686#52286686">Python multiprocessing Queue memory management</a></li>
+</ul>
+<h2>Contributors</h2>
+<ul>
+<li><a href="https://github.com/cgarciae">cgarciae</a></li>
+<li><a href="https://github.com/davidnet">davidnet</a></li>
+</ul>
   
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-pypeln', this);">Show source &equiv;</a></p>
   <div id="source-pypeln" class="source">
     <div class="codehilite"><pre><span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd"># Pypeline</span>
+
+<span class="sd">_Pypeline is a simple yet powerful python library for creating concurrent data pipelines._</span>
+
+<span class="sd">* Pypeline was designed to solve simple _medium_ data tasks that require concurrency and parallelism but where using frameworks like Spark or Dask feel exaggerated or unnatural.</span>
+<span class="sd">* Pypeline exposes an easy to use, familiar, functional API.</span>
+<span class="sd">* Pypeline enables you to build pipelines using Processes, Threads and asyncio.Tasks via the exact same API.</span>
+<span class="sd">* Pypeline allows you to have control over the memory and cpu resources used at each stage of your pipeline.</span>
+
+<span class="sd">## Installation</span>
+
+<span class="sd">Install Pypeline using pip:</span>
+
+<span class="sd">    pip install pypeln</span>
+
+
+<span class="sd">## Basic Usage</span>
+<span class="sd">With Pypeline you can easily create multi-stage data pipelines using 3 type of workers:</span>
+
+<span class="sd">### Processes</span>
+<span class="sd">You can create a pipeline based on [multiprocessing.Process](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process) workers by using the `process` module:</span>
+
+
+<span class="sd">    from pypeln import process as pr</span>
+<span class="sd">    import time</span>
+<span class="sd">    from random import random</span>
+
+<span class="sd">    def slow_add1(x):</span>
+<span class="sd">        time.sleep(random()) # &lt;= some slow computation</span>
+<span class="sd">        return x + 1</span>
+
+<span class="sd">    def slow_gt3(x):</span>
+<span class="sd">        time.sleep(random()) # &lt;= some slow computation</span>
+<span class="sd">        return x &gt; 3</span>
+
+<span class="sd">    data = range(10) # [0, 1, 2, ..., 9] </span>
+
+<span class="sd">    stage = pr.map(slow_add1, data, workers = 3, maxsize = 4)</span>
+<span class="sd">    stage = pr.filter(slow_gt3, stage, workers = 2)</span>
+
+<span class="sd">    data = list(stage) # e.g. [5, 6, 9, 4, 8, 10, 7]</span>
+
+<span class="sd">At each stage the you can specify the numbers of `workers`. The `maxsize` parameter limits the maximum amount of elements that the stage can hold simultaneously.</span>
+
+<span class="sd">### Threads</span>
+<span class="sd">You can create a pipeline based on [threading.Thread](https://docs.python.org/3/library/threading.html#threading.Thread) workers by using the `thread` module:</span>
+
+<span class="sd">    from pypeln import thread as th</span>
+<span class="sd">    import time</span>
+<span class="sd">    from random import random</span>
+
+<span class="sd">    def slow_add1(x):</span>
+<span class="sd">        time.sleep(random()) # &lt;= some slow computation</span>
+<span class="sd">        return x + 1</span>
+
+<span class="sd">    def slow_gt3(x):</span>
+<span class="sd">        time.sleep(random()) # &lt;= some slow computation</span>
+<span class="sd">        return x &gt; 3</span>
+
+<span class="sd">    data = range(10) # [0, 1, 2, ..., 9] </span>
+
+<span class="sd">    stage = th.map(slow_add1, data, workers = 3, maxsize = 4)</span>
+<span class="sd">    stage = th.filter(slow_gt3, stage, workers = 2)</span>
+
+<span class="sd">    data = list(stage) # e.g. [5, 6, 9, 4, 8, 10, 7]</span>
+
+<span class="sd">Here we have the exact same situation as in the previous case except that the worker are Threads.</span>
+
+<span class="sd">### Tasks</span>
+<span class="sd">You can create a pipeline based on [asyncio.Task](https://docs.python.org/3.4/library/asyncio-task.html#asyncio.Task) workers by using the `asyncio_task` module:</span>
+
+<span class="sd">    from pypeln import asyncio_task as aio</span>
+<span class="sd">    import asyncio</span>
+<span class="sd">    from random import random</span>
+
+<span class="sd">    async def slow_add1(x):</span>
+<span class="sd">        await asyncio.sleep(random()) # &lt;= some slow computation</span>
+<span class="sd">        return x + 1</span>
+
+<span class="sd">    async def slow_gt3(x):</span>
+<span class="sd">        await asyncio.sleep(random()) # &lt;= some slow computation</span>
+<span class="sd">        return x &gt; 3</span>
+
+<span class="sd">    data = range(10) # [0, 1, 2, ..., 9] </span>
+
+<span class="sd">    stage = aio.map(slow_add1, data, workers = 3, maxsize = 4)</span>
+<span class="sd">    stage = aio.filter(slow_gt3, stage, workers = 2)</span>
+
+<span class="sd">    data = list(stage) # e.g. [5, 6, 9, 4, 8, 10, 7]</span>
+
+<span class="sd">Conceptually similar but everything is running in a single thread and Task workers are created dynamically.</span>
+
+<span class="sd">## Mixed Pipelines</span>
+<span class="sd">You can create pipelines using different worker types such that each type is the best for its given task so you can get the maximum performance out of your code:</span>
+
+<span class="sd">    data = get_iterable()</span>
+<span class="sd">    data = aio.map(f1, data, workers = 100)</span>
+<span class="sd">    data = th.flat_map(f2, data, workers = 10)</span>
+<span class="sd">    data = filter(f3, data)</span>
+<span class="sd">    data = pr.map(f4, data, workers = 5, maxsize = 200)</span>
+
+<span class="sd">Notice that here we even used a regular python `filter`, since stages are iterables Pypeline integrates smoothly with any python code, just be aware of how each stage behaves.</span>
+
+
+<span class="sd">## Pipe Operator</span>
+<span class="sd">In the spirit of being a true pipeline library, Pypeline also lets you create your pipelines using the pipe `|` operator:</span>
+
+
+<span class="sd">    data = (</span>
+<span class="sd">        range(10)</span>
+<span class="sd">        | pr.map(slow_add1, workers = 3, maxsize = 4)</span>
+<span class="sd">        | pr.filter(slow_gt3, workers = 2)</span>
+<span class="sd">        | list</span>
+<span class="sd">    )</span>
+
+<span class="sd">## Architecture</span>
+
+<span class="sd">A Pypeline pipeline has the following structure:</span>
+
+<span class="sd">![diagram](https://github.com/cgarciae/pypeln/raw/master/docs/guide/diagram_small.png =250x250)</span>
+
+<span class="sd">* Its composed of several concurrent **stages**</span>
+<span class="sd">* At each stage it contains on or more **worker** entities that perform a task.</span>
+<span class="sd">* Related stages are connected by a **queue**, workers from one stage *put* items into it, and workers from the other stage *get* items from it.</span>
+<span class="sd">* Source stages consume iterables.</span>
+<span class="sd">* Sink stages can be converted into iterables which </span>
+<span class="sd">consume them.</span>
+
+<span class="sd">## Resources</span>
+<span class="sd">&lt;!-- * [Pypeline Guide](https://cgarciae.gitbook.io/pypeln) --&gt;</span>
+<span class="sd">* [Pypeline API Documentation](https://cgarciae.github.io/pypeln/)</span>
+
+<span class="sd">## Benchmarks</span>
+<span class="sd">* [Making an Unlimited Number of Requests with Python aiohttp + pypeln](https://medium.com/@cgarciae/making-an-infinite-number-of-requests-with-python-aiohttp-pypeln-3a552b97dc95)</span>
+<span class="sd">  * [Code](https://github.com/cgarciae/pypeln/tree/master/benchmarks/100_million_downloads)</span>
+
+
+<span class="sd">## Related Stuff</span>
+<span class="sd">* [mpipe](https://vmlaker.github.io/mpipe/)</span>
+<span class="sd">* [Process Pools](https://docs.python.org/3.4/library/multiprocessing.html?highlight=process#module-multiprocessing.pool)</span>
+<span class="sd">* [Making 100 million requests with Python aiohttp](https://www.artificialworlds.net/blog/2017/06/12/making-100-million-requests-with-python-aiohttp/)</span>
+<span class="sd">* [Python multiprocessing Queue memory management](https://stackoverflow.com/questions/52286527/python-multiprocessing-queue-memory-management/52286686#52286686)</span>
+
+<span class="sd">## Contributors</span>
+<span class="sd">* [cgarciae](https://github.com/cgarciae)</span>
+<span class="sd">* [davidnet](https://github.com/davidnet)</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span>

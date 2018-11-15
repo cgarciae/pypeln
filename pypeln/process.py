@@ -234,7 +234,7 @@ class _InputQueue(object):
             x = self.get()
 
             if self.pipeline_namespace.error:
-                return 
+                return
 
             if not utils.is_continue(x):
                 yield x
@@ -260,6 +260,8 @@ class _InputQueue(object):
     def put(self, x):
         self.queue.put(x)
 
+    def done(self):
+        self.queue.put(utils.DONE)
 
 class _OutputQueues(list):
 
@@ -842,16 +844,23 @@ def _to_iterable(stage, maxsize):
         p.daemon = True
         p.start()
 
-    for x in input_queue:
-        yield x
+    try:
+        for x in input_queue:
+            yield x
 
-    if pipeline_namespace.error:
-        error_class, _, trace = pipeline_error_queue.get()
-        raise error_class("\n\nOriginal {trace}".format(trace = trace))
+        if pipeline_namespace.error:
+            error_class, _, trace = pipeline_error_queue.get()
+            raise error_class("\n\nOriginal {trace}".format(trace = trace))
 
-    
-    for p in processes:
-        p.join()
+        
+        for p in processes:
+            p.join()
+
+    except:
+        for q in stage_input_queue.values():
+            q.done()
+        
+        raise
 
 def to_iterable(stage = utils.UNDEFINED, maxsize = 0):
     """

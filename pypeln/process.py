@@ -291,33 +291,37 @@ def _handle_exceptions(params):
 
 
 def _run_task(f_task, params):
+    try:
+        args = params.on_start() if params.on_start is not None else None
 
-    args = params.on_start() if params.on_start is not None else None
+        if args is None:
+            args = ()
 
-    if args is None:
-        args = ()
+        elif not isinstance(args, tuple):
+            args = (args,)
+        
+        if params.input_queue:
+            for x in params.input_queue:
+                f_task(x, args)
+        else:
+            f_task(args)
 
-    elif not isinstance(args, tuple):
-        args = (args,)
-    
-    if params.input_queue:
-        for x in params.input_queue:
-            f_task(x, args)
-    else:
-        f_task(args)
+        params.output_queues.done()
 
-    params.output_queues.done()
+        if params.on_done is not None:
+            with params.stage_lock:
+                params.stage_namespace.active_workers -= 1
 
-    if params.on_done is not None:
-        with params.stage_lock:
-            params.stage_namespace.active_workers -= 1
+            stage_status = StageStatus(
+                namespace = params.stage_namespace,
+                lock = params.stage_lock,
+            )
 
-        stage_status = StageStatus(
-            namespace = params.stage_namespace,
-            lock = params.stage_lock,
-        )
+            params.on_done(stage_status, *args)
 
-        params.on_done(stage_status, *args)
+    except BaseException as e:
+        params.pipeline_error_queue.put((type(e), e, "".join(traceback.format_exception(*sys.exc_info()))))
+        params.pipeline_namespace.error = True
     
 
 ###########

@@ -322,8 +322,11 @@ def _run_task(f_task, params):
             params.on_done(stage_status, *args)
 
     except BaseException as e:
-        params.pipeline_error_queue.put((type(e), e, "".join(traceback.format_exception(*sys.exc_info()))))
-        params.pipeline_namespace.error = True
+        try:
+            params.pipeline_error_queue.put((type(e), e, "".join(traceback.format_exception(*sys.exc_info()))))
+            params.pipeline_namespace.error = True
+        except BaseException as e:
+            print(e)
     
 
 ###########

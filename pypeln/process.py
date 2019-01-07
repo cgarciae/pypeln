@@ -55,7 +55,7 @@ When a worker is created it calls the `on_start` function, this functions should
 
     from pypeln import process as pr
 
-    def on_start():
+    def x():
         http_session = get_http_session()
         db_session = get_db_session()
         return http_session, db_session
@@ -116,6 +116,7 @@ from . import utils
 import sys
 import traceback
 import types
+import inspect
 
 #############
 # imports pr
@@ -182,8 +183,11 @@ class _StageParams(namedtuple("_StageParams",
         "input_queue", "output_queues", "on_start", "on_done", 
         "stage_namespace", "stage_lock",
         "pipeline_namespace", "pipeline_error_queue",
+        "index",
     ])):
     pass
+
+WorkerInfo = namedtuple("WorkerInfo", ["index"])
 
 class StageStatus(object):
     """
@@ -234,7 +238,7 @@ class _InputQueue(object):
             x = self.get()
 
             if self.pipeline_namespace.error:
-                return 
+                return
 
             if not utils.is_continue(x):
                 yield x
@@ -260,6 +264,8 @@ class _InputQueue(object):
     def put(self, x):
         self.queue.put(x)
 
+    def done(self):
+        self.queue.put(utils.DONE)
 
 class _OutputQueues(list):
 
@@ -291,33 +297,55 @@ def _handle_exceptions(params):
 
 
 def _run_task(f_task, params):
+    try:
+        
+        if params.on_start is not None:
+            n_args = len(inspect.getargspec(params.on_start).args)
 
-    args = params.on_start() if params.on_start is not None else None
+            if n_args == 0:
+                args = params.on_start()
+            elif n_args == 1:
+                worker_info = WorkerInfo(
+                    index = params.index
+                )
+                args = params.on_start(worker_info)
+            else:
+                args = None
+        else:
+            args = None
 
-    if args is None:
-        args = ()
 
-    elif not isinstance(args, tuple):
-        args = (args,)
-    
-    if params.input_queue:
-        for x in params.input_queue:
-            f_task(x, args)
-    else:
-        f_task(args)
+        if args is None:
+            args = ()
 
-    params.output_queues.done()
+        elif not isinstance(args, tuple):
+            args = (args,)
+        
+        if params.input_queue:
+            for x in params.input_queue:
+                f_task(x, args)
+        else:
+            f_task(args)
 
-    if params.on_done is not None:
-        with params.stage_lock:
-            params.stage_namespace.active_workers -= 1
+        params.output_queues.done()
 
-        stage_status = StageStatus(
-            namespace = params.stage_namespace,
-            lock = params.stage_lock,
-        )
+        if params.on_done is not None:
+            with params.stage_lock:
+                params.stage_namespace.active_workers -= 1
 
-        params.on_done(stage_status, *args)
+            stage_status = StageStatus(
+                namespace = params.stage_namespace,
+                lock = params.stage_lock,
+            )
+
+            params.on_done(stage_status, *args)
+
+    except BaseException as e:
+        try:
+            params.pipeline_error_queue.put((type(e), e, "".join(traceback.format_exception(*sys.exc_info()))))
+            params.pipeline_namespace.error = True
+        except BaseException as e:
+            print(e)
     
 
 ###########
@@ -815,7 +843,7 @@ def _to_iterable(stage, maxsize):
             stage_lock = None
             stage_namespace = None
 
-        for _ in range(_stage.workers):
+        for index in range(_stage.workers):
 
             stage_params = _StageParams(
                 output_queues = stage_output_queues[_stage],
@@ -826,6 +854,7 @@ def _to_iterable(stage, maxsize):
                 stage_namespace = stage_namespace,
                 pipeline_namespace = pipeline_namespace,
                 pipeline_error_queue = pipeline_error_queue,
+                index = index,
             )
             process = _stage.worker_constructor(
                 target = _stage.target,
@@ -838,16 +867,23 @@ def _to_iterable(stage, maxsize):
         p.daemon = True
         p.start()
 
-    for x in input_queue:
-        yield x
+    try:
+        for x in input_queue:
+            yield x
 
-    if pipeline_namespace.error:
-        error_class, _, trace = pipeline_error_queue.get()
-        raise error_class("\n\nOriginal {trace}".format(trace = trace))
+        if pipeline_namespace.error:
+            error_class, _, trace = pipeline_error_queue.get()
+            raise error_class("\n\nOriginal {trace}".format(trace = trace))
 
-    
-    for p in processes:
-        p.join()
+        
+        for p in processes:
+            p.join()
+
+    except:
+        for q in stage_input_queue.values():
+            q.done()
+        
+        raise
 
 def to_iterable(stage = utils.UNDEFINED, maxsize = 0):
     """

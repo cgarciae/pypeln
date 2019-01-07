@@ -2,12 +2,12 @@ import os
 from setuptools import setup, find_packages
 
 install_requires = [
-
+    "six",
 ]
 
 setup(
     name = "pypeln",
-    version = "0.1.6",
+    version = "0.1.7",
     author = "Cristian Garcia",
     author_email = "cgarcia.e88@gmail.com",
     description = (""),

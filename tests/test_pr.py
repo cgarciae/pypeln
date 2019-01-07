@@ -101,6 +101,25 @@ def test_map_square_event_start(nums):
     assert namespace.x == 1
 
 
+def test_worker_info():
+
+    nums = range(100)
+    n_workers = 4
+
+    def set_1(worker_info):
+        return worker_info.index
+
+    nums_pl = pr.map(
+        lambda x, index: index, 
+        nums, 
+        on_start = set_1, 
+        workers = n_workers,
+    )
+    nums_pl = set(nums_pl)
+
+    assert nums_pl.issubset(set(range(n_workers)))
+
+
 @hp.given(nums = st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_square_event_end(nums):

@@ -55,7 +55,7 @@ When a worker is created it calls the `on_start` function, this functions should
 
     from pypeln import process as pr
 
-    def on_start():
+    def x():
         http_session = get_http_session()
         db_session = get_db_session()
         return http_session, db_session
@@ -116,6 +116,7 @@ from . import utils
 import sys
 import traceback
 import types
+import inspect
 
 #############
 # imports pr
@@ -182,8 +183,11 @@ class _StageParams(namedtuple("_StageParams",
         "input_queue", "output_queues", "on_start", "on_done", 
         "stage_namespace", "stage_lock",
         "pipeline_namespace", "pipeline_error_queue",
+        "index",
     ])):
     pass
+
+WorkerInfo = namedtuple("WorkerInfo", ["index"])
 
 class StageStatus(object):
     """
@@ -294,7 +298,22 @@ def _handle_exceptions(params):
 
 def _run_task(f_task, params):
     try:
-        args = params.on_start() if params.on_start is not None else None
+        
+        if params.on_start is not None:
+            n_args = len(inspect.getargspec(params.on_start).args)
+
+            if n_args == 0:
+                args = params.on_start()
+            elif n_args == 1:
+                worker_info = WorkerInfo(
+                    index = params.index
+                )
+                args = params.on_start(worker_info)
+            else:
+                args = None
+        else:
+            args = None
+
 
         if args is None:
             args = ()
@@ -824,7 +843,7 @@ def _to_iterable(stage, maxsize):
             stage_lock = None
             stage_namespace = None
 
-        for _ in range(_stage.workers):
+        for index in range(_stage.workers):
 
             stage_params = _StageParams(
                 output_queues = stage_output_queues[_stage],
@@ -835,6 +854,7 @@ def _to_iterable(stage, maxsize):
                 stage_namespace = stage_namespace,
                 pipeline_namespace = pipeline_namespace,
                 pipeline_error_queue = pipeline_error_queue,
+                index = index,
             )
             process = _stage.worker_constructor(
                 target = _stage.target,

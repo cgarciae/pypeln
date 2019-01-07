@@ -2,3 +2,4 @@ pytest
 hypothesis
 cytoolz
 pytest-asyncio
+aiohttp

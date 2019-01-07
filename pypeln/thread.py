@@ -55,7 +55,7 @@ When a worker is created it calls the `on_start` function, this functions should
 
     from pypeln import process as pr
 
-    def on_start():
+    def x():
         http_session = get_http_session()
         db_session = get_db_session()
         return http_session, db_session
@@ -78,7 +78,7 @@ A few notes:
 * `on_end` receives a `pypeln.process.StageStatus` object followed by the resource objects created by `on_start`.
 
 ## Pipe Operator
-Functions that accept a `stage` parameter return a `Partial` instead of a new stage when `stage` is not given. These `utils.Partial`s are callables that accept the missing `stage` parameter and return the full output of the original function. For example
+Functions that accept a `stage` parameter return a `Partial` instead of a new stage when `stage` is not given. These `Partial`s are callables that accept the missing `stage` parameter and return the full output of the original function. For example
 
     pr.map(f, stage, **kwargs) = pr.map(f, **kwargs)(stage)
 
@@ -115,6 +115,8 @@ from collections import namedtuple
 from . import utils
 import sys
 import traceback
+import types
+import inspect
 
 #############
 # imports pr
@@ -181,10 +183,16 @@ class _StageParams(namedtuple("_StageParams",
         "input_queue", "output_queues", "on_start", "on_done", 
         "stage_namespace", "stage_lock",
         "pipeline_namespace", "pipeline_error_queue",
+        "index",
     ])):
     pass
 
+WorkerInfo = namedtuple("WorkerInfo", ["index"])
+
 class StageStatus(object):
+    """
+    Object passed to various `on_done` callbacks. It contains information about the stage in case book keeping is needed.
+    """
 
     def __init__(self, namespace, lock):
         self._namespace = namespace
@@ -192,11 +200,17 @@ class StageStatus(object):
 
     @property
     def done(self):
+        """
+        `bool` : `True` if all workers finished. 
+        """
         with self._lock:
             return self._namespace.active_workers == 0
 
     @property
     def active_workers(self):
+        """
+        `int` : Number of active workers. 
+        """
         with self._lock:
             return self._namespace.active_workers
 
@@ -224,7 +238,7 @@ class _InputQueue(object):
             x = self.get()
 
             if self.pipeline_namespace.error:
-                return 
+                return
 
             if not utils.is_continue(x):
                 yield x
@@ -250,6 +264,8 @@ class _InputQueue(object):
     def put(self, x):
         self.queue.put(x)
 
+    def done(self):
+        self.queue.put(utils.DONE)
 
 class _OutputQueues(list):
 
@@ -281,33 +297,55 @@ def _handle_exceptions(params):
 
 
 def _run_task(f_task, params):
+    try:
+        
+        if params.on_start is not None:
+            n_args = len(inspect.getargspec(params.on_start).args)
 
-    args = params.on_start() if params.on_start is not None else None
+            if n_args == 0:
+                args = params.on_start()
+            elif n_args == 1:
+                worker_info = WorkerInfo(
+                    index = params.index
+                )
+                args = params.on_start(worker_info)
+            else:
+                args = None
+        else:
+            args = None
 
-    if args is None:
-        args = ()
 
-    elif not isinstance(args, tuple):
-        args = (args,)
-    
-    if params.input_queue:
-        for x in params.input_queue:
-            f_task(x, args)
-    else:
-        f_task(args)
+        if args is None:
+            args = ()
 
-    params.output_queues.done()
+        elif not isinstance(args, tuple):
+            args = (args,)
+        
+        if params.input_queue:
+            for x in params.input_queue:
+                f_task(x, args)
+        else:
+            f_task(args)
 
-    if params.on_done is not None:
-        with params.stage_lock:
-            params.stage_namespace.active_workers -= 1
+        params.output_queues.done()
 
-        stage_status = StageStatus(
-            namespace = params.stage_namespace,
-            lock = params.stage_lock,
-        )
+        if params.on_done is not None:
+            with params.stage_lock:
+                params.stage_namespace.active_workers -= 1
 
-        params.on_done(stage_status, *args)
+            stage_status = StageStatus(
+                namespace = params.stage_namespace,
+                lock = params.stage_lock,
+            )
+
+            params.on_done(stage_status, *args)
+
+    except BaseException as e:
+        try:
+            params.pipeline_error_queue.put((type(e), e, "".join(traceback.format_exception(*sys.exc_info()))))
+            params.pipeline_namespace.error = True
+        except BaseException as e:
+            print(e)
     
 
 ###########
@@ -345,7 +383,7 @@ def map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, o
     Note that because of concurrency order is not guaranteed.
 
     # **Args**
-    * **`f`** : a function with signature `f(x, *args) -> y`, where `args` is the return of `on_start` if present, else the signature is just `f(x)`. 
+    * **`f`** : a function with signature `f(x, *args) -> y`, where `args` is the return of `on_start` if present, else the signature is just `f(x) -> y`. 
     * **`stage = Undefined`** : a stage or iterable.
     * **`workers = 1`** : the number of workers the stage should contain.
     * **`maxsize = 0`** : the maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
@@ -388,12 +426,55 @@ def _flat_map(f, params):
 
 def flat_map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None):
     """
+    Creates a stage that maps a function `f` over the data, however unlike `pypeln.process.map` in this case `f` returns an iterable. As its name implies, `flat_map` will flatten out these iterables so the resulting stage just contains their elements.
+
+        from pypeln import process as pr
+        import time
+        from random import random
+
+        def slow_integer_pair(x):
+            time.sleep(random()) # <= some slow computation
+
+            if x == 0:
+                yield x
+            else:
+                yield x
+                yield -x
+
+        data = range(10) # [0, 1, 2, ..., 9]
+        stage = pr.flat_map(slow_integer_pair, data, workers = 3, maxsize = 4)
+
+        list(stage) # e.g. [2, -2, 3, -3, 0, 1, -1, 6, -6, 4, -4, ...]
+
+    Note that because of concurrency order is not guaranteed. Also, `flat_map` is more general than both `pypeln.process.map` and `pypeln.process.filter`, as such these expressions are equivalent:
+
+        from pypeln import process as pr
+
+        pr.map(f, stage) = pr.flat_map(lambda x: [f(x)], stage)
+        pr.filter(f, stage) = pr.flat_map(lambda x: [x] if f(x) else [], stage)
+
+    Using `flat_map` with a generator function is very useful as we are able to filter out unwanted elements when e.g. there are exceptions, missing data, etc.
+
+    # **Args**
+    * **`f`** : a function with signature `f(x, *args) -> [y]`, where `args` is the return of `on_start` if present, else the signature is just `f(x) -> [y]`. 
+    * **`stage = Undefined`** : a stage or iterable.
+    * **`workers = 1`** : the number of workers the stage should contain.
+    * **`maxsize = 0`** : the maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+    * **`on_start = None`** : a function with signature `on_start() -> args`, where `args` can be any object different than `None` or a tuple of objects. The returned `args` are passed to `f` and `on_done`. This function is executed once per worker at the beggining.
+    * **`on_done = None`** : a function with signature `on_done(stage_status, *args)`, where `args` is the return of `on_start` if present, else the signature is just `on_done(stage_status)`, and `stage_status` is of type `pypeln.process.StageStatus`. This function is executed once per worker when the worker is done.
+
+    # **Returns**
+    * If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.
     """
 
     if utils.is_undefined(stage):
         return utils.Partial(lambda stage: flat_map(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
 
     stage = _to_stage(stage)
+
+    if isinstance(f, types.GeneratorType):
+        _f = f
+        f = lambda *args, **kwargs: _f(*args, **kwargs)
 
     return _Stage(
         worker_constructor = WORKER,
@@ -423,6 +504,33 @@ def _filter(f, params):
 
 def filter(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None):
     """
+    Creates a stage that filter the data given a predicate function `f`. It is intended to behave like python's built-in `filter` function but with the added concurrency.
+
+        from pypeln import process as pr
+        import time
+        from random import random
+
+        def slow_gt3(x):
+            time.sleep(random()) # <= some slow computation
+            return x > 3
+
+        data = range(10) # [0, 1, 2, ..., 9]
+        stage = pr.filter(slow_gt3, data, workers = 3, maxsize = 4)
+
+        data = list(stage) # e.g. [5, 6, 3, 4, 7, 8, 9]
+
+    Note that because of concurrency order is not guaranteed.
+
+    # **Args**
+    * **`f`** : a function with signature `f(x, *args) -> bool`, where `args` is the return of `on_start` if present, else the signature is just `f(x)`. 
+    * **`stage = Undefined`** : a stage or iterable.
+    * **`workers = 1`** : the number of workers the stage should contain.
+    * **`maxsize = 0`** : the maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+    * **`on_start = None`** : a function with signature `on_start() -> args`, where `args` can be any object different than `None` or a tuple of objects. The returned `args` are passed to `f` and `on_done`. This function is executed once per worker at the beggining.
+    * **`on_done = None`** : a function with signature `on_done(stage_status, *args)`, where `args` is the return of `on_start` if present, else the signature is just `on_done(stage_status)`, and `stage_status` is of type `pypeln.process.StageStatus`. This function is executed once per worker when the worker is done.
+
+    # **Returns**
+    * If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.
     """
 
     if utils.is_undefined(stage):
@@ -457,6 +565,37 @@ def _each(f, params):
 
 def each(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None, run = False):
     """
+    Creates a stage that runs the function `f` for each element in the data but the stage itself yields no elements. Its useful for sink stages that perform certain actions such as writting to disk, saving to a database, etc, and dont produce any results. For example:
+
+        from pypeln import process as pr
+
+        def process_image(image_path):
+            image = load_image(image_path)
+            image = transform_image(image)
+            save_image(image_path, image)
+
+        files_paths = get_file_paths()
+        stage = pr.each(process_image, file_paths, workers = 4)
+        pr.run(stage)
+
+    or alternatively
+
+        files_paths = get_file_paths()
+        pr.each(process_image, file_paths, workers = 4, run = True)
+
+    Note that because of concurrency order is not guaranteed.
+
+    # **Args**
+    * **`f`** : a function with signature `f(x, *args) -> None`, where `args` is the return of `on_start` if present, else the signature is just `f(x)`. 
+    * **`stage = Undefined`** : a stage or iterable.
+    * **`workers = 1`** : the number of workers the stage should contain.
+    * **`maxsize = 0`** : the maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+    * **`on_start = None`** : a function with signature `on_start() -> args`, where `args` can be any object different than `None` or a tuple of objects. The returned `args` are passed to `f` and `on_done`. This function is executed once per worker at the beggining.
+    * **`on_done = None`** : a function with signature `on_done(stage_status, *args)`, where `args` is the return of `on_start` if present, else the signature is just `on_done(stage_status)`, and `stage_status` is of type `pypeln.process.StageStatus`. This function is executed once per worker when the worker is done.
+    * **`run = False`** : specify whether to run the stage immediately.
+
+    # **Returns**
+    * If the `stage` parameters is not given then this function returns a `Partial`, else if `return = False` (default) it return a new stage, if `run = True` then it runs the stage and returns `None`.
     """
 
     if utils.is_undefined(stage):
@@ -496,6 +635,23 @@ def _concat(params):
 
 
 def concat(stages, maxsize = 0):
+    """
+    Concatenates / merges many stages into a single one by appending elements from each stage as they come, order is not preserved.
+
+        from pypeln import process as pr
+
+        stage_1 = [1, 2, 3]
+        stage_2 = [4, 5, 6, 7]
+
+        stage_3 = pr.concat([stage_1, stage_2]) # e.g. [1, 4, 5, 2, 6, 3, 7]
+
+    # **Args**
+    * **`stages`** : a list of stages or iterables.
+    * **`maxsize = 0`** : the maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+
+    # **Returns**
+    * A stage object.
+    """
 
     stages = [ _to_stage(s) for s in stages ]
 
@@ -515,9 +671,27 @@ def concat(stages, maxsize = 0):
 ################
 
 def run(stages, maxsize = 0):
-    
+    """
+    Iterates over one or more stages until their iterators run out of elements.
+
+        from pypeln import process as pr
+
+        data = get_data()
+        stage = pr.each(slow_fn, data, workers = 6)
+
+        # execute pipeline
+        pr.run(stage)
+
+    # **Args**
+    * **`stages`** : a stage/iterable or list of stages/iterables to be iterated over. If a list is passed, stages are first merged using `pypeln.process.concat` before iterating.
+    * **`maxsize = 0`** : the maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+
+    # **Returns**
+    * `None`
+    """
+
     if isinstance(stages, list) and len(stages) == 0:
-        raise ValueError("Expected atleast stage to run")
+        raise ValueError("Expected at least 1 stage to run")
 
     elif isinstance(stages, list):
         stage = concat(stages, maxsize = maxsize)
@@ -563,6 +737,22 @@ def _from_iterable(iterable, params):
     
 
 def from_iterable(iterable = utils.UNDEFINED, maxsize = None, worker_constructor = Thread):
+    """
+    Creates a stage from an iterable. This function gives you more control of how a stage is created through the `worker_constructor` parameter which can be either:
+    
+    * `threading.Thread`: (default) is efficient for iterables that already have the data in memory like lists or numpy arrays because threads can share memory so no serialization is needed. 
+    * `multiprocessing.Process`: is efficient for iterables who's data is not in memory like arbitrary generators and benefit from escaping the GIL. This is inefficient for iterables which have data in memory because they have to be serialized when sent to the background process.
+
+    All functions that accept stages or iterables use this function when an iterable is passed to convert it into a stage using the default arguments.
+
+    # **Args**
+    * **`iterable`** : a source iterable.
+    * **`maxsize = None`** : this parameter is not used and only kept for API compatibility with the other modules.
+    * **`worker_constructor = threading.Thread`** : defines the worker type for the producer stage.
+
+    # **Returns**
+    * If the `iterable` parameters is given then this function returns a new stage, else it returns a `Partial`.
+    """
 
     if utils.is_undefined(iterable):
         return utils.Partial(lambda iterable: from_iterable(iterable, maxsize=maxsize, worker_constructor=worker_constructor))
@@ -653,7 +843,7 @@ def _to_iterable(stage, maxsize):
             stage_lock = None
             stage_namespace = None
 
-        for _ in range(_stage.workers):
+        for index in range(_stage.workers):
 
             stage_params = _StageParams(
                 output_queues = stage_output_queues[_stage],
@@ -664,6 +854,7 @@ def _to_iterable(stage, maxsize):
                 stage_namespace = stage_namespace,
                 pipeline_namespace = pipeline_namespace,
                 pipeline_error_queue = pipeline_error_queue,
+                index = index,
             )
             process = _stage.worker_constructor(
                 target = _stage.target,
@@ -676,42 +867,41 @@ def _to_iterable(stage, maxsize):
         p.daemon = True
         p.start()
 
-    for x in input_queue:
-        yield x
+    try:
+        for x in input_queue:
+            yield x
 
-    if pipeline_namespace.error:
-        error_class, _, trace = pipeline_error_queue.get()
-        raise error_class("\n\nOriginal {trace}".format(trace = trace))
+        if pipeline_namespace.error:
+            error_class, _, trace = pipeline_error_queue.get()
+            raise error_class("\n\nOriginal {trace}".format(trace = trace))
 
-    
-    for p in processes:
-        p.join()
+        
+        for p in processes:
+            p.join()
+
+    except:
+        for q in stage_input_queue.values():
+            q.done()
+        
+        raise
 
 def to_iterable(stage = utils.UNDEFINED, maxsize = 0):
+    """
+    Creates an iterable from a stage. This function is used by the stage's `__iter__` method with the default arguments.
+
+    # **Args**
+    * **`stage`** : a stage object.
+    * **`maxsize = 0`** : the maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+
+    # **Returns**
+    * If the `stage` parameters is given then this function returns an iterable, else it returns a `Partial`.
+    """
 
     if utils.is_undefined(stage):
         return utils.Partial(lambda stage: _to_iterable(stage, maxsize))
     else:
         return _to_iterable(stage, maxsize)
-    
 
-if __name__ == '__main__':
-    import time
-    import random
-
-    def slow_square(x):
-        time.sleep(random.uniform(0, 1))
-        return x**2
-
-    stage = range(10)
-
-    stage = flat_map(lambda x: [x, x + 1, x + 2], stage)
-
-    stage = map(slow_square, stage, workers=4)
-
-    stage = filter(lambda x: x > 9, stage)
-
-    print(stage)
     
 
     

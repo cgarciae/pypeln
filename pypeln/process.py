@@ -873,7 +873,10 @@ def _to_iterable(stage, maxsize):
 
         if pipeline_namespace.error:
             error_class, _, trace = pipeline_error_queue.get()
-            raise error_class("\n\nOriginal {trace}".format(trace = trace))
+            try:
+                raise error_class("\n\nOriginal {trace}".format(trace = trace))
+            except:
+                raise Exception("\n\nOriginal {trace}".format(trace = trace))
 
         
         for p in processes:

@@ -364,8 +364,12 @@ def _map(f, params):
     @_handle_exceptions(params)
     def f_task(x, args):
         print("TASK", x, args, f)
-        y = f(x, *args)
-        print("Y", y)
+        try:
+            y = f(x, *args)
+            print("Y", y)
+        except BaseException as e:
+            print("EEEEE", e)
+            exit(1)
         params.output_queues.put(y)
 
     _run_task(f_task, params)

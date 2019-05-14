@@ -867,8 +867,11 @@ def _to_iterable(stage, maxsize):
         p.daemon = True
         p.start()
 
+        print(f"Process started: {p}")
+
     try:
         for x in input_queue:
+            print(f"Main process, got element: {x}")
             yield x
 
         if pipeline_namespace.error:

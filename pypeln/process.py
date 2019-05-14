@@ -298,7 +298,7 @@ def _handle_exceptions(params):
 
 def _run_task(f_task, params):
     try:
-        
+        print("TRY", params)
         if params.on_start is not None:
             n_args = len(inspect.getargspec(params.on_start).args)
 
@@ -341,6 +341,7 @@ def _run_task(f_task, params):
             params.on_done(stage_status, *args)
 
     except BaseException as e:
+        print("EXCEPT", e)
         try:
             params.pipeline_error_queue.put((type(e), e, "".join(traceback.format_exception(*sys.exc_info()))))
             params.pipeline_namespace.error = True

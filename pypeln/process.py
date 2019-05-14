@@ -322,9 +322,11 @@ def _run_task(f_task, params):
             args = (args,)
         
         if params.input_queue:
+            print("IF", params.input_queue)
             for x in params.input_queue:
                 f_task(x, args)
         else:
+            print("ELSE", f_task)
             f_task(args)
 
         params.output_queues.done()

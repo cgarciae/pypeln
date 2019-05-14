@@ -355,6 +355,8 @@ def _run_task(f_task, params):
 
 def _map(f, params):
 
+    print(params)
+
     @_handle_exceptions(params)
     def f_task(x, args):
         y = f(x, *args)

@@ -130,10 +130,19 @@ import inspect
 # from collections import namedtuple
 # from . import utils
 
-# _MANAGER = Manager()
+# _MANAGER = None
+
+# def _get_manager():
+#     global _MANAGER
+
+#     if _MANAGER is None:
+#         _MANAGER = Manager()
+
+#     return _MANAGER
+
 
 # def _get_namespace():
-#     return _MANAGER.Namespace()
+#     return _get_manager().Namespace()
 
 #############
 # imports th

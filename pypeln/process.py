@@ -55,7 +55,7 @@ When a worker is created it calls the `on_start` function, this functions should
 
     from pypeln import process as pr
 
-    def x():
+    def on_start():
         http_session = get_http_session()
         db_session = get_db_session()
         return http_session, db_session
@@ -68,7 +68,7 @@ When a worker is created it calls the `on_start` function, this functions should
         # some logic
         return y
 
-    stage = pr.map(f, stage, workers = 3, on_start = on_start)
+    stage = pr.map(f, stage, workers = 3, on_start = on_start, on_end = on_end)
 
 A few notes:
 

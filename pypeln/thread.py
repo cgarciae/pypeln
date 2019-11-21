@@ -150,9 +150,10 @@ import inspect
 
 from threading import Thread as WORKER
 from threading import Thread
-from.utils import Namespace
+from .utils import Namespace
 from six.moves.queue import Queue, Empty, Full
 from threading import Lock
+
 
 def _get_namespace():
     return Namespace()
@@ -162,9 +163,19 @@ def _get_namespace():
 # classes
 ####################
 
-class _Stage(utils.BaseStage):
 
-    def __init__(self, worker_constructor, workers, maxsize, on_start, on_done, target, args, dependencies):
+class _Stage(utils.BaseStage):
+    def __init__(
+        self,
+        worker_constructor,
+        workers,
+        maxsize,
+        on_start,
+        on_done,
+        target,
+        args,
+        dependencies,
+    ):
         self.worker_constructor = worker_constructor
         self.workers = workers
         self.maxsize = maxsize
@@ -173,30 +184,42 @@ class _Stage(utils.BaseStage):
         self.target = target
         self.args = args
         self.dependencies = dependencies
-    
+
     def __iter__(self):
         return to_iterable(self)
 
     def __repr__(self):
         return "_Stage(worker_constructor = {worker_constructor}, workers = {workers}, maxsize = {maxsize}, target = {target}, args = {args}, dependencies = {dependencies})".format(
-            worker_constructor = self.worker_constructor,
-            workers = self.workers,
-            maxsize = self.maxsize,
-            target = self.target,
-            args = self.args,
-            dependencies = len(self.dependencies),
+            worker_constructor=self.worker_constructor,
+            workers=self.workers,
+            maxsize=self.maxsize,
+            target=self.target,
+            args=self.args,
+            dependencies=len(self.dependencies),
         )
 
-class _StageParams(namedtuple("_StageParams",
-    [
-        "input_queue", "output_queues", "on_start", "on_done", 
-        "stage_namespace", "stage_lock",
-        "pipeline_namespace", "pipeline_error_queue",
-        "index",
-    ])):
+
+class _StageParams(
+    namedtuple(
+        "_StageParams",
+        [
+            "input_queue",
+            "output_queues",
+            "on_start",
+            "on_done",
+            "stage_namespace",
+            "stage_lock",
+            "pipeline_namespace",
+            "pipeline_error_queue",
+            "index",
+        ],
+    )
+):
     pass
 
+
 WorkerInfo = namedtuple("WorkerInfo", ["index"])
+
 
 class StageStatus(object):
     """
@@ -223,18 +246,16 @@ class StageStatus(object):
         with self._lock:
             return self._namespace.active_workers
 
-
     def __str__(self):
         return "StageStatus(done = {done}, active_workers = {active_workers})".format(
-            done = self.done,
-            active_workers = self.active_workers,
+            done=self.done, active_workers=self.active_workers
         )
 
-class _InputQueue(object):
 
+class _InputQueue(object):
     def __init__(self, maxsize, total_done, pipeline_namespace, **kwargs):
-        
-        self.queue = Queue(maxsize = maxsize, **kwargs)
+
+        self.queue = Queue(maxsize=maxsize, **kwargs)
         self.lock = Lock()
         self.namespace = _get_namespace()
         self.namespace.remaining = total_done
@@ -253,18 +274,18 @@ class _InputQueue(object):
                 yield x
 
     def get(self):
-        
+
         try:
-            x = self.queue.get(timeout = utils.TIMEOUT)
+            x = self.queue.get(timeout=utils.TIMEOUT)
         except (Empty, Full):
             return utils.CONTINUE
-        
+
         if not utils.is_done(x):
             return x
         else:
             with self.lock:
                 self.namespace.remaining -= 1
-            
+
             return utils.CONTINUE
 
     def is_done(self):
@@ -276,8 +297,8 @@ class _InputQueue(object):
     def done(self):
         self.queue.put(utils.DONE)
 
-class _OutputQueues(list):
 
+class _OutputQueues(list):
     def put(self, x):
         for queue in self:
             queue.put(x)
@@ -288,18 +309,18 @@ class _OutputQueues(list):
 
 
 def _handle_exceptions(params):
-
     def handle_exceptions(f):
-
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
 
             try:
                 return f(*args, **kwargs)
             except BaseException as e:
-                params.pipeline_error_queue.put((type(e), e, "".join(traceback.format_exception(*sys.exc_info()))))
+                params.pipeline_error_queue.put(
+                    (type(e), e, "".join(traceback.format_exception(*sys.exc_info())))
+                )
                 params.pipeline_namespace.error = True
-        
+
         return wrapper
 
     return handle_exceptions
@@ -307,29 +328,26 @@ def _handle_exceptions(params):
 
 def _run_task(f_task, params):
     try:
-        
+
         if params.on_start is not None:
             n_args = len(inspect.getargspec(params.on_start).args)
 
             if n_args == 0:
                 args = params.on_start()
             elif n_args == 1:
-                worker_info = WorkerInfo(
-                    index = params.index
-                )
+                worker_info = WorkerInfo(index=params.index)
                 args = params.on_start(worker_info)
             else:
                 args = None
         else:
             args = None
 
-
         if args is None:
             args = ()
 
         elif not isinstance(args, tuple):
             args = (args,)
-        
+
         if params.input_queue:
             for x in params.input_queue:
                 f_task(x, args)
@@ -343,19 +361,20 @@ def _run_task(f_task, params):
                 params.stage_namespace.active_workers -= 1
 
             stage_status = StageStatus(
-                namespace = params.stage_namespace,
-                lock = params.stage_lock,
+                namespace=params.stage_namespace, lock=params.stage_lock
             )
 
             params.on_done(stage_status, *args)
 
     except BaseException as e:
         try:
-            params.pipeline_error_queue.put((type(e), e, "".join(traceback.format_exception(*sys.exc_info()))))
+            params.pipeline_error_queue.put(
+                (type(e), e, "".join(traceback.format_exception(*sys.exc_info())))
+            )
             params.pipeline_namespace.error = True
         except BaseException as e:
             print(e)
-    
+
 
 ###########
 # map
@@ -363,7 +382,6 @@ def _run_task(f_task, params):
 
 
 def _map(f, params):
-
     @_handle_exceptions(params)
     def f_task(x, args):
         y = f(x, *args)
@@ -372,7 +390,7 @@ def _map(f, params):
     _run_task(f_task, params)
 
 
-def map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None):
+def map(f, stage=utils.UNDEFINED, workers=1, maxsize=0, on_start=None, on_done=None):
     """
     Creates a stage that maps a function `f` over the data. Its intended to behave like python's built-in `map` function but with the added concurrency.
 
@@ -404,27 +422,37 @@ def map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, o
     """
 
     if utils.is_undefined(stage):
-        return utils.Partial(lambda stage: map(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
+        return utils.Partial(
+            lambda stage: map(
+                f,
+                stage,
+                workers=workers,
+                maxsize=maxsize,
+                on_start=on_start,
+                on_done=on_done,
+            )
+        )
 
     stage = _to_stage(stage)
 
     return _Stage(
-        worker_constructor = WORKER,
-        workers = workers,
-        maxsize = maxsize,
-        on_start = on_start,
-        on_done = on_done,
-        target = _map,
-        args = (f,),
-        dependencies = [stage],
+        worker_constructor=WORKER,
+        workers=workers,
+        maxsize=maxsize,
+        on_start=on_start,
+        on_done=on_done,
+        target=_map,
+        args=(f,),
+        dependencies=[stage],
     )
+
 
 ###########
 # flat_map
 ###########
 
-def _flat_map(f, params):
 
+def _flat_map(f, params):
     @_handle_exceptions(params)
     def f_task(x, args):
         for y in f(x, *args):
@@ -433,7 +461,9 @@ def _flat_map(f, params):
     _run_task(f_task, params)
 
 
-def flat_map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None):
+def flat_map(
+    f, stage=utils.UNDEFINED, workers=1, maxsize=0, on_start=None, on_done=None
+):
     """
     Creates a stage that maps a function `f` over the data, however unlike `pypeln.process.map` in this case `f` returns an iterable. As its name implies, `flat_map` will flatten out these iterables so the resulting stage just contains their elements.
 
@@ -477,7 +507,16 @@ def flat_map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = No
     """
 
     if utils.is_undefined(stage):
-        return utils.Partial(lambda stage: flat_map(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
+        return utils.Partial(
+            lambda stage: flat_map(
+                f,
+                stage,
+                workers=workers,
+                maxsize=maxsize,
+                on_start=on_start,
+                on_done=on_done,
+            )
+        )
 
     stage = _to_stage(stage)
 
@@ -486,14 +525,14 @@ def flat_map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = No
         f = lambda *args, **kwargs: _f(*args, **kwargs)
 
     return _Stage(
-        worker_constructor = WORKER,
-        workers = workers,
-        maxsize = maxsize,
-        on_start = on_start,
-        on_done = on_done,
-        target = _flat_map,
-        args = (f,),
-        dependencies = [stage],
+        worker_constructor=WORKER,
+        workers=workers,
+        maxsize=maxsize,
+        on_start=on_start,
+        on_done=on_done,
+        target=_flat_map,
+        args=(f,),
+        dependencies=[stage],
     )
 
 
@@ -501,8 +540,8 @@ def flat_map(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = No
 # filter
 ###########
 
-def _filter(f, params):
 
+def _filter(f, params):
     @_handle_exceptions(params)
     def f_task(x, args):
         if f(x, *args):
@@ -511,7 +550,7 @@ def _filter(f, params):
     _run_task(f_task, params)
 
 
-def filter(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None):
+def filter(f, stage=utils.UNDEFINED, workers=1, maxsize=0, on_start=None, on_done=None):
     """
     Creates a stage that filter the data given a predicate function `f`. It is intended to behave like python's built-in `filter` function but with the added concurrency.
 
@@ -543,19 +582,28 @@ def filter(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None
     """
 
     if utils.is_undefined(stage):
-        return utils.Partial(lambda stage: filter(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
+        return utils.Partial(
+            lambda stage: filter(
+                f,
+                stage,
+                workers=workers,
+                maxsize=maxsize,
+                on_start=on_start,
+                on_done=on_done,
+            )
+        )
 
     stage = _to_stage(stage)
-    
+
     return _Stage(
-        worker_constructor = WORKER,
-        workers = workers,
-        maxsize = maxsize,
-        on_start = on_start,
-        on_done = on_done,
-        target = _filter,
-        args = (f,),
-        dependencies = [stage],
+        worker_constructor=WORKER,
+        workers=workers,
+        maxsize=maxsize,
+        on_start=on_start,
+        on_done=on_done,
+        target=_filter,
+        args=(f,),
+        dependencies=[stage],
     )
 
 
@@ -563,8 +611,8 @@ def filter(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None
 # each
 ###########
 
-def _each(f, params):
 
+def _each(f, params):
     @_handle_exceptions(params)
     def f_task(x, args):
         f(x, *args)
@@ -572,7 +620,15 @@ def _each(f, params):
     _run_task(f_task, params)
 
 
-def each(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, on_done = None, run = False):
+def each(
+    f,
+    stage=utils.UNDEFINED,
+    workers=1,
+    maxsize=0,
+    on_start=None,
+    on_done=None,
+    run=False,
+):
     """
     Creates a stage that runs the function `f` for each element in the data but the stage itself yields no elements. Its useful for sink stages that perform certain actions such as writting to disk, saving to a database, etc, and dont produce any results. For example:
 
@@ -608,19 +664,28 @@ def each(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, 
     """
 
     if utils.is_undefined(stage):
-        return utils.Partial(lambda stage: each(f, stage, workers=workers, maxsize=maxsize, on_start=on_start, on_done=on_done))
+        return utils.Partial(
+            lambda stage: each(
+                f,
+                stage,
+                workers=workers,
+                maxsize=maxsize,
+                on_start=on_start,
+                on_done=on_done,
+            )
+        )
 
     stage = _to_stage(stage)
 
     stage = _Stage(
-        worker_constructor = WORKER,
-        workers = workers,
-        maxsize = maxsize,
-        on_start = on_start,
-        on_done = on_done,
-        target = _each,
-        args = (f,),
-        dependencies = [stage],
+        worker_constructor=WORKER,
+        workers=workers,
+        maxsize=maxsize,
+        on_start=on_start,
+        on_done=on_done,
+        target=_each,
+        args=(f,),
+        dependencies=[stage],
     )
 
     if not run:
@@ -634,16 +699,15 @@ def each(f, stage = utils.UNDEFINED, workers = 1, maxsize = 0, on_start = None, 
 # concat
 ###########
 
-def _concat(params):
 
+def _concat(params):
     def f_task(x, args):
         params.output_queues.put(x)
 
     _run_task(f_task, params)
 
 
-
-def concat(stages, maxsize = 0):
+def concat(stages, maxsize=0):
     """
     Concatenates / merges many stages into a single one by appending elements from each stage as they come, order is not preserved.
 
@@ -662,24 +726,26 @@ def concat(stages, maxsize = 0):
     * A stage object.
     """
 
-    stages = [ _to_stage(s) for s in stages ]
+    stages = [_to_stage(s) for s in stages]
 
     return _Stage(
-        worker_constructor = WORKER,
-        workers = 1,
-        maxsize = maxsize,
-        on_start = None,
-        on_done = None,
-        target = _concat,
-        args = tuple(),
-        dependencies = stages,
+        worker_constructor=WORKER,
+        workers=1,
+        maxsize=maxsize,
+        on_start=None,
+        on_done=None,
+        target=_concat,
+        args=tuple(),
+        dependencies=stages,
     )
+
 
 ################
 # run
 ################
 
-def run(stages, maxsize = 0):
+
+def run(stages, maxsize=0):
     """
     Iterates over one or more stages until their iterators run out of elements.
 
@@ -703,21 +769,21 @@ def run(stages, maxsize = 0):
         raise ValueError("Expected at least 1 stage to run")
 
     elif isinstance(stages, list):
-        stage = concat(stages, maxsize = maxsize)
-    
+        stage = concat(stages, maxsize=maxsize)
+
     else:
         stage = stages
 
-    stage = to_iterable(stage, maxsize = maxsize)
-    
+    stage = to_iterable(stage, maxsize=maxsize)
+
     for _ in stages:
         pass
 
-    
 
 ################
 # _to_stage
-################ 
+################
+
 
 def _to_stage(obj):
 
@@ -726,26 +792,25 @@ def _to_stage(obj):
 
     elif hasattr(obj, "__iter__"):
         return from_iterable(obj)
-    
+
     else:
-        raise ValueError("Object {obj} is not iterable".format(obj = obj))
+        raise ValueError("Object {obj} is not iterable".format(obj=obj))
+
 
 ################
 # from_iterable
 ################
 
-def _from_iterable(iterable, params):
 
+def _from_iterable(iterable, params):
     def f_task(args):
         for x in iterable:
             params.output_queues.put(x)
 
     _run_task(f_task, params)
 
-    
-    
 
-def from_iterable(iterable = utils.UNDEFINED, maxsize = None, worker_constructor = Thread):
+def from_iterable(iterable=utils.UNDEFINED, maxsize=None, worker_constructor=Thread):
     """
     Creates a stage from an iterable. This function gives you more control of how a stage is created through the `worker_constructor` parameter which can be either:
     
@@ -764,38 +829,45 @@ def from_iterable(iterable = utils.UNDEFINED, maxsize = None, worker_constructor
     """
 
     if utils.is_undefined(iterable):
-        return utils.Partial(lambda iterable: from_iterable(iterable, maxsize=maxsize, worker_constructor=worker_constructor))
+        return utils.Partial(
+            lambda iterable: from_iterable(
+                iterable, maxsize=maxsize, worker_constructor=worker_constructor
+            )
+        )
 
     return _Stage(
-        worker_constructor = worker_constructor,
-        workers = 1,
-        maxsize = None,
-        on_start = None,
-        on_done = None,
-        target = _from_iterable,
-        args = (iterable,),
-        dependencies = [],
+        worker_constructor=worker_constructor,
+        workers=1,
+        maxsize=None,
+        on_start=None,
+        on_done=None,
+        target=_from_iterable,
+        args=(iterable,),
+        dependencies=[],
     )
+
 
 ##############
 # to_iterable
 ##############
 
-def _build_queues(stage, stage_input_queue, stage_output_queues, visited, pipeline_namespace):
+
+def _build_queues(
+    stage, stage_input_queue, stage_output_queues, visited, pipeline_namespace
+):
 
     if stage in visited:
         return stage_input_queue, stage_output_queues
     else:
         visited.add(stage)
-    
-    
+
     if len(stage.dependencies) > 0:
-        total_done = sum([ s.workers for s in stage.dependencies ])
+        total_done = sum([s.workers for s in stage.dependencies])
         input_queue = _InputQueue(stage.maxsize, total_done, pipeline_namespace)
         stage_input_queue[stage] = input_queue
 
         for _stage in stage.dependencies:
-            
+
             if _stage not in stage_output_queues:
                 stage_output_queues[_stage] = _OutputQueues([input_queue])
             else:
@@ -806,41 +878,40 @@ def _build_queues(stage, stage_input_queue, stage_output_queues, visited, pipeli
                 stage_input_queue,
                 stage_output_queues,
                 visited,
-                pipeline_namespace = pipeline_namespace,
+                pipeline_namespace=pipeline_namespace,
             )
 
     return stage_input_queue, stage_output_queues
 
+
 def _create_worker(f, args, output_queues, input_queue):
 
-    kwargs = dict(
-        output_queues = output_queues)
+    kwargs = dict(output_queues=output_queues)
 
     if input_queue is not None:
-        kwargs.update(input_queue = input_queue)
+        kwargs.update(input_queue=input_queue)
 
-    return WORKER(target = f, args = args, kwargs = kwargs)
+    return WORKER(target=f, args=args, kwargs=kwargs)
+
 
 def _to_iterable(stage, maxsize):
 
     pipeline_namespace = _get_namespace()
     pipeline_namespace.error = False
     pipeline_error_queue = Queue()
-    
-
 
     input_queue = _InputQueue(maxsize, stage.workers, pipeline_namespace)
 
     stage_input_queue, stage_output_queues = _build_queues(
-        stage = stage,
-        stage_input_queue = dict(),
-        stage_output_queues = dict(),
-        visited = set(),
-        pipeline_namespace = pipeline_namespace,
+        stage=stage,
+        stage_input_queue=dict(),
+        stage_output_queues=dict(),
+        visited=set(),
+        pipeline_namespace=pipeline_namespace,
     )
 
-    stage_output_queues[stage] = _OutputQueues([ input_queue ])
-    
+    stage_output_queues[stage] = _OutputQueues([input_queue])
+
     processes = []
     for _stage in stage_output_queues:
 
@@ -855,19 +926,18 @@ def _to_iterable(stage, maxsize):
         for index in range(_stage.workers):
 
             stage_params = _StageParams(
-                output_queues = stage_output_queues[_stage],
-                input_queue = stage_input_queue.get(_stage, None),
-                on_start = _stage.on_start,
-                on_done = _stage.on_done,
-                stage_lock = stage_lock,
-                stage_namespace = stage_namespace,
-                pipeline_namespace = pipeline_namespace,
-                pipeline_error_queue = pipeline_error_queue,
-                index = index,
+                output_queues=stage_output_queues[_stage],
+                input_queue=stage_input_queue.get(_stage, None),
+                on_start=_stage.on_start,
+                on_done=_stage.on_done,
+                stage_lock=stage_lock,
+                stage_namespace=stage_namespace,
+                pipeline_namespace=pipeline_namespace,
+                pipeline_error_queue=pipeline_error_queue,
+                index=index,
             )
             process = _stage.worker_constructor(
-                target = _stage.target,
-                args = _stage.args + (stage_params,)
+                target=_stage.target, args=_stage.args + (stage_params,)
             )
 
             processes.append(process)
@@ -882,19 +952,22 @@ def _to_iterable(stage, maxsize):
 
         if pipeline_namespace.error:
             error_class, _, trace = pipeline_error_queue.get()
-            raise error_class("\n\nOriginal {trace}".format(trace = trace))
+            try:
+                raise error_class("\n\nOriginal {trace}".format(trace=trace))
+            except:
+                raise Exception("\n\nError: {trace}".format(trace=trace))
 
-        
         for p in processes:
             p.join()
 
     except:
         for q in stage_input_queue.values():
             q.done()
-        
+
         raise
 
-def to_iterable(stage = utils.UNDEFINED, maxsize = 0):
+
+def to_iterable(stage=utils.UNDEFINED, maxsize=0):
     """
     Creates an iterable from a stage. This function is used by the stage's `__iter__` method with the default arguments.
 
@@ -911,6 +984,3 @@ def to_iterable(stage = utils.UNDEFINED, maxsize = 0):
     else:
         return _to_iterable(stage, maxsize)
 
-    
-
-    

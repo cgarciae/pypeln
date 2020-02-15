@@ -1,4 +1,3 @@
-
 import hypothesis as hp
 from hypothesis import strategies as st
 import cytoolz as cz
@@ -13,7 +12,8 @@ MAX_EXAMPLES = 15
 # trivial
 ############
 
-@hp.given(nums = st.lists(st.integers()))
+
+@hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_from_to_iterable(nums):
 
@@ -24,25 +24,24 @@ def test_from_to_iterable(nums):
 
     assert nums_pl == nums_py
 
-@hp.given(nums = st.lists(st.integers()))
+
+@hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_from_to_iterable_pipe(nums):
 
     nums_py = nums
 
-    nums_pl = (
-        nums
-        | aio.from_iterable()
-        | list 
-    )
+    nums_pl = nums | aio.from_iterable() | list
 
     assert nums_pl == nums_py
+
 
 ############
 # map
 ############
 
-@hp.given(nums = st.lists(st.integers()))
+
+@hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_id(nums):
 
@@ -53,23 +52,20 @@ def test_map_id(nums):
 
     assert nums_pl == nums_py
 
-@hp.given(nums = st.lists(st.integers()))
+
+@hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_id_pipe(nums):
 
-    nums_pl = (
-        nums
-        | aio.map(lambda x: x)
-        | list
-    )
+    nums_pl = nums | aio.map(lambda x: x) | list
 
     assert nums_pl == nums
 
-@hp.given(nums = st.lists(st.integers()))
+
+@hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_square(nums):
 
-    
     nums_py = map(lambda x: x ** 2, nums)
     nums_py = list(nums_py)
 
@@ -79,14 +75,12 @@ def test_map_square(nums):
     assert nums_pl == nums_py
 
 
-@hp.given(nums = st.lists(st.integers()))
+@hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_square_event_start(nums):
 
-    
     nums_py = map(lambda x: x ** 2, nums)
     nums_py = list(nums_py)
-
 
     namespace = aio._get_namespace()
     namespace.x = 0
@@ -101,7 +95,7 @@ def test_map_square_event_start(nums):
     assert namespace.x == 1
 
 
-@hp.given(nums = st.lists(st.integers()))
+@hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_square_event_end(nums):
 
@@ -126,7 +120,7 @@ def test_map_square_event_end(nums):
     assert namespace.active_workers == 0
 
 
-@hp.given(nums = st.lists(st.integers()))
+@hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_square_workers(nums):
 
@@ -143,10 +137,10 @@ def test_map_square_workers(nums):
 # flat_map
 ############
 
-@hp.given(nums = st.lists(st.integers()))
+
+@hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_flat_map_square(nums):
-
     def _generator(x):
         yield x
         yield x + 1
@@ -165,15 +159,14 @@ def test_flat_map_square(nums):
     assert nums_pl == nums_py
 
 
-@hp.given(nums = st.lists(st.integers()))
+@hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_flat_map_square_workers(nums):
-
     def _generator(x):
         yield x
         yield x + 1
         yield x + 2
-    
+
     nums_py = map(lambda x: x ** 2, nums)
     nums_py = cz.mapcat(_generator, nums_py)
     nums_py = list(nums_py)
@@ -184,19 +177,20 @@ def test_flat_map_square_workers(nums):
 
     assert sorted(nums_pl) == sorted(nums_py)
 
+
 ############
 # filter
 ############
 
-@hp.given(nums = st.lists(st.integers()))
+
+@hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_flat_map_square_filter_workers(nums):
-
     def _generator(x):
         yield x
         yield x + 1
         yield x + 2
-    
+
     nums_py = map(lambda x: x ** 2, nums)
     nums_py = cz.mapcat(_generator, nums_py)
     nums_py = cz.filter(lambda x: x > 1, nums_py)
@@ -210,15 +204,14 @@ def test_flat_map_square_filter_workers(nums):
     assert sorted(nums_pl) == sorted(nums_py)
 
 
-@hp.given(nums = st.lists(st.integers()))
+@hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_flat_map_square_filter_workers_pipe(nums):
-
     def _generator(x):
         yield x
         yield x + 1
         yield x + 2
-    
+
     nums_py = map(lambda x: x ** 2, nums)
     nums_py = cz.mapcat(_generator, nums_py)
     nums_py = cz.filter(lambda x: x > 1, nums_py)
@@ -234,12 +227,13 @@ def test_flat_map_square_filter_workers_pipe(nums):
 
     assert sorted(nums_pl) == sorted(nums_py)
 
+
 ############
 # concat
 ############
 
 
-@hp.given(nums = st.lists(st.integers()))
+@hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_concat_basic(nums):
 
@@ -256,11 +250,11 @@ def test_concat_basic(nums):
     assert sorted(nums_pl) == sorted(nums_py)
 
 
-@hp.given(nums = st.lists(st.integers()))
+@hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_concat_multiple(nums):
 
-    nums_py = [ x + 1 for x in nums ]
+    nums_py = [x + 1 for x in nums]
     nums_py1 = nums_py + nums_py
     nums_py2 = nums_py1 + nums_py
 
@@ -276,8 +270,10 @@ def test_concat_multiple(nums):
 # error handling
 ###################
 
+
 class MyError(Exception):
     pass
+
 
 def test_error_handling():
 
@@ -290,20 +286,20 @@ def test_error_handling():
 
     try:
         list(stage)
-    
+
     except MyError as e:
         error = e
 
-    assert isinstance(error, MyError) 
+    assert isinstance(error, MyError)
 
 
 ###################
 # from_to_iterable
 ###################
-@hp.given(nums = st.lists(st.integers()))
+@hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-def test_from_to_iterable(nums):
-    
+def test_from_to_iterable2(nums):
+
     nums_pl = nums
     nums_pl = aio.from_iterable(nums_pl)
     nums_pl = cz.partition_all(10, nums_pl)
@@ -318,8 +314,7 @@ def test_from_to_iterable(nums):
     assert nums_py == nums_pl
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     error = None
 
     def raise_error(x):

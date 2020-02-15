@@ -1,5 +1,1 @@
-pytest
-hypothesis
-cytoolz
-pytest-asyncio
-aiohttp
+pytest hypothesis cytoolz pytest-asyncio aiohttp

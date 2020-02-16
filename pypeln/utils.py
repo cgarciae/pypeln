@@ -5,8 +5,8 @@ from collections import namedtuple
 
 TIMEOUT = 0.0001
 
-class Partial(object):
 
+class Partial(object):
     def __init__(self, f):
         self.f = f
 
@@ -19,8 +19,8 @@ class Partial(object):
     def __call__(self, stage):
         return self.f(stage)
 
-class BaseStage(object):
 
+class BaseStage(object):
     def __or__(self, f):
         return f(self)
 
@@ -28,24 +28,50 @@ class BaseStage(object):
 class Namespace(object):
     pass
 
-class Done(object): pass
-DONE = Done()
-def is_done(x): return isinstance(x, Done)
 
-class Value(namedtuple("Value", "value")): pass
-def is_value(x): return isinstance(x, Value)
+class Done(object):
+    def __str__(self):
+        return "DONE"
+
+
+DONE = Done()
+
+
+def is_done(x):
+    return isinstance(x, Done)
+
+
+class Value(namedtuple("Value", "value")):
+    pass
+
+
+def is_value(x):
+    return isinstance(x, Value)
+
 
 class Continue(object):
     def __str__(self):
         return "Continue"
+
+
 CONTINUE = Continue()
-def is_continue(x): return isinstance(x, Continue)
+
+
+def is_continue(x):
+    return isinstance(x, Continue)
+
 
 class _None(object):
     def __str__(self):
         return "_None"
+
+
 NONE = _None()
-def is_none(x): return isinstance(x, _None)
+
+
+def is_none(x):
+    return isinstance(x, _None)
+
 
 class Undefined(object):
     def __str__(self):
@@ -53,19 +79,23 @@ class Undefined(object):
 
     def __repr__(self):
         return "Undefined"
+
+
 UNDEFINED = Undefined()
-def is_undefined(x): return isinstance(x, Undefined)
+
+
+def is_undefined(x):
+    return isinstance(x, Undefined)
 
 
 def chunks(n, l):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
         if i + n <= len(l):
-            yield l[i:i + n]
+            yield l[i : i + n]
 
 
 def print_error(f):
-
     @functools.wraps(f)
     def _lambda(*args, **kwargs):
         try:

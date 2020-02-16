@@ -14,7 +14,7 @@ def _WORKER(target, args, kwargs=None):
     return target(*args, **kwargs)
 
 
-def _get_namespace():
+def get_namespace():
     return utils.Namespace()
 
 
@@ -42,7 +42,7 @@ class _Stage(utils.BaseStage):
     def __await__(self):
 
         maxsize = 0
-        pipeline_namespace = _get_namespace()
+        pipeline_namespace = get_namespace()
         pipeline_namespace.error = None
         loop = asyncio.get_event_loop()
 
@@ -57,7 +57,7 @@ class _Stage(utils.BaseStage):
     async def __aiter__(self):
 
         maxsize = 0
-        pipeline_namespace = _get_namespace()
+        pipeline_namespace = get_namespace()
         pipeline_namespace.error = None
         loop = asyncio.get_event_loop()
 
@@ -633,7 +633,7 @@ def _to_iterable(stage, maxsize):
 
     # print("_to_iterable", stage)
 
-    pipeline_namespace = _get_namespace()
+    pipeline_namespace = get_namespace()
     pipeline_namespace.error = None
 
     try:

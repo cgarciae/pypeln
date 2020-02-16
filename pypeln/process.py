@@ -142,7 +142,7 @@ def _get_manager():
     return _MANAGER
 
 
-def _get_namespace():
+def get_namespace():
     return _get_manager().Namespace()
 
 
@@ -156,7 +156,7 @@ def _get_namespace():
 # from six.moves.queue import Queue, Empty, Full
 # from threading import Lock
 
-# def _get_namespace():
+# def get_namespace():
 #     return Namespace()
 
 
@@ -258,7 +258,7 @@ class _InputQueue(object):
 
         self.queue = Queue(maxsize=maxsize, **kwargs)
         self.lock = Lock()
-        self.namespace = _get_namespace()
+        self.namespace = get_namespace()
         self.namespace.remaining = total_done
 
         self.pipeline_namespace = pipeline_namespace
@@ -896,7 +896,7 @@ def _create_worker(f, args, output_queues, input_queue):
 
 def _to_iterable(stage, maxsize):
 
-    pipeline_namespace = _get_namespace()
+    pipeline_namespace = get_namespace()
     pipeline_namespace.error = False
     pipeline_error_queue = Queue()
 
@@ -917,7 +917,7 @@ def _to_iterable(stage, maxsize):
 
         if _stage.on_done is not None:
             stage_lock = Lock()
-            stage_namespace = _get_namespace()
+            stage_namespace = get_namespace()
             stage_namespace.active_workers = _stage.workers
         else:
             stage_lock = None

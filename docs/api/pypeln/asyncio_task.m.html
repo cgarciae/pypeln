@@ -1111,7 +1111,7 @@ table {
     <span class="k">return</span> <span class="n">target</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_get_namespace</span><span class="p">():</span>
+<span class="k">def</span> <span class="nf">get_namespace</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">Namespace</span><span class="p">()</span>
 
 <span class="k">class</span> <span class="nc">_Stage</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">BaseStage</span><span class="p">):</span>
@@ -1129,7 +1129,7 @@ table {
     <span class="k">def</span> <span class="nf">__await__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">pipeline_namespace</span> <span class="o">=</span> <span class="n">_get_namespace</span><span class="p">()</span>
+        <span class="n">pipeline_namespace</span> <span class="o">=</span> <span class="n">get_namespace</span><span class="p">()</span>
         <span class="n">pipeline_namespace</span><span class="o">.</span><span class="n">error</span> <span class="o">=</span> <span class="bp">None</span>
         <span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
         
@@ -1144,7 +1144,7 @@ table {
     <span class="n">async</span> <span class="k">def</span> <span class="nf">__aiter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         
         <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">pipeline_namespace</span> <span class="o">=</span> <span class="n">_get_namespace</span><span class="p">()</span>
+        <span class="n">pipeline_namespace</span> <span class="o">=</span> <span class="n">get_namespace</span><span class="p">()</span>
         <span class="n">pipeline_namespace</span><span class="o">.</span><span class="n">error</span> <span class="o">=</span> <span class="bp">None</span>
         <span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
         
@@ -1662,7 +1662,7 @@ table {
 
     <span class="c1"># print(&quot;_to_iterable&quot;, stage)</span>
 
-    <span class="n">pipeline_namespace</span> <span class="o">=</span> <span class="n">_get_namespace</span><span class="p">()</span>
+    <span class="n">pipeline_namespace</span> <span class="o">=</span> <span class="n">get_namespace</span><span class="p">()</span>
     <span class="n">pipeline_namespace</span><span class="o">.</span><span class="n">error</span> <span class="o">=</span> <span class="bp">None</span>
 
     <span class="k">try</span><span class="p">:</span>  

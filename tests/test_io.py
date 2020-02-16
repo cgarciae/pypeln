@@ -82,7 +82,7 @@ def test_map_square_event_start(nums):
     nums_py = map(lambda x: x ** 2, nums)
     nums_py = list(nums_py)
 
-    namespace = aio._get_namespace()
+    namespace = aio.get_namespace()
     namespace.x = 0
 
     def set_1():
@@ -99,7 +99,7 @@ def test_map_square_event_start(nums):
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_square_event_end(nums):
 
-    namespace = aio._get_namespace()
+    namespace = aio.get_namespace()
     namespace.x = 0
     namespace.done = False
     namespace.active_workers = -1

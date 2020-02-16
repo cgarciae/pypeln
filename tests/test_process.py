@@ -4,7 +4,7 @@ import cytoolz as cz
 import functools as ft
 import time
 
-from pypeln import asyncio_task as aio
+import pypeln as pl
 
 MAX_EXAMPLES = 15
 
@@ -19,7 +19,7 @@ def test_from_to_iterable(nums):
 
     nums_py = nums
 
-    nums_pl = aio.from_iterable(nums)
+    nums_pl = pl.process.from_iterable(nums)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums_py
@@ -31,7 +31,7 @@ def test_from_to_iterable_pipe(nums):
 
     nums_py = nums
 
-    nums_pl = nums | aio.from_iterable() | list
+    nums_pl = nums | pl.process.from_iterable() | list
 
     assert nums_pl == nums_py
 
@@ -47,7 +47,7 @@ def test_map_id(nums):
 
     nums_py = nums
 
-    nums_pl = aio.map(lambda x: x, nums)
+    nums_pl = pl.process.map(lambda x: x, nums)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums_py
@@ -57,7 +57,7 @@ def test_map_id(nums):
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_id_pipe(nums):
 
-    nums_pl = nums | aio.map(lambda x: x) | list
+    nums_pl = nums | pl.process.map(lambda x: x) | list
 
     assert nums_pl == nums
 
@@ -69,7 +69,7 @@ def test_map_square(nums):
     nums_py = map(lambda x: x ** 2, nums)
     nums_py = list(nums_py)
 
-    nums_pl = aio.map(lambda x: x ** 2, nums)
+    nums_pl = pl.process.map(lambda x: x ** 2, nums)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums_py
@@ -82,24 +82,40 @@ def test_map_square_event_start(nums):
     nums_py = map(lambda x: x ** 2, nums)
     nums_py = list(nums_py)
 
-    namespace = aio.get_namespace()
+    namespace = pl.process.get_namespace()
     namespace.x = 0
 
     def set_1():
         namespace.x = 1
 
-    nums_pl = aio.map(lambda x: x ** 2, nums, on_start=set_1)
+    nums_pl = pl.process.map(lambda x: x ** 2, nums, on_start=set_1)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums_py
     assert namespace.x == 1
 
 
+def test_worker_info():
+
+    nums = range(100)
+    n_workers = 4
+
+    def set_1(worker_info):
+        return dict(index=worker_info.index)
+
+    nums_pl = pl.process.map(
+        lambda x, index: index, nums, on_start=set_1, workers=n_workers,
+    )
+    nums_pl = set(nums_pl)
+
+    assert nums_pl.issubset(set(range(n_workers)))
+
+
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_square_event_end(nums):
 
-    namespace = aio.get_namespace()
+    namespace = pl.process.get_namespace()
     namespace.x = 0
     namespace.done = False
     namespace.active_workers = -1
@@ -112,7 +128,9 @@ def test_map_square_event_end(nums):
         namespace.active_workers = stage_status.active_workers
         namespace.done = stage_status.done
 
-    nums_pl = aio.map(lambda x: x ** 2, nums, workers=3, on_start=set_1, on_done=set_2)
+    nums_pl = pl.process.map(
+        lambda x: x ** 2, nums, workers=3, on_start=set_1, on_done=set_2
+    )
     nums_pl = list(nums_pl)
 
     assert namespace.x == 2
@@ -127,7 +145,7 @@ def test_map_square_workers(nums):
     nums_py = map(lambda x: x ** 2, nums)
     nums_py = list(nums_py)
 
-    nums_pl = aio.map(lambda x: x ** 2, nums, workers=2)
+    nums_pl = pl.process.map(lambda x: x ** 2, nums, workers=2)
     nums_pl = list(nums_pl)
 
     assert sorted(nums_pl) == sorted(nums_py)
@@ -146,14 +164,12 @@ def test_flat_map_square(nums):
         yield x + 1
         yield x + 2
 
-    print(nums)
-
     nums_py = map(lambda x: x ** 2, nums)
     nums_py = cz.mapcat(_generator, nums_py)
     nums_py = list(nums_py)
 
-    nums_pl = aio.map(lambda x: x ** 2, nums)
-    nums_pl = aio.flat_map(_generator, nums_pl)
+    nums_pl = pl.process.map(lambda x: x ** 2, nums)
+    nums_pl = pl.process.flat_map(_generator, nums_pl)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums_py
@@ -171,8 +187,8 @@ def test_flat_map_square_workers(nums):
     nums_py = cz.mapcat(_generator, nums_py)
     nums_py = list(nums_py)
 
-    nums_pl = aio.map(lambda x: x ** 2, nums)
-    nums_pl = aio.flat_map(_generator, nums_pl, workers=3)
+    nums_pl = pl.process.map(lambda x: x ** 2, nums)
+    nums_pl = pl.process.flat_map(_generator, nums_pl, workers=3)
     nums_pl = list(nums_pl)
 
     assert sorted(nums_pl) == sorted(nums_py)
@@ -196,9 +212,9 @@ def test_flat_map_square_filter_workers(nums):
     nums_py = cz.filter(lambda x: x > 1, nums_py)
     nums_py = list(nums_py)
 
-    nums_pl = aio.map(lambda x: x ** 2, nums)
-    nums_pl = aio.flat_map(_generator, nums_pl, workers=3)
-    nums_pl = aio.filter(lambda x: x > 1, nums_pl)
+    nums_pl = pl.process.map(lambda x: x ** 2, nums)
+    nums_pl = pl.process.flat_map(_generator, nums_pl, workers=3)
+    nums_pl = pl.process.filter(lambda x: x > 1, nums_pl)
     nums_pl = list(nums_pl)
 
     assert sorted(nums_pl) == sorted(nums_py)
@@ -219,9 +235,9 @@ def test_flat_map_square_filter_workers_pipe(nums):
 
     nums_pl = (
         nums
-        | aio.map(lambda x: x ** 2)
-        | aio.flat_map(_generator, workers=3)
-        | aio.filter(lambda x: x > 1)
+        | pl.process.map(lambda x: x ** 2)
+        | pl.process.flat_map(_generator, workers=3)
+        | pl.process.filter(lambda x: x > 1)
         | list
     )
 
@@ -242,10 +258,10 @@ def test_concat_basic(nums):
     nums_py2 = list(map(lambda x: -x, nums_py))
     nums_py = nums_py1 + nums_py2
 
-    nums_pl = aio.map(lambda x: x + 1, nums)
-    nums_pl1 = aio.map(lambda x: x ** 2, nums_pl)
-    nums_pl2 = aio.map(lambda x: -x, nums_pl)
-    nums_pl = aio.concat([nums_pl1, nums_pl2])
+    nums_pl = pl.process.map(lambda x: x + 1, nums)
+    nums_pl1 = pl.process.map(lambda x: x ** 2, nums_pl)
+    nums_pl2 = pl.process.map(lambda x: -x, nums_pl)
+    nums_pl = pl.process.concat([nums_pl1, nums_pl2])
 
     assert sorted(nums_pl) == sorted(nums_py)
 
@@ -258,11 +274,11 @@ def test_concat_multiple(nums):
     nums_py1 = nums_py + nums_py
     nums_py2 = nums_py1 + nums_py
 
-    nums_pl = aio.map(lambda x: x + 1, nums)
-    nums_pl1 = aio.concat([nums_pl, nums_pl])
-    nums_pl2 = aio.concat([nums_pl1, nums_pl])
+    nums_pl = pl.process.map(lambda x: x + 1, nums)
+    nums_pl1 = pl.process.concat([nums_pl, nums_pl])
+    nums_pl2 = pl.process.concat([nums_pl1, nums_pl])
 
-    assert sorted(nums_py1) == sorted(list(nums_pl1))
+    # assert sorted(nums_py1) == sorted(list(nums_pl1))
     assert sorted(nums_py2) == sorted(list(nums_pl2))
 
 
@@ -282,7 +298,7 @@ def test_error_handling():
     def raise_error(x):
         raise MyError()
 
-    stage = aio.map(raise_error, range(10))
+    stage = pl.process.map(raise_error, range(10))
 
     try:
         list(stage)
@@ -298,12 +314,12 @@ def test_error_handling():
 ###################
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-def test_from_to_iterable2(nums):
+def test_from_to_iterable(nums):
 
     nums_pl = nums
-    nums_pl = aio.from_iterable(nums_pl)
+    nums_pl = pl.process.from_iterable(nums_pl)
     nums_pl = cz.partition_all(10, nums_pl)
-    nums_pl = aio.map(sum, nums_pl)
+    nums_pl = pl.process.map(sum, nums_pl)
     nums_pl = list(nums_pl)
 
     nums_py = nums
@@ -320,6 +336,6 @@ if __name__ == "__main__":
     def raise_error(x):
         raise MyError()
 
-    stage = aio.map(raise_error, range(10))
+    stage = pl.process.map(raise_error, range(10))
 
     list(stage)

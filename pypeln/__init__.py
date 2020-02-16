@@ -148,7 +148,7 @@ consume them.
 
 from . import thread
 from . import process
-from . import asyncio_task
+from . import task
 
 __all__ = ["process", "thread", "asyncio_task"]
 __version__ = "0.1.10"

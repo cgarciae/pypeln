@@ -2,11 +2,9 @@ import inspect
 import sys
 import traceback
 from collections import namedtuple
-from queue import Queue
-from threading import Lock
-from threading import Thread
 
 from pypeln import utils as pypeln_utils
+
 from . import utils
 
 
@@ -26,7 +24,7 @@ class Stage(pypeln_utils.BaseStage):
         ), f"{self.__class__} must define either 'apply' or 'process'"
 
         if worker_constructor is None:
-            worker_constructor = Thread
+            worker_constructor = utils.CONTEXT.Process
 
         self.f = f
         self.workers = workers
@@ -121,7 +119,7 @@ class Stage(pypeln_utils.BaseStage):
 
         self.pipeline_namespace = pipeline_namespace
         self.pipeline_error_queue = pipeline_error_queue
-        self.stage_lock = Lock()
+        self.stage_lock = utils.CONTEXT.Lock()
         self.stage_namespace = utils.get_namespace()
         self.stage_namespace.active_workers = self.workers
         self.input_queue = utils.IterableQueue(
@@ -139,7 +137,7 @@ class Stage(pypeln_utils.BaseStage):
 
         pipeline_namespace = utils.get_namespace()
         pipeline_namespace.error = False
-        pipeline_error_queue = Queue()
+        pipeline_error_queue = utils.CONTEXT.Queue()
 
         output_queue = utils.IterableQueue(maxsize, self.workers, pipeline_namespace)
         built_stages = set()
@@ -184,4 +182,3 @@ class Stage(pypeln_utils.BaseStage):
                 stage.input_queue.done()
 
             raise
-

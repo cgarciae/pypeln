@@ -1,12 +1,13 @@
+import asyncio
 import inspect
 import sys
 import traceback
 from collections import namedtuple
 from queue import Queue
-from threading import Lock
-from threading import Thread
+from threading import Lock, Thread
 
 from pypeln import utils as pypeln_utils
+
 from . import utils
 
 
@@ -25,8 +26,8 @@ class Stage(pypeln_utils.BaseStage):
             self, "process"
         ), f"{self.__class__} must define either 'apply' or 'process'"
 
-        if worker_constructor is None:
-            worker_constructor = Thread
+        def worker_constructor(f, args):
+            return f(*args)
 
         self.f = f
         self.workers = workers
@@ -46,8 +47,9 @@ class Stage(pypeln_utils.BaseStage):
         self.pipeline_namespace = None
         self.pipeline_error_queue = None
 
-    def run(self, index):
+    async def run(self, index):
         try:
+
             if self.on_start is not None:
                 on_start_kwargs = {}
 
@@ -61,17 +63,21 @@ class Stage(pypeln_utils.BaseStage):
             if f_kwargs is None:
                 f_kwargs = {}
 
-            if hasattr(self, "apply"):
-                for x in self.input_queue:
-                    self.apply(x, **f_kwargs)
-            else:
-                self.process(**f_kwargs)
+            if hasattr(f_kwargs, "__await__"):
+                f_kwargs = await f_kwargs
 
-            self.output_queues.done()
+            if hasattr(self, "apply"):
+                async with utils.TaskPool(self.workers, self.loop) as tasks:
+
+                    async for x in self.input_queue:
+                        task = self.apply(x, **f_kwargs)
+                        await tasks.put(task)
+            else:
+                await self.process(**f_kwargs)
+
+            await self.output_queues.done()
 
             if self.on_done is not None:
-                with self.stage_lock:
-                    self.stage_namespace.active_workers -= 1
 
                 on_done_kwargs = {}
 
@@ -80,11 +86,14 @@ class Stage(pypeln_utils.BaseStage):
                         namespace=self.stage_namespace, lock=self.stage_lock
                     )
 
-                self.on_done(**on_done_kwargs)
+                done_resp = self.on_done(**on_done_kwargs)
+
+                if hasattr(done_resp, "__await__"):
+                    await done_resp
 
         except BaseException as e:
             try:
-                self.pipeline_error_queue.put(
+                self.pipeline_error_queue.put_nowait(
                     (type(e), e, "".join(traceback.format_exception(*sys.exc_info())))
                 )
                 self.pipeline_namespace.error = True
@@ -117,13 +126,10 @@ class Stage(pypeln_utils.BaseStage):
 
         built_stages.add(self)
 
-        total_done = sum([stage.workers for stage in self.dependencies])
+        total_done = len(self.dependencies)
 
         self.pipeline_namespace = pipeline_namespace
         self.pipeline_error_queue = pipeline_error_queue
-        self.stage_lock = Lock()
-        self.stage_namespace = utils.get_namespace()
-        self.stage_namespace.active_workers = self.workers
         self.input_queue = utils.IterableQueue(
             self.maxsize, total_done, pipeline_namespace
         )
@@ -135,7 +141,16 @@ class Stage(pypeln_utils.BaseStage):
                 built_stages, self.input_queue, pipeline_namespace, pipeline_error_queue
             )
 
+    def run_coroutine(self, coro, loop):
+
+        if loop.is_running():
+            loop.create_task(coro)
+        else:
+            loop.run_until_complete(coro)
+
     def to_iterable(self, maxsize):
+
+        loop = asyncio.get_event_loop()
 
         pipeline_namespace = utils.get_namespace()
         pipeline_namespace.error = False
@@ -144,23 +159,13 @@ class Stage(pypeln_utils.BaseStage):
         output_queue = utils.IterableQueue(maxsize, self.workers, pipeline_namespace)
         built_stages = set()
 
-        self.build(
-            built_stages=built_stages,
-            output_queue=output_queue,
-            pipeline_namespace=pipeline_namespace,
-            pipeline_error_queue=pipeline_error_queue,
+        coro, output_queue = self.to_coroutine(
+            maxsize, pipeline_namespace, pipeline_error_queue
         )
 
-        workers = []
-        for stage in built_stages:
-            for index in range(stage.workers):
-                workers.append(
-                    stage.worker_constructor(target=stage.run, args=(index,))
-                )
-
-        for p in workers:
-            p.daemon = True
-            p.start()
+        thread = Thread(target=self.run_coroutine, args=(coro, loop))
+        thread.daemon = True
+        thread.start()
 
         try:
             for x in output_queue:
@@ -176,8 +181,7 @@ class Stage(pypeln_utils.BaseStage):
 
                 raise error
 
-            for p in workers:
-                p.join()
+            thread.join()
 
         except:
             for stage in built_stages:
@@ -185,3 +189,25 @@ class Stage(pypeln_utils.BaseStage):
 
             raise
 
+    def to_coroutine(self, maxsize, pipeline_namespace, pipeline_error_queue):
+
+        total_done = 1
+        output_queue = utils.IterableQueue(maxsize, total_done, pipeline_namespace)
+
+        built_stages = set()
+
+        self.build(
+            built_stages=built_stages,
+            output_queue=output_queue,
+            pipeline_namespace=pipeline_namespace,
+            pipeline_error_queue=pipeline_error_queue,
+        )
+
+        workers = []
+        for stage in built_stages:
+            for index in range(stage.workers):
+                workers.append(stage.worker_constructor(stage.run, args=(index,)))
+
+        task = asyncio.gather(*workers)
+
+        return task, output_queue

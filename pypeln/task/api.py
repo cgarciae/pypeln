@@ -4,6 +4,10 @@ from pypeln import utils as pypeln_utils
 
 from . import utils
 from .stage import Stage
+import asyncio
+import time
+import traceback
+import sys
 
 #############################################################
 # to_stage
@@ -16,13 +20,77 @@ class FromIterable(Stage):
 
         self.iterable = iterable
 
-    def process(self):
+    async def process(self):
 
-        for x in self.iterable:
+        async for x in self.to_async_iterable(self.iterable):
             if self.pipeline_namespace.error:
                 return
 
-            self.output_queues.put(x)
+            await self.output_queues.put(x)
+
+    async def to_async_iterable(self, iterable):
+
+        if hasattr(iterable, "__aiter__"):
+            async for x in iterable:
+                yield x
+        elif not hasattr(iterable, "__iter__"):
+            raise ValueError(
+                "Object {iterable} most be either iterable or async iterable.".format(
+                    iterable=iterable
+                )
+            )
+
+        if type(iterable) in (list, dict, tuple, set):
+            for i, x in enumerate(iterable):
+                yield x
+
+                if i % 1000 == 0:
+                    await asyncio.sleep(0)
+
+        else:
+            queue = utils.IterableQueue(
+                maxsize=self.maxsize,
+                total_done=1,
+                pipeline_namespace=self.pipeline_namespace,
+            )
+
+            loop = asyncio.get_event_loop()
+
+            task = loop.run_in_executor(
+                None, lambda: self.consume_iterable(iterable, queue, loop)
+            )
+
+            async for x in queue:
+                yield x
+
+            await task
+
+    def consume_iterable(self, iterable, queue, loop):
+
+        try:
+            for x in iterable:
+                while True:
+                    if not queue.full():
+                        loop.call_soon_threadsafe(queue.put_nowait, x)
+                        break
+                    else:
+                        time.sleep(utils.TIMEOUT)
+
+            while True:
+                if not queue.full():
+                    loop.call_soon_threadsafe(queue.put_nowait, utils.DONE)
+                    break
+                else:
+                    time.sleep(utils.TIMEOUT)
+
+        except BaseException as e:
+            try:
+                self.pipeline_error_queue.put_nowait(
+                    (type(e), e, "".join(traceback.format_exception(*sys.exc_info())))
+                )
+                self.pipeline_namespace.error = True
+            except BaseException as e:
+                print(e)
 
 
 def from_iterable(

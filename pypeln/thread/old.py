@@ -817,7 +817,7 @@ def from_iterable(iterable=utils.UNDEFINED, maxsize=None, worker_constructor=Thr
     * `threading.Thread`: (default) is efficient for iterables that already have the data in memory like lists or numpy arrays because threads can share memory so no serialization is needed. 
     * `multiprocessing.Process`: is efficient for iterables who's data is not in memory like arbitrary generators and benefit from escaping the GIL. This is inefficient for iterables which have data in memory because they have to be serialized when sent to the background process.
 
-    All functions that accept stages or iterables use this function when an iterable is passed to convert it into a stage using the default arguments.
+    
 
     # **Args**
     * **`iterable`** : a source iterable.

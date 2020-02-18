@@ -7,7 +7,7 @@ from . import utils
 from .stage import Stage
 
 #############################################################
-# to_stage
+# from_iterable
 #############################################################
 
 
@@ -30,14 +30,12 @@ def from_iterable(
     iterable: typing.Iterable = pypeln_utils.UNDEFINED,
     maxsize: int = None,
     worker_constructor: typing.Type = Thread,
-):
+) -> Stage:
     """
     Creates a stage from an iterable. This function gives you more control of how a stage is created through the `worker_constructor` parameter which can be either:
     
     * `threading.Thread`: (default) is efficient for iterables that already have the data in memory like lists or numpy arrays because threads can share memory so no serialization is needed. 
     * `multiprocessing.Process`: is efficient for iterables who's data is not in memory like arbitrary generators and benefit from escaping the GIL. This is inefficient for iterables which have data in memory because they have to be serialized when sent to the background process.
-
-    All functions that accept stages or iterables use this function when an iterable is passed to convert it into a stage using the default arguments.
 
     Arguments:
         iterable: a source iterable.

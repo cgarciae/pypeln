@@ -1,4 +1,5 @@
-from pypeln import asyncio_task as aio
+import pypeln as pl
+
 
 def batch(x, list_acc, n):
 
@@ -10,11 +11,10 @@ def batch(x, list_acc, n):
         list_acc.append(x)
 
 
-
 print(
     range(100)
-    | aio.map(lambda x: x)
-    | aio.flat_map(lambda x, list_acc: batch(x, list_acc, 10), on_start=lambda: [])
-    | aio.map(sum)
+    | pl.task.map(lambda x: x)
+    | pl.task.flat_map(lambda x, list_acc: batch(x, list_acc, 10), on_start=lambda: [])
+    | pl.task.map(sum)
     | list
 )

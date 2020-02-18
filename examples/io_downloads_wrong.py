@@ -1,11 +1,13 @@
 from aiohttp import ClientSession
-from pypeln import asyncio_task as aio
+import pypeln as pl
 import asyncio
 import sys
+
 
 async def fetch(url, session):
     async with session.get(url) as response:
         return await response.read()
+
 
 def main():
     r = 10
@@ -16,8 +18,9 @@ def main():
 
     session = ClientSession()
     data = range(r)
-    aio.each(lambda i: fetch(url, session), data, workers=1000)
+    pl.task.each(lambda i: fetch(url, session), data, workers=1000)
 
     print("FINISH")
-    
+
+
 main()

@@ -164,7 +164,7 @@ def map(
     """
     Creates a stage that maps a function `f` over the data. Its intended to behave like python's built-in `map` function but with the added concurrency.
 
-        from pypeln import process as pr
+        import pypeln as pl
         import time
         from random import random
 
@@ -173,7 +173,7 @@ def map(
             return x + 1
 
         data = range(10) # [0, 1, 2, ..., 9]
-        stage = pr.map(slow_add1, data, workers = 3, maxsize = 4)
+        stage = pl.process.map(slow_add1, data, workers = 3, maxsize = 4)
 
         data = list(stage) # e.g. [2, 1, 5, 6, 3, 4, 7, 8, 9, 10]
 
@@ -236,7 +236,7 @@ def flat_map(
     """
     Creates a stage that maps a function `f` over the data, however unlike `pypeln.process.map` in this case `f` returns an iterable. As its name implies, `flat_map` will flatten out these iterables so the resulting stage just contains their elements.
 
-        from pypeln import process as pr
+        import pypeln as pl
         import time
         from random import random
 
@@ -250,16 +250,16 @@ def flat_map(
                 yield -x
 
         data = range(10) # [0, 1, 2, ..., 9]
-        stage = pr.flat_map(slow_integer_pair, data, workers = 3, maxsize = 4)
+        stage = pl.process.flat_map(slow_integer_pair, data, workers = 3, maxsize = 4)
 
         list(stage) # e.g. [2, -2, 3, -3, 0, 1, -1, 6, -6, 4, -4, ...]
 
     Note that because of concurrency order is not guaranteed. Also, `flat_map` is more general than both `pypeln.process.map` and `pypeln.process.filter`, as such these expressions are equivalent:
 
-        from pypeln import process as pr
+        import pypeln as pl
 
-        pr.map(f, stage) = pr.flat_map(lambda x: [f(x)], stage)
-        pr.filter(f, stage) = pr.flat_map(lambda x: [x] if f(x) else [], stage)
+        pl.process.map(f, stage) = pl.process.flat_map(lambda x: [f(x)], stage)
+        pl.process.filter(f, stage) = pl.process.flat_map(lambda x: [x] if f(x) else [], stage)
 
     Using `flat_map` with a generator function is very useful as we are able to filter out unwanted elements when e.g. there are exceptions, missing data, etc.
 
@@ -321,7 +321,7 @@ def filter(
     """
     Creates a stage that filter the data given a predicate function `f`. It is intended to behave like python's built-in `filter` function but with the added concurrency.
 
-        from pypeln import process as pr
+        import pypeln as pl
         import time
         from random import random
 
@@ -330,7 +330,7 @@ def filter(
             return x > 3
 
         data = range(10) # [0, 1, 2, ..., 9]
-        stage = pr.filter(slow_gt3, data, workers = 3, maxsize = 4)
+        stage = pl.process.filter(slow_gt3, data, workers = 3, maxsize = 4)
 
         data = list(stage) # e.g. [5, 6, 3, 4, 7, 8, 9]
 
@@ -397,7 +397,7 @@ def each(
     """
     Creates a stage that runs the function `f` for each element in the data but the stage itself yields no elements. Its useful for sink stages that perform certain actions such as writting to disk, saving to a database, etc, and dont produce any results. For example:
 
-        from pypeln import process as pr
+        import pypeln as pl
 
         def process_image(image_path):
             image = load_image(image_path)
@@ -405,13 +405,13 @@ def each(
             save_image(image_path, image)
 
         files_paths = get_file_paths()
-        stage = pr.each(process_image, file_paths, workers = 4)
-        pr.run(stage)
+        stage = pl.process.each(process_image, file_paths, workers = 4)
+        pl.process.run(stage)
 
     or alternatively
 
         files_paths = get_file_paths()
-        pr.each(process_image, file_paths, workers = 4, run = True)
+        pl.process.each(process_image, file_paths, workers = 4, run = True)
 
     Note that because of concurrency order is not guaranteed.
 
@@ -472,12 +472,12 @@ def concat(stages, maxsize=0):
     """
     Concatenates / merges many stages into a single one by appending elements from each stage as they come, order is not preserved.
 
-        from pypeln import process as pr
+        import pypeln as pl
 
         stage_1 = [1, 2, 3]
         stage_2 = [4, 5, 6, 7]
 
-        stage_3 = pr.concat([stage_1, stage_2]) # e.g. [1, 4, 5, 2, 6, 3, 7]
+        stage_3 = pl.process.concat([stage_1, stage_2]) # e.g. [1, 4, 5, 2, 6, 3, 7]
 
     # **Args**
     * **`stages`** : a list of stages or iterables.

@@ -1,10 +1,27 @@
 import asyncio
 from collections import namedtuple
 from queue import Empty, Full, Queue
-from threading import Lock
+from threading import Lock, Thread
 
 from pypeln import utils as pypeln_utils
 import time
+
+
+LOOP = asyncio.new_event_loop()
+
+
+def run_on_loop(f_coro):
+
+    if not LOOP.is_running():
+
+        def run():
+            LOOP.run_forever()
+
+        thread = Thread(target=run)
+        thread.daemon = True
+        thread.start()
+
+    LOOP.call_soon_threadsafe(lambda: LOOP.create_task(f_coro()))
 
 
 def get_namespace():
@@ -12,11 +29,10 @@ def get_namespace():
 
 
 class TaskPool(object):
-    def __init__(self, workers, loop):
-        self.semaphore = asyncio.Semaphore(workers, loop=loop)
+    def __init__(self, workers):
+        self.semaphore = asyncio.Semaphore(workers)
         self.tasks = set()
         self.closed = False
-        self.loop = loop
 
     async def put(self, coro):
 
@@ -25,7 +41,7 @@ class TaskPool(object):
 
         await self.semaphore.acquire()
 
-        task = asyncio.ensure_future(coro, loop=self.loop)
+        task = asyncio.create_task(coro)
         self.tasks.add(task)
         task.add_done_callback(self.on_task_done)
 
@@ -34,7 +50,7 @@ class TaskPool(object):
         self.semaphore.release()
 
     async def join(self):
-        await asyncio.gather(*self.tasks, loop=self.loop)
+        await asyncio.gather(*self.tasks)
         self.closed = True
 
     async def __aenter__(self):
@@ -45,8 +61,8 @@ class TaskPool(object):
 
 
 class IterableQueue(asyncio.Queue):
-    def __init__(self, maxsize, total_done, pipeline_namespace, **kwargs):
-        super().__init__(maxsize=maxsize, **kwargs)
+    def __init__(self, maxsize, total_done, pipeline_namespace, loop, **kwargs):
+        super().__init__(maxsize=maxsize, loop=loop, **kwargs)
 
         self.remaining = total_done
         self.pipeline_namespace = pipeline_namespace
@@ -80,8 +96,6 @@ class IterableQueue(asyncio.Queue):
 
         x = await super().get()
 
-        # print(x)
-
         if pypeln_utils.is_done(x):
             self.remaining -= 1
             return pypeln_utils.CONTINUE
@@ -104,6 +118,9 @@ class IterableQueue(asyncio.Queue):
     async def done(self):
         await self.put(pypeln_utils.DONE)
 
+    def done_nowait(self):
+        self.put_nowait(pypeln_utils.DONE)
+
 
 class MultiQueue(list):
     async def put(self, x):
@@ -121,33 +138,22 @@ class MultiQueue(list):
         return self.done()
 
 
-class StageStatus:
-    """
-    Object passed to various `on_done` callbacks. It contains information about the stage in case book keeping is needed.
-    """
-
-    def __init__(self, namespace, lock):
-        self._namespace = namespace
-        self._lock = lock
+class StageStatus(object):
+    def __init__(self):
+        pass
 
     @property
-    def done(self) -> bool:
-        """
-        `bool` : `True` if all workers finished. 
-        """
-        with self._lock:
-            return self._namespace.active_workers == 0
+    def done(self):
+        return True
 
     @property
     def active_workers(self):
-        """
-        `int` : Number of active workers. 
-        """
-        with self._lock:
-            return self._namespace.active_workers
+        return 0
 
     def __str__(self):
-        return f"StageStatus(done = {done}, active_workers = {active_workers})"
+        return "StageStatus(done = {done}, active_workers = {active_workers})".format(
+            done=self.done, active_workers=self.active_workers,
+        )
 
 
 WorkerInfo = namedtuple("WorkerInfo", ["index"])

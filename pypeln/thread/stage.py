@@ -96,7 +96,7 @@ class Stage(pypeln_utils.BaseStage):
 
     def build(
         self,
-        built_stages: set,
+        pipeline_stages: set,
         output_queue: utils.IterableQueue,
         pipeline_namespace,
         pipeline_error_queue,
@@ -112,10 +112,10 @@ class Stage(pypeln_utils.BaseStage):
 
         self.output_queues.append(output_queue)
 
-        if self in built_stages:
+        if self in pipeline_stages:
             return
 
-        built_stages.add(self)
+        pipeline_stages.add(self)
 
         total_done = sum([stage.workers for stage in self.dependencies])
 
@@ -132,7 +132,10 @@ class Stage(pypeln_utils.BaseStage):
             stage: Stage
 
             stage.build(
-                built_stages, self.input_queue, pipeline_namespace, pipeline_error_queue
+                pipeline_stages,
+                self.input_queue,
+                pipeline_namespace,
+                pipeline_error_queue,
             )
 
     def to_iterable(self, maxsize):
@@ -142,17 +145,17 @@ class Stage(pypeln_utils.BaseStage):
         pipeline_error_queue = Queue()
 
         output_queue = utils.IterableQueue(maxsize, self.workers, pipeline_namespace)
-        built_stages = set()
+        pipeline_stages = set()
 
         self.build(
-            built_stages=built_stages,
+            pipeline_stages=pipeline_stages,
             output_queue=output_queue,
             pipeline_namespace=pipeline_namespace,
             pipeline_error_queue=pipeline_error_queue,
         )
 
         workers = []
-        for stage in built_stages:
+        for stage in pipeline_stages:
             for index in range(stage.workers):
                 workers.append(
                     stage.worker_constructor(target=stage.run, args=(index,))
@@ -180,7 +183,7 @@ class Stage(pypeln_utils.BaseStage):
                 p.join()
 
         except:
-            for stage in built_stages:
+            for stage in pipeline_stages:
                 stage.input_queue.done()
 
             raise

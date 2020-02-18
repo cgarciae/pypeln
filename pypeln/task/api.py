@@ -9,6 +9,7 @@ import time
 import traceback
 import sys
 
+
 #############################################################
 # to_stage
 #############################################################
@@ -21,27 +22,23 @@ class FromIterable(Stage):
         self.iterable = iterable
 
     async def process(self):
-
-        async for x in self.to_async_iterable(self.iterable):
+        async for x in self.to_async_iterable():
             if self.pipeline_namespace.error:
                 return
 
             await self.output_queues.put(x)
 
-    async def to_async_iterable(self, iterable):
-
-        if hasattr(iterable, "__aiter__"):
-            async for x in iterable:
+    async def to_async_iterable(self):
+        if hasattr(self.iterable, "__aiter__"):
+            async for x in self.iterable:
                 yield x
-        elif not hasattr(iterable, "__iter__"):
+        elif not hasattr(self.iterable, "__iter__"):
             raise ValueError(
-                "Object {iterable} most be either iterable or async iterable.".format(
-                    iterable=iterable
-                )
+                f"Object {self.iterable} most be either iterable or async iterable."
             )
 
-        if type(iterable) in (list, dict, tuple, set):
-            for i, x in enumerate(iterable):
+        if False and type(self.iterable) in (list, dict, tuple, set):
+            for i, x in enumerate(self.iterable):
                 yield x
 
                 if i % 1000 == 0:
@@ -52,43 +49,43 @@ class FromIterable(Stage):
                 maxsize=self.maxsize,
                 total_done=1,
                 pipeline_namespace=self.pipeline_namespace,
+                loop=self.loop,
             )
 
-            loop = asyncio.get_event_loop()
-
-            task = loop.run_in_executor(
-                None, lambda: self.consume_iterable(iterable, queue, loop)
-            )
-
+            task = self.loop.run_in_executor(None, lambda: self.consume_iterable(queue))
             async for x in queue:
                 yield x
 
             await task
 
-    def consume_iterable(self, iterable, queue, loop):
-
+    def consume_iterable(self, queue):
         try:
-            for x in iterable:
+            for x in self.iterable:
                 while True:
                     if not queue.full():
-                        loop.call_soon_threadsafe(queue.put_nowait, x)
+                        self.loop.call_soon_threadsafe(queue.put_nowait, x)
                         break
                     else:
                         time.sleep(utils.TIMEOUT)
 
             while True:
                 if not queue.full():
-                    loop.call_soon_threadsafe(queue.put_nowait, utils.DONE)
+                    self.loop.call_soon_threadsafe(queue.done_nowait)
                     break
                 else:
                     time.sleep(utils.TIMEOUT)
 
         except BaseException as e:
             try:
-                self.pipeline_error_queue.put_nowait(
-                    (type(e), e, "".join(traceback.format_exception(*sys.exc_info())))
+                for stage in self.pipeline_stages:
+                    self.loop.call_soon_threadsafe(stage.input_queue.done_nowait)
+
+                self.loop.call_soon_threadsafe(
+                    self.pipeline_error_queue.put_nowait,
+                    (type(e), e, "".join(traceback.format_exception(*sys.exc_info()))),
                 )
                 self.pipeline_namespace.error = True
+                self.loop.call_soon_threadsafe(queue.done_nowait)
             except BaseException as e:
                 print(e)
 
@@ -115,15 +112,12 @@ def from_iterable(
 
     if pypeln_utils.is_undefined(iterable):
         return pypeln_utils.Partial(
-            lambda iterable: from_iterable(
-                iterable, maxsize=None, worker_constructor=worker_constructor
-            )
+            lambda iterable: from_iterable(iterable, maxsize=None,)
         )
 
     return FromIterable(
         iterable=iterable,
         f=None,
-        worker_constructor=worker_constructor,
         workers=1,
         maxsize=0,
         on_start=None,
@@ -142,7 +136,7 @@ def to_stage(obj):
     if isinstance(obj, Stage):
         return obj
 
-    elif hasattr(obj, "__iter__"):
+    elif hasattr(obj, "__iter__") or hasattr(obj, "__aiter__"):
         return from_iterable(obj)
 
     else:
@@ -155,9 +149,13 @@ def to_stage(obj):
 
 
 class Map(Stage):
-    def apply(self, x, **kwargs):
+    async def apply(self, x, **kwargs):
         y = self.f(x, **kwargs)
-        self.output_queues.put(y)
+
+        if hasattr(y, "__await__"):
+            y = await y
+
+        await self.output_queues.put(y)
 
 
 def map(
@@ -223,9 +221,13 @@ def map(
 
 
 class FlatMap(Stage):
-    def apply(self, x, **kwargs):
+    async def apply(self, x, **kwargs):
         for y in self.f(x, **kwargs):
-            self.output_queues.put(y)
+
+            if hasattr(y, "__await__"):
+                y = await y
+
+            await self.output_queues.put(y)
 
 
 def flat_map(
@@ -303,9 +305,14 @@ def flat_map(
 
 
 class Filter(Stage):
-    def apply(self, x, **kwargs):
-        if self.f(x, **kwargs):
-            self.output_queues.put(x)
+    async def apply(self, x, **kwargs):
+        y = self.f(x, **kwargs)
+
+        if hasattr(y, "__await__"):
+            y = await y
+
+        if y:
+            await self.output_queues.put(x)
 
 
 def filter(
@@ -371,8 +378,11 @@ def filter(
 
 
 class Each(Stage):
-    def apply(self, x, **kwargs):
-        self.f(x, **kwargs)
+    async def apply(self, x, **kwargs):
+        y = self.f(x, **kwargs)
+
+        if hasattr(y, "__await__"):
+            y = await y
 
 
 def each(
@@ -454,8 +464,8 @@ def each(
 
 
 class Concat(Stage):
-    def apply(self, x):
-        self.output_queues.put(x)
+    async def apply(self, x):
+        await self.output_queues.put(x)
 
 
 def concat(stages, maxsize=0):

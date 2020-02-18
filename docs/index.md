@@ -113,26 +113,10 @@ data = (
     | list
 )
 ```
-## Architecture
-
-A Pypeln pipeline has the following structure:
-
-![diagram](docs/guide/diagram.png)
-
-* Its composed of several concurrent **stages**
-* At each stage it contains on or more **worker** entities that perform a task.
-* Related stages are connected by a **queue**, workers from one stage *put* items into it, and workers from the other stage *get* items from it.
-* Source stages consume iterables.
-* Sink stages can be converted into iterables which 
-consume them.
-
-## Resources
-<!-- * [Pypeln Guide](https://cgarciae.gitbook.io/pypeln) -->
-* [Pypeln API Documentation](https://cgarciae.github.io/pypeln/)
 
 ## Benchmarks
 * [Making an Unlimited Number of Requests with Python aiohttp + pypeln](https://medium.com/@cgarciae/making-an-infinite-number-of-requests-with-python-aiohttp-pypeln-3a552b97dc95)
-  * [Code](https://github.com/cgarciae/pypeln/tree/master/benchmarks/100_million_downloads)
+    * [Code](https://github.com/cgarciae/pypeln/tree/master/benchmarks/100_million_downloads)
 
 
 ## Related Stuff
@@ -143,4 +127,6 @@ consume them.
 
 ## Contributors
 * [cgarciae](https://github.com/cgarciae)
-* [davidnet](https://github.com/davidnet)
+
+## License
+MIT

@@ -257,25 +257,66 @@
     Architecture
   </a>
   
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stage-types" class="md-nav__link">
+    Stage Types
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
-  <a href="#managing-resources" class="md-nav__link">
-    Managing Resources
+  <a href="#stages" class="md-nav__link">
+    Stages
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#process-and-thread" class="md-nav__link">
-    Process and Thread
+  <a href="#workers" class="md-nav__link">
+    Workers
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#queues" class="md-nav__link">
+    Queues
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#resource-management" class="md-nav__link">
+    Resource Management
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pipe-operator" class="md-nav__link">
+    Pipe Operator
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recomendations" class="md-nav__link">
+    Recomendations
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#async-task" class="md-nav__link">
-    Async Task
+    Async &amp; Task
   </a>
   
 </li>
@@ -376,25 +417,66 @@
     Architecture
   </a>
   
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stage-types" class="md-nav__link">
+    Stage Types
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
-  <a href="#managing-resources" class="md-nav__link">
-    Managing Resources
+  <a href="#stages" class="md-nav__link">
+    Stages
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#process-and-thread" class="md-nav__link">
-    Process and Thread
+  <a href="#workers" class="md-nav__link">
+    Workers
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#queues" class="md-nav__link">
+    Queues
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#resource-management" class="md-nav__link">
+    Resource Management
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pipe-operator" class="md-nav__link">
+    Pipe Operator
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recomendations" class="md-nav__link">
+    Recomendations
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#async-task" class="md-nav__link">
-    Async Task
+    Async &amp; Task
   </a>
   
 </li>
@@ -419,6 +501,10 @@
                 
                 
                 <h1 id="advanced-usage">Advanced Usage<a class="headerlink" href="#advanced-usage" title="Permanent link">&para;</a></h1>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This document is still a WORK IN PROGRESS</p>
+</div>
 <h2 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h2>
 <p>A Pypeln pipeline has the following structure:</p>
 <p><img alt="diagram" src="images/diagram.png" /></p>
@@ -430,9 +516,177 @@
 <li>Sink stages can be converted into iterables which 
 consume them.</li>
 </ul>
-<h2 id="managing-resources">Managing Resources<a class="headerlink" href="#managing-resources" title="Permanent link">&para;</a></h2>
-<h2 id="process-and-thread">Process and Thread<a class="headerlink" href="#process-and-thread" title="Permanent link">&para;</a></h2>
-<h2 id="async-task">Async Task<a class="headerlink" href="#async-task" title="Permanent link">&para;</a></h2>
+<h3 id="stage-types">Stage Types<a class="headerlink" href="#stage-types" title="Permanent link">&para;</a></h3>
+<p>Pypeln has 3 types of stages, each stage has an associated worker and queue types: </p>
+<table>
+<thead>
+<tr>
+<th>Stage Type</th>
+<th>Worker</th>
+<th>Queue</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pl.process.Stage</code></td>
+<td><code>multiprocessing.Process</code></td>
+<td><code>multiprocessing.Queue</code></td>
+</tr>
+<tr>
+<td><code>pl.thread.Stage</code></td>
+<td><code>threading.Thread</code></td>
+<td><code>queue.Queue</code></td>
+</tr>
+<tr>
+<td><code>pl.task.Stage</code></td>
+<td><code>asyncio.Task</code></td>
+<td><code>asyncio.Queue</code></td>
+</tr>
+</tbody>
+</table>
+<p>Depending on the type of stage you use the following characteristics will vary: memory management, concurrency, parallelism, inter-stage communication overhead, worker initialization overhead:</p>
+<table>
+<thead>
+<tr>
+<th>Stage Type</th>
+<th>Memory</th>
+<th>Concurrency</th>
+<th>Parallelism</th>
+<th>Communication Overhead</th>
+<th>Initialization Overhead</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>process</code></td>
+<td>independent</td>
+<td>cpu + IO</td>
+<td>cpu + IO</td>
+<td>high</td>
+<td>high</td>
+</tr>
+<tr>
+<td><code>thread</code></td>
+<td>shared</td>
+<td>only for IO</td>
+<td>only for IO</td>
+<td>none</td>
+<td>mid</td>
+</tr>
+<tr>
+<td><code>task</code></td>
+<td>shared</td>
+<td>optimized IO</td>
+<td>only for IO</td>
+<td>none</td>
+<td>low</td>
+</tr>
+</tbody>
+</table>
+<h2 id="stages">Stages<a class="headerlink" href="#stages" title="Permanent link">&para;</a></h2>
+<p>Stages are lazy <a href="https://docs.python.org/3/glossary.html#term-iterable">iterable</a> objects that only contain meta information about the computation, to actually execute a pipeline you can iterate over it using a for loop, calling <code>list</code>, <code>pl.&lt;module&gt;.run</code>, etc. For example:</p>
+<p><div class="codehilite"><pre><span></span><code><span class="kn">import</span> <span class="nn">pypeln</span> <span class="k">as</span> <span class="nn">pl</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">random</span>
+
+<span class="k">def</span> <span class="nf">slow_add1</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="p">())</span> <span class="c1"># &lt;= some slow computation</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="c1"># [0, 1, 2, ..., 9]</span>
+<span class="n">stage</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">slow_add1</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">4</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">stage</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="c1"># e.g. 2, 1, 5, 6, 3, 4, 7, 8, 9, 10</span>
+</code></pre></div>
+This example uses <code>pl.process</code> but it works the same for all the other modules. Since <code>pypeln</code> implements the <code>Iterable</code> interface it becomes very intuitive to use and compatible with most other python code. </p>
+<h2 id="workers">Workers<a class="headerlink" href="#workers" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This section is not yet ported correctly</p>
+</div>
+<p>Each Stage defines a number of workers The number of workers on each stage can usually be controled by the <code>workers</code> parameter on <code>pypeln</code>'s various functions. Try not to create more processes than the number of cores you have on your machine or else they will end up fighting for resources and computation will be suboptimal.</p>
+<p>The worker type of this module is a <a href="https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process">multiprocessing.Process</a>. Each worker process is instantiated with <code>daemon = True</code>. Creating each process is slow and consumes a lot of memory. Since processes are technically separate programs managed by the OS they are great for doing operations in parallel by avoiding the <a href="https://realpython.com/python-gil">GIL</a> (or rather having their separate GIL).</p>
+<h2 id="queues">Queues<a class="headerlink" href="#queues" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This section is not yet ported correctly</p>
+</div>
+<p>The queue type of this module is a <a href="https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Queue">multiprocessing.Queue</a>. Since processes don't share memory, all information passed between them through these queues must first be serialized (pickled) which is slow, be aware of this and try to avoid sending large objects.</p>
+<p>The number of elements each stage can hold usually be controled by the <code>maxsize</code> parameter on <code>pypeln.process</code>'s various functions. When passed this parameter sets a maximum size for the input Queue of the stage, this serves as a <a href="https://www.quora.com/What-is-backpressure-in-the-context-of-data-streaming">backpressure</a> mechanism because any stages pushing data to a Queue that becomes full (reaches its <code>maxsize</code>) will have to stop their computation until space becomes available, thus, potentially preveting <code>OutOfMemeory</code> errors due to overpressure from faster stages.</p>
+<h2 id="resource-management">Resource Management<a class="headerlink" href="#resource-management" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This section is not yet ported correctly</p>
+</div>
+<p>There are many occasions where you need to create some resource objects (e.g. http or database sessions) that for efficiency are expected to last the whole lifespan of each worker. To handle such objects many functions have the <code>on_start</code> and <code>on_done</code> arguments which expect some callback functions. </p>
+<p>When a worker is created it calls the <code>on_start</code> function, this functions should create and return the resource objects. These object will be passed as extra arguments to the main function and also to the <code>on_end</code> function.</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">import</span> <span class="nn">pypeln</span> <span class="k">as</span> <span class="nn">pl</span>
+
+<span class="k">def</span> <span class="p">():</span>
+    <span class="n">http_session</span> <span class="o">=</span> <span class="n">get_http_session</span><span class="p">()</span>
+    <span class="n">db_session</span> <span class="o">=</span> <span class="n">get_db_session</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">http_session</span><span class="p">,</span> <span class="n">db_session</span>
+
+<span class="k">def</span> <span class="nf">on_end</span><span class="p">(</span><span class="n">_stage_status</span><span class="p">,</span> <span class="n">http_session</span><span class="p">,</span> <span class="n">db_session</span><span class="p">):</span>
+    <span class="n">http_session</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">db_session</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">http_session</span><span class="p">,</span> <span class="n">db_session</span><span class="p">):</span>
+    <span class="c1"># some logic</span>
+    <span class="k">return</span> <span class="n">y</span>
+
+<span class="n">stage</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">on_start</span> <span class="o">=</span> <span class="n">on_start</span><span class="p">)</span>
+</code></pre></div>
+
+<p>A few notes:</p>
+<ul>
+<li>The resource objects are created per worker.</li>
+<li><code>on_start</code> should return a object other that <code>None</code> or a tuple of resource objects.</li>
+<li>If <code>on_start</code> returns some arguments then they must be accepted by <code>f</code> and <code>on_end</code>.</li>
+<li><code>on_end</code> receives a <code>pypeln.process.StageStatus</code> object followed by the resource objects created by <code>on_start</code>. </li>
+</ul>
+<h2 id="pipe-operator">Pipe Operator<a class="headerlink" href="#pipe-operator" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This section is not yet ported correctly</p>
+</div>
+<p>Functions that accept a <code>stage</code> parameter return a <code>Partial</code> instead of a new stage when <code>stage</code> is not given. These <code>Partial</code>s are callables that accept the missing <code>stage</code> parameter and return the full output of the original function. For example</p>
+<div class="codehilite"><pre><span></span><code>pl.process.map(f, stage, **kwargs) = pl.process.map(f, **kwargs)(stage)
+</code></pre></div>
+
+
+<p>The important thing about partials is that they implement the pipe <code>|</code> operator as</p>
+<div class="codehilite"><pre><span></span><code>x | partial = partial(x)
+</code></pre></div>
+
+
+<p>This allows you to define pipelines in the following way:</p>
+<div class="codehilite"><pre><span></span><code>from pypenl import process as pr
+
+data = (
+    range(10)
+    | pl.process.map(slow_add1, workers = 3, maxsize = 4)
+    | pl.process.filter(slow_gt3, workers = 2)
+    | list
+)
+</code></pre></div>
+
+
+<h2 id="recomendations">Recomendations<a class="headerlink" href="#recomendations" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This section is not yet ported correctly</p>
+</div>
+<p>Creating processes and doing Inter-Process Communication (IPC) is expensive, therefore we recommend the following:</p>
+<ul>
+<li>Minimize the number of stages based on this module.</li>
+<li>Tune the number of workers based on the number of cores.</li>
+<li>When processing large datasets set the maxsize of the stage to prevent <code>OutOfMemory</code> errors.</li>
+<li>If possible don't send large objects.</li>
+<li>If you just need a single stage to perform a task over a collection in parallel use the <code>pypeln.process.each</code> function. </li>
+</ul>
+<h2 id="async-task">Async &amp; Task<a class="headerlink" href="#async-task" title="Permanent link">&para;</a></h2>
                 
                   
                 

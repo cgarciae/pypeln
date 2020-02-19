@@ -390,7 +390,9 @@ def _map(f, params):
     _run_task(f_task, params)
 
 
-def map(f, stage=utils.UNDEFINED, workers=1, maxsize=0, on_start=None, on_done=None):
+def map(
+    f, stage=pypeln_utils.UNDEFINED, workers=1, maxsize=0, on_start=None, on_done=None
+):
     """
     Creates a stage that maps a function `f` over the data. Its intended to behave like python's built-in `map` function but with the added concurrency.
 
@@ -462,7 +464,7 @@ def _flat_map(f, params):
 
 
 def flat_map(
-    f, stage=utils.UNDEFINED, workers=1, maxsize=0, on_start=None, on_done=None
+    f, stage=pypeln_utils.UNDEFINED, workers=1, maxsize=0, on_start=None, on_done=None
 ):
     """
     Creates a stage that maps a function `f` over the data, however unlike `pypeln.process.map` in this case `f` returns an iterable. As its name implies, `flat_map` will flatten out these iterables so the resulting stage just contains their elements.
@@ -550,7 +552,9 @@ def _filter(f, params):
     _run_task(f_task, params)
 
 
-def filter(f, stage=utils.UNDEFINED, workers=1, maxsize=0, on_start=None, on_done=None):
+def filter(
+    f, stage=pypeln_utils.UNDEFINED, workers=1, maxsize=0, on_start=None, on_done=None
+):
     """
     Creates a stage that filter the data given a predicate function `f`. It is intended to behave like python's built-in `filter` function but with the added concurrency.
 
@@ -622,7 +626,7 @@ def _each(f, params):
 
 def each(
     f,
-    stage=utils.UNDEFINED,
+    stage=pypeln_utils.UNDEFINED,
     workers=1,
     maxsize=0,
     on_start=None,
@@ -810,7 +814,9 @@ def _from_iterable(iterable, params):
     _run_task(f_task, params)
 
 
-def from_iterable(iterable=utils.UNDEFINED, maxsize=None, worker_constructor=Thread):
+def from_iterable(
+    iterable=pypeln_utils.UNDEFINED, maxsize=None, worker_constructor=Thread
+):
     """
     Creates a stage from an iterable. This function gives you more control of how a stage is created through the `worker_constructor` parameter which can be either:
     
@@ -967,7 +973,7 @@ def _to_iterable(stage, maxsize):
         raise
 
 
-def to_iterable(stage=utils.UNDEFINED, maxsize=0):
+def to_iterable(stage=pypeln_utils.UNDEFINED, maxsize=0):
     """
     Creates an iterable from a stage. This function is used by the stage's `__iter__` method with the default arguments.
 

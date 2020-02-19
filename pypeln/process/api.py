@@ -1,3 +1,28 @@
+"""
+The `process` module lets you create pipelines using objects from python's [multiprocessing](https://docs.python.org/3.4/library/multiprocessing.html) module according to Pypeln's general [architecture](https://cgarciae.github.io/pypeln/advanced/#architecture). Use this module when you are in need of true parallelism for CPU heavy operations but be aware of its implications.
+
+```python
+import pypeln as pl
+import time
+from random import random
+
+def slow_add1(x):
+    time.sleep(random()) # <= some slow computation
+    return x + 1
+
+def slow_gt3(x):
+    time.sleep(random()) # <= some slow computation
+    return x > 3
+
+data = range(10) # [0, 1, 2, ..., 9] 
+
+stage = pl.process.map(slow_add1, data, workers = 3, maxsize = 4)
+stage = pl.process.filter(slow_gt3, stage, workers = 2)
+
+data = list(stage) # e.g. [5, 6, 9, 4, 8, 10, 7]
+```
+"""
+
 import typing
 from threading import Thread
 
@@ -456,3 +481,66 @@ def concat(stages: typing.List[Stage], maxsize: int = 0) -> Stage:
         on_done=None,
         dependencies=stages,
     )
+
+
+#############################################################
+# run
+#############################################################
+
+
+def run(stages: typing.List[Stage], maxsize: int = 0) -> None:
+    """
+    Iterates over one or more stages until their iterators run out of elements.
+
+    ```python
+    import pypeln as pl
+
+    data = get_data()
+    stage = pl.process.each(slow_fn, data, workers = 6)
+
+    # execute pipeline
+    pl.process.run(stage)
+    ```
+
+    Arguments:
+        stages: A stage/iterable or list of stages/iterables to be iterated over. If a list is passed, stages are first merged using `concat` before iterating.
+        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+
+    """
+
+    if isinstance(stages, list) and len(stages) == 0:
+        raise ValueError("Expected at least 1 stage to run")
+
+    elif isinstance(stages, list):
+        stage = concat(stages, maxsize=maxsize)
+
+    else:
+        stage = stages
+
+    stage = to_iterable(stage, maxsize=maxsize)
+
+    for _ in stages:
+        pass
+
+
+#############################################################
+# to_iterable
+#############################################################
+
+
+def to_iterable(stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0):
+    """
+    Creates an iterable from a stage.
+
+    Arguments:
+        stage: A stage object.
+        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+
+    Returns:
+        If the `stage` parameters is given then this function returns an iterable, else it returns a `Partial`.
+    """
+
+    if pypeln_utils.is_undefined(stage):
+        return pypeln_utils.Partial(lambda stage: to_iterable(stage, maxsize=maxsize))
+    else:
+        return stage.to_iterable(maxsize=maxsize)

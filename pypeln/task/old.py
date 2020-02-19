@@ -251,7 +251,9 @@ def _map(f, params):
     return _run_task(f_task, params)
 
 
-def map(f, stage=utils.UNDEFINED, workers=1, maxsize=0, on_start=None, on_done=None):
+def map(
+    f, stage=pypeln_utils.UNDEFINED, workers=1, maxsize=0, on_start=None, on_done=None
+):
 
     if utils.is_undefined(stage):
         return utils.Partial(
@@ -297,7 +299,7 @@ def _flat_map(f, params):
 
 
 def flat_map(
-    f, stage=utils.UNDEFINED, workers=1, maxsize=0, on_start=None, on_done=None
+    f, stage=pypeln_utils.UNDEFINED, workers=1, maxsize=0, on_start=None, on_done=None
 ):
 
     if utils.is_undefined(stage):
@@ -346,7 +348,9 @@ def _filter(f, params):
     return _run_task(f_task, params)
 
 
-def filter(f, stage=utils.UNDEFINED, workers=1, maxsize=0, on_start=None, on_done=None):
+def filter(
+    f, stage=pypeln_utils.UNDEFINED, workers=1, maxsize=0, on_start=None, on_done=None
+):
 
     if utils.is_undefined(stage):
         return utils.Partial(
@@ -393,7 +397,7 @@ def _each(f, params):
 
 def each(
     f,
-    stage=utils.UNDEFINED,
+    stage=pypeln_utils.UNDEFINED,
     workers=1,
     maxsize=0,
     on_start=None,
@@ -558,7 +562,7 @@ def _from_iterable(iterable, params):
     return _run_task(f_task, params)
 
 
-def from_iterable(iterable=utils.UNDEFINED, maxsize=0, worker_constructor=None):
+def from_iterable(iterable=pypeln_utils.UNDEFINED, maxsize=0, worker_constructor=None):
 
     if utils.is_undefined(iterable):
         return utils.Partial(
@@ -683,7 +687,7 @@ def _to_iterable(stage, maxsize):
         loop.set_exception_handler(old_exception_handler)
 
 
-def to_iterable(stage=utils.UNDEFINED, maxsize=0):
+def to_iterable(stage=pypeln_utils.UNDEFINED, maxsize=0):
 
     if utils.is_undefined(stage):
         return utils.Partial(lambda stage: to_iterable(stage, maxsize=maxsize))

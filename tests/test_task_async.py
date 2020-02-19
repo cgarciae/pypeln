@@ -21,7 +21,6 @@ async def test_await(nums):
     X = [0]
 
     async def impure_add1(x):
-        print("AAAAAAAAAAAAAAAAAAA")
         X[0] += 1
 
         await asyncio.sleep(0.01)

@@ -28,11 +28,11 @@ Pypeln has 3 types of stages, each stage has an associated worker and queue type
 Depending on the type of stage you use the following characteristics will vary: memory management, concurrency, parallelism, inter-stage communication overhead, worker initialization overhead:
 
 
-| Stage Type | Memory      | Concurrency  | Parallelism | Communication Overhead | Initialization Overhead |
-| ---------- | ----------- | ------------ | ----------- | ---------------------- | ----------------------- |
-| `process`  | independent | cpu + IO     | cpu + IO    | high                   | high                    |
-| `thread`   | shared      | only for IO  | only for IO | none                   | mid                     |
-| `task`     | shared      | optimized IO | only for IO | none                   | low                     |
+| Stage Type | Memory      | Concurrency  | Parallelism  | Communication Overhead | Initialization Overhead |
+| ---------- | ----------- | ------------ | ------------ | ---------------------- | ----------------------- |
+| `process`  | independent | cpu + IO     | cpu + IO     | high                   | high                    |
+| `thread`   | shared      | only for IO  | only for IO  | none                   | mid                     |
+| `task`     | shared      | optimized IO | optimized IO | none                   | low                     |
 
 ## Stages
 Stages are lazy [iterable](https://docs.python.org/3/glossary.html#term-iterable) objects that only contain meta information about the computation, to actually execute a pipeline you can iterate over it using a for loop, calling `list`, `pl.<module>.run`, etc. For example:
@@ -47,7 +47,7 @@ def slow_add1(x):
     return x + 1
 
 data = range(10) # [0, 1, 2, ..., 9]
-stage = pl.process.map(slow_add1, data, workers = 3, maxsize = 4)
+stage = pl.process.map(slow_add1, data, workers=3, maxsize=4)
 
 for x in stage:
     print(x) # e.g. 2, 1, 5, 6, 3, 4, 7, 8, 9, 10
@@ -97,7 +97,7 @@ def f(x, http_session, db_session):
     # some logic
     return y
 
-stage = pl.process.map(f, stage, workers = 3, on_start = on_start)
+stage = pl.process.map(f, stage, workers=3, on_start = on_start)
 ```
 
 A few notes:
@@ -127,8 +127,8 @@ This allows you to define pipelines in the following way:
 
     data = (
         range(10)
-        | pl.process.map(slow_add1, workers = 3, maxsize = 4)
-        | pl.process.filter(slow_gt3, workers = 2)
+        | pl.process.map(slow_add1, workers=3, maxsize=4)
+        | pl.process.filter(slow_gt3, workers=2)
         | list
     )
 

@@ -36,8 +36,8 @@ You can create a pipeline based on [multiprocessing.Process](https://docs.python
 
     data = range(10) # [0, 1, 2, ..., 9] 
 
-    stage = pl.process.map(slow_add1, data, workers = 3, maxsize = 4)
-    stage = pl.process.filter(slow_gt3, stage, workers = 2)
+    stage = pl.process.map(slow_add1, data, workers=3, maxsize=4)
+    stage = pl.process.filter(slow_gt3, stage, workers=2)
 
     data = list(stage) # e.g. [5, 6, 9, 4, 8, 10, 7]
 
@@ -60,8 +60,8 @@ You can create a pipeline based on [threading.Thread](https://docs.python.org/3/
 
     data = range(10) # [0, 1, 2, ..., 9] 
 
-    stage = pl.thread.map(slow_add1, data, workers = 3, maxsize = 4)
-    stage = pl.thread.filter(slow_gt3, stage, workers = 2)
+    stage = pl.thread.map(slow_add1, data, workers=3, maxsize=4)
+    stage = pl.thread.filter(slow_gt3, stage, workers=2)
 
     data = list(stage) # e.g. [5, 6, 9, 4, 8, 10, 7]
 
@@ -84,8 +84,8 @@ You can create a pipeline based on [asyncio.Task](https://docs.python.org/3.4/li
 
     data = range(10) # [0, 1, 2, ..., 9] 
 
-    stage = pl.task.map(slow_add1, data, workers = 3, maxsize = 4)
-    stage = pl.task.filter(slow_gt3, stage, workers = 2)
+    stage = pl.task.map(slow_add1, data, workers=3, maxsize=4)
+    stage = pl.task.filter(slow_gt3, stage, workers=2)
 
     data = list(stage) # e.g. [5, 6, 9, 4, 8, 10, 7]
 
@@ -95,10 +95,10 @@ Conceptually similar but everything is running in a single thread and Task worke
 You can create pipelines using different worker types such that each type is the best for its given task so you can get the maximum performance out of your code:
 
     data = get_iterable()
-    data = pl.task.map(f1, data, workers = 100)
-    data = pl.thread.flat_map(f2, data, workers = 10)
+    data = pl.task.map(f1, data, workers=100)
+    data = pl.thread.flat_map(f2, data, workers=10)
     data = filter(f3, data)
-    data = pl.process.map(f4, data, workers = 5, maxsize = 200)
+    data = pl.process.map(f4, data, workers=5, maxsize=200)
 
 Notice that here we even used a regular python `filter`, since stages are iterables Pypeln integrates smoothly with any python code, just be aware of how each stage behaves.
 
@@ -109,8 +109,8 @@ In the spirit of being a true pipeline library, Pypeln also lets you create your
 
     data = (
         range(10)
-        | pl.process.map(slow_add1, workers = 3, maxsize = 4)
-        | pl.process.filter(slow_gt3, workers = 2)
+        | pl.process.map(slow_add1, workers=3, maxsize=4)
+        | pl.process.filter(slow_gt3, workers=2)
         | list
     )
 

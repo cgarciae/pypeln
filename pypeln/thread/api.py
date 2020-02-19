@@ -119,7 +119,7 @@ def map(
         return x + 1
 
     data = range(10) # [0, 1, 2, ..., 9]
-    stage = pl.thread.map(slow_add1, data, workers = 3, maxsize = 4)
+    stage = pl.thread.map(slow_add1, data, workers=3, maxsize=4)
 
     data = list(stage) # e.g. [2, 1, 5, 6, 3, 4, 7, 8, 9, 10]
     ```
@@ -200,7 +200,7 @@ def flat_map(
             yield -x
 
     data = range(10) # [0, 1, 2, ..., 9]
-    stage = pl.thread.flat_map(slow_integer_pair, data, workers = 3, maxsize = 4)
+    stage = pl.thread.flat_map(slow_integer_pair, data, workers=3, maxsize=4)
 
     list(stage) # e.g. [2, -2, 3, -3, 0, 1, -1, 6, -6, 4, -4, ...]
     ```
@@ -287,7 +287,7 @@ def filter(
         return x > 3
 
     data = range(10) # [0, 1, 2, ..., 9]
-    stage = pl.thread.filter(slow_gt3, data, workers = 3, maxsize = 4)
+    stage = pl.thread.filter(slow_gt3, data, workers=3, maxsize=4)
 
     data = list(stage) # e.g. [5, 6, 3, 4, 7, 8, 9]
     ```
@@ -362,7 +362,7 @@ def each(
         save_image(image_path, image)
 
     files_paths = get_file_paths()
-    stage = pl.thread.each(process_image, file_paths, workers = 4)
+    stage = pl.thread.each(process_image, file_paths, workers=4)
     pl.thread.run(stage)
 
     ```
@@ -371,7 +371,7 @@ def each(
 
     ```python
     files_paths = get_file_paths()
-    pl.thread.each(process_image, file_paths, workers = 4, run = True)
+    pl.thread.each(process_image, file_paths, workers=4, run = True)
     ```
 
     !!! note
@@ -476,7 +476,7 @@ def run(stages: typing.List[Stage], maxsize: int = 0) -> None:
     import pypeln as pl
 
     data = get_data()
-    stage = pl.thread.each(slow_fn, data, workers = 6)
+    stage = pl.thread.each(slow_fn, data, workers=6)
 
     # execute pipeline
     pl.thread.run(stage)

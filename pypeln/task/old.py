@@ -71,7 +71,7 @@ class _Stage(utils.BaseStage):
         await task
 
     def __repr__(self):
-        return "_Stage(worker_constructor = {worker_constructor}, workers = {workers}, maxsize = {maxsize}, target = {target}, args = {args}, dependencies = {dependencies})".format(
+        return "_Stage(worker_constructor = {worker_constructor}, workers={workers}, maxsize={maxsize}, target = {target}, args = {args}, dependencies = {dependencies})".format(
             worker_constructor=self.worker_constructor,
             workers=self.workers,
             maxsize=self.maxsize,

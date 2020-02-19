@@ -3,13 +3,15 @@
 from aiohttp import ClientSession, TCPConnector
 import asyncio
 import sys
-from pypeln import TaskPool
+from pypeln.task import TaskPool
 
 limit = 1000
+
 
 async def fetch(url, session):
     async with session.get(url) as response:
         return await response.read()
+
 
 async def _main(url, total_requests):
     connector = TCPConnector(limit=None)

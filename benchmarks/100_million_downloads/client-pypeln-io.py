@@ -19,7 +19,7 @@ pl.task.each(
     fetch,
     urls,
     workers=limit,
-    on_start=lambda: ClientSession(connector=TCPConnector(limit=None)),
-    on_done=lambda _status, session: session.close(),
+    on_start=lambda: dict(session=ClientSession(connector=TCPConnector(limit=None))),
+    on_done=lambda session: session.close(),
     run=True,
 )

@@ -5,20 +5,26 @@ import sys
 
 
 async def fetch(url, session):
+    print("url")
     async with session.get(url) as response:
         return await response.read()
 
 
 async def main():
-    r = 10
-    url = "http://google.com"
+    try:
+        r = 10
+        url = "http://google.com"
 
-    # r = int(sys.argv[1])
-    # url = "http://localhost:8080/{}"
+        # r = int(sys.argv[1])
+        # url = "http://localhost:8080/{}"
 
-    async with ClientSession() as session:
-        data = range(r)
-        await pl.task.each(lambda i: fetch(url, session), data, workers=1000, run=False)
+        async with ClientSession() as session:
+            data = range(r)
+            await pl.task.each(
+                lambda i: fetch(url, session), data, workers=1000, run=False
+            )
+    except BaseException as e:
+        print(e)
 
 
 loop = asyncio.get_event_loop()

@@ -18,7 +18,7 @@ def main():
 
     session = ClientSession()
     data = range(r)
-    pl.task.each(lambda i: fetch(url, session), data, workers=1000)
+    pl.task.each(lambda i: fetch(url, session), data, workers=1000, run=True)
 
     print("FINISH")
 

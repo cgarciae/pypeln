@@ -6,7 +6,7 @@
 ## Architecture
 A Pypeln pipeline has the following structure:
 
-![diagram](images/diagram.png)
+![diagram](https://github.com/cgarciae/pypeln/blob/master/docs/images/diagram.png?raw=true)
 
 * Its composed of several concurrent **stages**
 * At each stage it contains on or more **worker** entities that perform a task.

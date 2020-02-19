@@ -1,26 +1,5 @@
 """
-The `process` module lets you create pipelines using objects from python's [multiprocessing](https://docs.python.org/3.4/library/multiprocessing.html) module according to Pypeln's general [architecture](https://cgarciae.github.io/pypeln/advanced/#architecture). Use this module when you are in need of true parallelism for CPU heavy operations but be aware of its implications.
-
-```python
-import pypeln as pl
-import time
-from random import random
-
-def slow_add1(x):
-    time.sleep(random()) # <= some slow computation
-    return x + 1
-
-def slow_gt3(x):
-    time.sleep(random()) # <= some slow computation
-    return x > 3
-
-data = range(10) # [0, 1, 2, ..., 9] 
-
-stage = pl.process.map(slow_add1, data, workers = 3, maxsize = 4)
-stage = pl.process.filter(slow_gt3, stage, workers = 2)
-
-data = list(stage) # e.g. [5, 6, 9, 4, 8, 10, 7]
-```
+The `process` module lets you create pipelines using objects from python's [multiprocessing](https://docs.python.org/3/library/multiprocessing.html) module according to Pypeln's general [architecture](https://cgarciae.github.io/pypeln/advanced/#architecture). Use this module when you are in need of true parallelism for CPU heavy operations but be aware of its implications.
 """
 
 import typing

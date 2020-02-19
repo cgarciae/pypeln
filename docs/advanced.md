@@ -1,8 +1,5 @@
 # Advanced Usage
 
-!!! warning
-    This document is still a WORK IN PROGRESS
-
 ## Architecture
 A Pypeln pipeline has the following structure:
 
@@ -56,93 +53,94 @@ This example uses `pl.process` but it works the same for all the other modules. 
 
 ## Workers
 
-!!! warning
-    This section is not yet ported correctly
+Each Stage defines a number of workers which can usually be controlled by the `workers` parameter on `pypeln`'s various functions. In general try not to create more workers than the number of cores you have on your machine or else they will end up fighting for resources, but this varies with the type of worker. The following table shows the relative cost in memory + cpu usage of creating each worker:
 
-Each Stage defines a number of workers The number of workers on each stage can usually be controled by the `workers` parameter on `pypeln`'s various functions. Try not to create more processes than the number of cores you have on your machine or else they will end up fighting for resources and computation will be suboptimal.
+| Worker    | Memory + CPU Cost |
+| --------- | ----------------- |
+| `Process` | high              |
+| `Thread`  | mid               |
+| `Task`    | low               |
 
-The worker type of this module is a [multiprocessing.Process](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process). Each worker process is instantiated with `daemon = True`. Creating each process is slow and consumes a lot of memory. Since processes are technically separate programs managed by the OS they are great for doing operations in parallel by avoiding the [GIL](https://realpython.com/python-gil) (or rather having their separate GIL).
+General guidelines:
+
+* Only use `processes` when you need to perform heavy CPU operations in pararallel such as image processing, data transformations, etc. When forking a `Process` all the memory is copied to the new process, intialization is slow, communications between processes is costly since python objects have to be serialized, but you effectly escape the GIL so you gain true parallelism.
+* `Threads` are very good for doing syncronous IO tasks such as interacting with the OS and libraries that yet don't expose a `async` API.
+* `Tasks` are highly optimized for asynchronous IO operations, they are super cheap to create since they are just regular python objects, and you can generally create them in higher quantities since the event loop manages them efficiently for you. 
 
 ## Queues
 
-!!! warning
-    This section is not yet ported correctly
+Worker communicate between each other through `Queues`. The maximum number of elements each `Queue` can hold is controlled by the `maxsize` parameter in `pypeln`'s various functions. By default this number is `0` which means there is no limit to the number of elements, however when `maxsize` is set it serves as a [backpressure](https://www.quora.com/What-is-backpressure-in-the-context-of-data-streaming) mechanism that prevents previous stages from pushing new elements to a Queue when it becomes full (reaches its `maxsize`), these stages will stop their computation until space becomes available thus potentially preveting `OutOfMemeory` errors on the slower stages.
 
-The queue type of this module is a [multiprocessing.Queue](https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Queue). Since processes don't share memory, all information passed between them through these queues must first be serialized (pickled) which is slow, be aware of this and try to avoid sending large objects.
+The following table shows the relative communication cost between workers given the nature of their queues:
 
-The number of elements each stage can hold usually be controled by the `maxsize` parameter on `pypeln.process`'s various functions. When passed this parameter sets a maximum size for the input Queue of the stage, this serves as a [backpressure](https://www.quora.com/What-is-backpressure-in-the-context-of-data-streaming) mechanism because any stages pushing data to a Queue that becomes full (reaches its `maxsize`) will have to stop their computation until space becomes available, thus, potentially preveting `OutOfMemeory` errors due to overpressure from faster stages.
+| Worker    | Communication Cost |
+| --------- | ------------------ |
+| `Process` | high               |
+| `Thread`  | none               |
+| `Task`    | none               |
+
+General guidelines:
+
+* Communication between `processes` is costly since python objects have to be serialized, which has a considerable overhead when passing large objects such as `numpy` arrays, binary objects, etc. To avoid this overhead try only passing metadata information such as filepaths between processes.
+* There is no overhead in communication between `threads` or `tasks`, since everything happens in-memory there is no serialization overhead.
 
 ## Resource Management
 
-!!! warning
-    This section is not yet ported correctly
+There are many occasions where you need to create some resource objects (e.g. http or database sessions) that (for efficiency) are expected to last the whole span of each worker's life. To support and effectily manage the lifecycle of such objects most of `pypeln`s functions accept the `on_start` and `on_done` callbacks.
 
-There are many occasions where you need to create some resource objects (e.g. http or database sessions) that for efficiency are expected to last the whole lifespan of each worker. To handle such objects many functions have the `on_start` and `on_done` arguments which expect some callback functions. 
-
-When a worker is created it calls the `on_start` function, this functions should create and return the resource objects. These object will be passed as extra arguments to the main function and also to the `on_end` function.
+When a worker is created its `on_start` function get called. This function can return a dictionary containing these resource objects which will be passed as keyword arguments to the workers main function and the `on_end` function. For exmaple:
 
 ```python
 import pypeln as pl
 
-def ():
-    http_session = get_http_session()
-    db_session = get_db_session()
-    return http_session, db_session
-
-def on_end(_stage_status, http_session, db_session):
-    http_session.close()
-    db_session.close()
+def on_start():
+    return dict(
+        http_session = get_http_session(), 
+        db_session = get_db_session(),
+    )
 
 def f(x, http_session, db_session):
     # some logic
     return y
 
-stage = pl.process.map(f, stage, workers=3, on_start = on_start)
+def on_end(http_session, db_session):
+    http_session.close()
+    db_session.close()
+
+
+stage = pl.process.map(f, stage, workers=3, on_start=on_start, on_end=on_end)
 ```
 
-A few notes:
+Additionally:
 
-* The resource objects are created per worker.
-* `on_start` should return a object other that `None` or a tuple of resource objects.
-* If `on_start` returns some arguments then they must be accepted by `f` and `on_end`.
-* `on_end` receives a `pypeln.process.StageStatus` object followed by the resource objects created by `on_start`. 
+* If `f` defines a `worker_info` argument an object with information about the worker will be passed.
+* If `on_end` defines a `stage_status` an object with information about the stage will be passed. 
 
 
 ## Pipe Operator
 
-!!! warning
-    This section is not yet ported correctly
+Most functions can return a `Partial` instead of a `Stage` if the `stage` argument is not given. These `Partial`s are callables that accept the missing `stage` parameter and call the computation. The following expressions are equivalent:
 
-Functions that accept a `stage` parameter return a `Partial` instead of a new stage when `stage` is not given. These `Partial`s are callables that accept the missing `stage` parameter and return the full output of the original function. For example
+    pl.process.map(f, stage, **kwargs) <=> pl.process.map(f, **kwargs)(stage)
 
-    pl.process.map(f, stage, **kwargs) = pl.process.map(f, **kwargs)(stage)
+`Partial` implements the pipe `|` operator as
 
-The important thing about partials is that they implement the pipe `|` operator as
+    x | partial <=> partial(x)
 
-    x | partial = partial(x)
+This allows `pypeln` to enable you to define your pipelines more fluently:
 
-This allows you to define pipelines in the following way:
+```python
+from pypenl import process as pr
 
-    from pypenl import process as pr
+data = (
+    range(10)
+    | pl.process.map(slow_add1, workers=3, maxsize=4)
+    | pl.process.filter(slow_gt3, workers=2)
+    | list
+)
+```
 
-    data = (
-        range(10)
-        | pl.process.map(slow_add1, workers=3, maxsize=4)
-        | pl.process.filter(slow_gt3, workers=2)
-        | list
-    )
+## Task & Async
 
-## Recomendations
-
-!!! warning
-    This section is not yet ported correctly
-
-Creating processes and doing Inter-Process Communication (IPC) is expensive, therefore we recommend the following:
-
-* Minimize the number of stages based on this module.
-* Tune the number of workers based on the number of cores.
-* When processing large datasets set the maxsize of the stage to prevent `OutOfMemory` errors.
-* If possible don't send large objects.
-* If you just need a single stage to perform a task over a collection in parallel use the `pypeln.process.each` function. 
-
-## Async & Task
+!!! note
+    Comming soon!

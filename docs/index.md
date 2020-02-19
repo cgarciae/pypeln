@@ -2,10 +2,14 @@
 
 _Pypeln (pronounced as "pypeline") is a simple yet powerful python library for creating concurrent data pipelines._
 
+#### Main Features
+
 * **Simple**: Pypeln was designed to solve _medium_ data tasks that require parallelism and concurrency where using frameworks like Spark or Dask feels exaggerated or unnatural.
 * **Easy-to-use**: Pypeln exposes a familiar functional API compatible with regular Python code.
 * **Flexible**: Pypeln enables you to build pipelines using Processes, Threads and asyncio.Tasks via the exact same API.
 * **Fine-grained Control**: Pypeln allows you to have control over the memory and cpu resources used at each stage of your pipelines.
+
+For more information take a look at the [Documentation](https://cgarciae.github.io/pypeln).
 
 ## Installation
 

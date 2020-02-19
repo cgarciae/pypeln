@@ -9,6 +9,8 @@ _Pypeln (pronounced as "pypeline") is a simple yet powerful python library for c
 * **Flexible**: Pypeln enables you to build pipelines using Processes, Threads and asyncio.Tasks via the exact same API.
 * **Fine-grained Control**: Pypeln allows you to have control over the memory and cpu resources used at each stage of your pipelines.
 
+For more information take a look at the [Documentation](https://cgarciae.github.io/pypeln).
+
 ## Installation
 
 Install Pypeln using pip:

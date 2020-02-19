@@ -1714,10 +1714,10 @@
 <span class="sd">    import pypeln as pl</span>
 
 <span class="sd">    data = get_data()</span>
-<span class="sd">    stage = pl.process.each(slow_fn, data, workers = 6)</span>
+<span class="sd">    stage = pl.thread.each(slow_fn, data, workers = 6)</span>
 
 <span class="sd">    # execute pipeline</span>
-<span class="sd">    pl.process.run(stage)</span>
+<span class="sd">    pl.thread.run(stage)</span>
 <span class="sd">    ```</span>
 
 <span class="sd">    Arguments:</span>
@@ -1747,10 +1747,10 @@
 <div class="codehilite"><pre><span></span><code><span class="kn">import</span> <span class="nn">pypeln</span> <span class="k">as</span> <span class="nn">pl</span>
 
 <span class="n">data</span> <span class="o">=</span> <span class="n">get_data</span><span class="p">()</span>
-<span class="n">stage</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">each</span><span class="p">(</span><span class="n">slow_fn</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">6</span><span class="p">)</span>
+<span class="n">stage</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">each</span><span class="p">(</span><span class="n">slow_fn</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">6</span><span class="p">)</span>
 
 <span class="c1"># execute pipeline</span>
-<span class="n">pl</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
+<span class="n">pl</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 </code></pre></div>
 
 <p><strong>Parameters</strong></p>

@@ -1786,7 +1786,11 @@
 599
 600
 601
-602</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+602
+603
+604</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">to_iterable</span><span class="p">(</span>
+    <span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">typing</span><span class="o">.</span><span class="n">Iterable</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Creates an iterable from a stage.</span>
 
@@ -1842,7 +1846,7 @@
 </thead>
 <tbody>
 <tr>
-<td><code>_empty</code></td>
+<td><code>Iterable</code></td>
 <td>If the <code>stage</code> parameters is given then this function returns an iterable, else it returns a <code>Partial</code>.</td>
 </tr>
 </tbody>

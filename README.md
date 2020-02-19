@@ -118,16 +118,13 @@ data = (
 )
 ```
 
-## Benchmarks
-* [Making an Unlimited Number of Requests with Python aiohttp + pypeln](https://medium.com/@cgarciae/making-an-infinite-number-of-requests-with-python-aiohttp-pypeln-3a552b97dc95)
-    * [Code](https://github.com/cgarciae/pypeln/tree/master/benchmarks/100_million_downloads)
-
-
 ## Related Stuff
-* [mpipe](https://vmlaker.github.io/mpipe/)
+* [Making an Unlimited Number of Requests with Python aiohttp + pypeln](https://medium.com/@cgarciae/making-an-infinite-number-of-requests-with-python-aiohttp-pypeln-3a552b97dc95)
 * [Process Pools](https://docs.python.org/3.4/library/multiprocessing.html?highlight=process#module-multiprocessing.pool)
 * [Making 100 million requests with Python aiohttp](https://www.artificialworlds.net/blog/2017/06/12/making-100-million-requests-with-python-aiohttp/)
 * [Python multiprocessing Queue memory management](https://stackoverflow.com/questions/52286527/python-multiprocessing-queue-memory-management/52286686#52286686)
+* [joblib](https://joblib.readthedocs.io/en/latest/)
+* [mpipe](https://vmlaker.github.io/mpipe/)
 
 ## Contributors
 * [cgarciae](https://github.com/cgarciae)

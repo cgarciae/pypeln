@@ -694,7 +694,7 @@
 <span class="sd">        save_image(image_path, image)</span>
 
 <span class="sd">    files_paths = get_file_paths()</span>
-<span class="sd">    stage = pl.thread.each(process_image, file_paths, workers = 4)</span>
+<span class="sd">    stage = pl.thread.each(process_image, file_paths, workers=4)</span>
 <span class="sd">    pl.thread.run(stage)</span>
 
 <span class="sd">    ```</span>
@@ -703,7 +703,7 @@
 
 <span class="sd">    ```python</span>
 <span class="sd">    files_paths = get_file_paths()</span>
-<span class="sd">    pl.thread.each(process_image, file_paths, workers = 4, run = True)</span>
+<span class="sd">    pl.thread.each(process_image, file_paths, workers=4, run = True)</span>
 <span class="sd">    ```</span>
 
 <span class="sd">    !!! note</span>
@@ -763,13 +763,13 @@
     <span class="n">save_image</span><span class="p">(</span><span class="n">image_path</span><span class="p">,</span> <span class="n">image</span><span class="p">)</span>
 
 <span class="n">files_paths</span> <span class="o">=</span> <span class="n">get_file_paths</span><span class="p">()</span>
-<span class="n">stage</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">each</span><span class="p">(</span><span class="n">process_image</span><span class="p">,</span> <span class="n">file_paths</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">4</span><span class="p">)</span>
+<span class="n">stage</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">each</span><span class="p">(</span><span class="n">process_image</span><span class="p">,</span> <span class="n">file_paths</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
 <span class="n">pl</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 </code></pre></div>
 
 <p>or alternatively</p>
 <div class="codehilite"><pre><span></span><code><span class="n">files_paths</span> <span class="o">=</span> <span class="n">get_file_paths</span><span class="p">()</span>
-<span class="n">pl</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">each</span><span class="p">(</span><span class="n">process_image</span><span class="p">,</span> <span class="n">file_paths</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> <span class="n">run</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">pl</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">each</span><span class="p">(</span><span class="n">process_image</span><span class="p">,</span> <span class="n">file_paths</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">run</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
 </code></pre></div>
 
 <div class="admonition note">
@@ -932,7 +932,7 @@
 <span class="sd">        return x &gt; 3</span>
 
 <span class="sd">    data = range(10) # [0, 1, 2, ..., 9]</span>
-<span class="sd">    stage = pl.thread.filter(slow_gt3, data, workers = 3, maxsize = 4)</span>
+<span class="sd">    stage = pl.thread.filter(slow_gt3, data, workers=3, maxsize=4)</span>
 
 <span class="sd">    data = list(stage) # e.g. [5, 6, 3, 4, 7, 8, 9]</span>
 <span class="sd">    ```</span>
@@ -988,7 +988,7 @@
     <span class="k">return</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">3</span>
 
 <span class="n">data</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="c1"># [0, 1, 2, ..., 9]</span>
-<span class="n">stage</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">slow_gt3</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">4</span><span class="p">)</span>
+<span class="n">stage</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">slow_gt3</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
 
 <span class="n">data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span> <span class="c1"># e.g. [5, 6, 3, 4, 7, 8, 9]</span>
 </code></pre></div>
@@ -1168,7 +1168,7 @@
 <span class="sd">            yield -x</span>
 
 <span class="sd">    data = range(10) # [0, 1, 2, ..., 9]</span>
-<span class="sd">    stage = pl.thread.flat_map(slow_integer_pair, data, workers = 3, maxsize = 4)</span>
+<span class="sd">    stage = pl.thread.flat_map(slow_integer_pair, data, workers=3, maxsize=4)</span>
 
 <span class="sd">    list(stage) # e.g. [2, -2, 3, -3, 0, 1, -1, 6, -6, 4, -4, ...]</span>
 <span class="sd">    ```</span>
@@ -1240,7 +1240,7 @@
         <span class="k">yield</span> <span class="o">-</span><span class="n">x</span>
 
 <span class="n">data</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="c1"># [0, 1, 2, ..., 9]</span>
-<span class="n">stage</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">flat_map</span><span class="p">(</span><span class="n">slow_integer_pair</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">4</span><span class="p">)</span>
+<span class="n">stage</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">flat_map</span><span class="p">(</span><span class="n">slow_integer_pair</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
 
 <span class="nb">list</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span> <span class="c1"># e.g. [2, -2, 3, -3, 0, 1, -1, 6, -6, 4, -4, ...]</span>
 </code></pre></div>
@@ -1542,7 +1542,7 @@
 <span class="sd">        return x + 1</span>
 
 <span class="sd">    data = range(10) # [0, 1, 2, ..., 9]</span>
-<span class="sd">    stage = pl.thread.map(slow_add1, data, workers = 3, maxsize = 4)</span>
+<span class="sd">    stage = pl.thread.map(slow_add1, data, workers=3, maxsize=4)</span>
 
 <span class="sd">    data = list(stage) # e.g. [2, 1, 5, 6, 3, 4, 7, 8, 9, 10]</span>
 <span class="sd">    ```</span>
@@ -1598,7 +1598,7 @@
     <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
 
 <span class="n">data</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="c1"># [0, 1, 2, ..., 9]</span>
-<span class="n">stage</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">slow_add1</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">maxsize</span> <span class="o">=</span> <span class="mi">4</span><span class="p">)</span>
+<span class="n">stage</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">slow_add1</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
 
 <span class="n">data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span> <span class="c1"># e.g. [2, 1, 5, 6, 3, 4, 7, 8, 9, 10]</span>
 </code></pre></div>
@@ -1714,7 +1714,7 @@
 <span class="sd">    import pypeln as pl</span>
 
 <span class="sd">    data = get_data()</span>
-<span class="sd">    stage = pl.thread.each(slow_fn, data, workers = 6)</span>
+<span class="sd">    stage = pl.thread.each(slow_fn, data, workers=6)</span>
 
 <span class="sd">    # execute pipeline</span>
 <span class="sd">    pl.thread.run(stage)</span>
@@ -1747,7 +1747,7 @@
 <div class="codehilite"><pre><span></span><code><span class="kn">import</span> <span class="nn">pypeln</span> <span class="k">as</span> <span class="nn">pl</span>
 
 <span class="n">data</span> <span class="o">=</span> <span class="n">get_data</span><span class="p">()</span>
-<span class="n">stage</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">each</span><span class="p">(</span><span class="n">slow_fn</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">6</span><span class="p">)</span>
+<span class="n">stage</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">each</span><span class="p">(</span><span class="n">slow_fn</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
 
 <span class="c1"># execute pipeline</span>
 <span class="n">pl</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>

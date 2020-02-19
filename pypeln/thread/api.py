@@ -1,5 +1,5 @@
 """
-The `process` module lets you create pipelines using objects from python's [threading](https://docs.python.org/3/library/threading.html) module according to Pypeln's general [architecture](https://cgarciae.github.io/pypeln/advanced/#architecture). Use this module when you are in need to perform some synchronous IO operations and DONT need to perform heavy CPU operations.
+The `thread` module lets you create pipelines using objects from python's [threading](https://docs.python.org/3/library/threading.html) module according to Pypeln's general [architecture](https://cgarciae.github.io/pypeln/advanced/#architecture). Use this module when you are in need to perform some synchronous IO operations and DONT need to perform heavy CPU operations.
 """
 import typing
 from threading import Thread

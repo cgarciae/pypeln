@@ -298,48 +298,6 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#stage" class="md-nav__link">
-    Stage
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#workers" class="md-nav__link">
-    Workers
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#queue" class="md-nav__link">
-    Queue
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#resource-management" class="md-nav__link">
-    Resource Management
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pipe-operator" class="md-nav__link">
-    Pipe Operator
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#recomendations" class="md-nav__link">
-    Recomendations
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#pypeln.thread.api.concat" class="md-nav__link">
     concat()
   </a>
@@ -444,48 +402,6 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#stage" class="md-nav__link">
-    Stage
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#workers" class="md-nav__link">
-    Workers
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#queue" class="md-nav__link">
-    Queue
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#resource-management" class="md-nav__link">
-    Resource Management
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pipe-operator" class="md-nav__link">
-    Pipe Operator
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#recomendations" class="md-nav__link">
-    Recomendations
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#pypeln.thread.api.concat" class="md-nav__link">
     concat()
   </a>
@@ -561,147 +477,40 @@
                 
                 
                 <h1 id="plthread">pl.thread<a class="headerlink" href="#plthread" title="Permanent link">&para;</a></h1>
-<p>The <code>process</code> module lets you create pipelines using objects from python's <a href="https://docs.python.org/3.4/library/multiprocessing.html">multiprocessing</a> module according to Pypeln's general <a href="https://cgarciae.gitbook.io/pypeln/#architecture">architecture</a>. Use this module when you are in need of true parallelism for CPU heavy operations but be aware of its implications (continue reading).</p>
-<div class="codehilite"><pre><span></span><code>import pypeln as pl
-import time
-from random import random
-
-def slow_add1(x):
-    time.sleep(random()) # &lt;= some slow computation
-    return x + 1
-
-def slow_gt3(x):
-    time.sleep(random()) # &lt;= some slow computation
-    return x &gt; 3
-
-data = range(10) # [0, 1, 2, ..., 9]
-
-stage = pl.process.map(slow_add1, data, workers = 3, maxsize = 4)
-stage = pl.process.filter(slow_gt3, stage, workers = 2)
-
-data = list(stage) # e.g. [5, 6, 9, 4, 8, 10, 7]
-</code></pre></div>
-
-
-<h2 id="stage">Stage<a class="headerlink" href="#stage" title="Permanent link">&para;</a></h2>
-<p>All functions from this module return a private <code>pypeln.process._Stage</code> object. Stages are lazy, that is, a <code>_Stage</code> objects merely contains the information needed to perform the computation of itself and the Stages it depends on. Stages are <a href="https://docs.python.org/3/glossary.html#term-iterable">iterables</a> i.e. they implement <code>__iter__</code>, to actually execute the pipeline you can directly iterable them or iterate over the generator returned by <code>pypeln.process.to_iterable</code> which gives you more control.</p>
-<div class="codehilite"><pre><span></span><code>import pypeln as pl
-import time
-from random import random
-
-def slow_add1(x):
-    time.sleep(random()) # &lt;= some slow computation
-    return x + 1
-
-data = range(10) # [0, 1, 2, ..., 9]
-stage = pl.process.map(slow_add1, data, workers = 3, maxsize = 4)
-
-for x in stage:
-    print(x) # e.g. 2, 1, 5, 6, 3, 4, 7, 8, 9, 10
-</code></pre></div>
-
-
-<p>This iterable API makes Pypeln a very intuitive/pythonic to use and compatible with most other python code. </p>
-<h2 id="workers">Workers<a class="headerlink" href="#workers" title="Permanent link">&para;</a></h2>
-<p>The worker type of this module is a <a href="https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Process">multiprocessing.Process</a>. Each worker process is instantiated with <code>daemon = True</code>. Creating each process is slow and consumes a lot of memory. Since processes are technically separate programs managed by the OS they are great for doing operations in parallel by avoiding the <a href="https://realpython.com/python-gil">GIL</a> (or rather having their separate GIL).</p>
-<p>The number of workers on each stage can usually be controled by the <code>workers</code> parameter on <code>pypeln.process</code>'s various functions. Try not to create more processes than the number of cores you have on your machine or else they will end up fighting for resources and computation will be suboptimal.</p>
-<h2 id="queue">Queue<a class="headerlink" href="#queue" title="Permanent link">&para;</a></h2>
-<p>The queue type of this module is a <a href="https://docs.python.org/3.4/library/multiprocessing.html#multiprocessing.Queue">multiprocessing.Queue</a>. Since processes don't share memory, all information passed between them through these queues must first be serialized (pickled) which is slow, be aware of this and try to avoid sending large objects.</p>
-<p>The number of elements each stage can hold usually be controled by the <code>maxsize</code> parameter on <code>pypeln.process</code>'s various functions. When passed this parameter sets a maximum size for the input Queue of the stage, this serves as a <a href="https://www.quora.com/What-is-backpressure-in-the-context-of-data-streaming">backpressure</a> mechanism because any stages pushing data to a Queue that becomes full (reaches its <code>maxsize</code>) will have to stop their computation until space becomes available, thus, potentially preveting <code>OutOfMemeory</code> errors due to overpressure from faster stages.</p>
-<h2 id="resource-management">Resource Management<a class="headerlink" href="#resource-management" title="Permanent link">&para;</a></h2>
-<p>There are many occasions where you need to create some resource objects (e.g. http or database sessions) that for efficiency are expected to last the whole lifespan of each worker. To handle such objects many functions have the <code>on_start</code> and <code>on_done</code> arguments which expect some callback functions. </p>
-<p>When a worker is created it calls the <code>on_start</code> function, this functions should create and return the resource objects. These object will be passed as extra arguments to the main function and also to the <code>on_end</code> function.</p>
-<div class="codehilite"><pre><span></span><code>import pypeln as pl
-
-def ():
-    http_session = get_http_session()
-    db_session = get_db_session()
-    return http_session, db_session
-
-def on_end(_stage_status, http_session, db_session):
-    http_session.close()
-    db_session.close()
-
-def f(x, http_session, db_session):
-    # some logic
-    return y
-
-stage = pl.process.map(f, stage, workers = 3, on_start = on_start)
-</code></pre></div>
-
-
-<p>A few notes:</p>
-<ul>
-<li>The resource objects are created per worker.</li>
-<li><code>on_start</code> should return a object other that <code>None</code> or a tuple of resource objects.</li>
-<li>If <code>on_start</code> returns some arguments then they must be accepted by <code>f</code> and <code>on_end</code>.</li>
-<li><code>on_end</code> receives a <code>pypeln.process.StageStatus</code> object followed by the resource objects created by <code>on_start</code>.</li>
-</ul>
-<h2 id="pipe-operator">Pipe Operator<a class="headerlink" href="#pipe-operator" title="Permanent link">&para;</a></h2>
-<p>Functions that accept a <code>stage</code> parameter return a <code>Partial</code> instead of a new stage when <code>stage</code> is not given. These <code>Partial</code>s are callables that accept the missing <code>stage</code> parameter and return the full output of the original function. For example</p>
-<div class="codehilite"><pre><span></span><code>pl.process.map(f, stage, **kwargs) = pl.process.map(f, **kwargs)(stage)
-</code></pre></div>
-
-
-<p>The important thing about partials is that they implement the pipe <code>|</code> operator as</p>
-<div class="codehilite"><pre><span></span><code>x | partial = partial(x)
-</code></pre></div>
-
-
-<p>This allows you to define pipelines in the following way:</p>
-<div class="codehilite"><pre><span></span><code>from pypenl import process as pr
-
-data = (
-    range(10)
-    | pl.process.map(slow_add1, workers = 3, maxsize = 4)
-    | pl.process.filter(slow_gt3, workers = 2)
-    | list
-)
-</code></pre></div>
-
-
-<h2 id="recomendations">Recomendations<a class="headerlink" href="#recomendations" title="Permanent link">&para;</a></h2>
-<p>Creating processes and doing Inter-Process Communication (IPC) is expensive, therefore we recommend the following:</p>
-<ul>
-<li>Minimize the number of stages based on this module.</li>
-<li>Tune the number of workers based on the number of cores.</li>
-<li>When processing large datasets set the maxsize of the stage to prevent <code>OutOfMemory</code> errors.</li>
-<li>If possible don't send large objects.</li>
-<li>If you just need a single stage to perform a task over a collection in parallel use the <code>pypeln.process.each</code> function. </li>
-</ul>
+<p>The <code>process</code> module lets you create pipelines using objects from python's <a href="https://docs.python.org/3/library/threading.html">threading</a> module according to Pypeln's general <a href="https://cgarciae.github.io/pypeln/advanced/#architecture">architecture</a>. Use this module when you are in need to perform some synchronous IO operations and DONT need to perform heavy CPU operations.</p>
 <h2 id="pypeln.thread.api.concat"><code class="codehilite"><span class="n">concat</span><span class="p">(</span><span class="n">stages</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.thread.api.concat" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>540
-541
-542
-543
-544
-545
-546
-547
-548
-549
-550
-551
-552
-553
-554
-555
-556
-557
-558
-559
-560
-561
-562
-563
-564
-565
-566
-567
-568
-569
-570</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">concat</span><span class="p">(</span><span class="n">stages</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Stage</span><span class="p">],</span> <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Stage</span><span class="p">:</span>
+<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>433
+434
+435
+436
+437
+438
+439
+440
+441
+442
+443
+444
+445
+446
+447
+448
+449
+450
+451
+452
+453
+454
+455
+456
+457
+458
+459
+460
+461
+462
+463</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">concat</span><span class="p">(</span><span class="n">stages</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Stage</span><span class="p">],</span> <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Stage</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Concatenates / merges many stages into a single one by appending elements from each stage as they come, order is not preserved.</span>
 
@@ -788,83 +597,83 @@ data = (
 </div>
 <h2 id="pypeln.thread.api.each"><code class="codehilite"><span class="n">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.thread.api.each" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>451
-452
-453
-454
-455
-456
-457
-458
-459
-460
-461
-462
-463
-464
-465
-466
-467
-468
-469
-470
-471
-472
-473
-474
-475
-476
-477
-478
-479
-480
-481
-482
-483
-484
-485
-486
-487
-488
-489
-490
-491
-492
-493
-494
-495
-496
-497
-498
-499
-500
-501
-502
-503
-504
-505
-506
-507
-508
-509
-510
-511
-512
-513
-514
-515
-516
-517
-518
-519
-520
-521
-522
-523
-524
-525
-526
-527</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">each</span><span class="p">(</span>
+<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>344
+345
+346
+347
+348
+349
+350
+351
+352
+353
+354
+355
+356
+357
+358
+359
+360
+361
+362
+363
+364
+365
+366
+367
+368
+369
+370
+371
+372
+373
+374
+375
+376
+377
+378
+379
+380
+381
+382
+383
+384
+385
+386
+387
+388
+389
+390
+391
+392
+393
+394
+395
+396
+397
+398
+399
+400
+401
+402
+403
+404
+405
+406
+407
+408
+409
+410
+411
+412
+413
+414
+415
+416
+417
+418
+419
+420</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">each</span><span class="p">(</span>
     <span class="n">f</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">,</span>
     <span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span>
     <span class="n">workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
@@ -1040,69 +849,69 @@ data = (
 </div>
 <h2 id="pypeln.thread.api.filter"><code class="codehilite"><span class="nb">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.thread.api.filter" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>376
-377
-378
-379
-380
-381
-382
-383
-384
-385
-386
-387
-388
-389
-390
-391
-392
-393
-394
-395
-396
-397
-398
-399
-400
-401
-402
-403
-404
-405
-406
-407
-408
-409
-410
-411
-412
-413
-414
-415
-416
-417
-418
-419
-420
-421
-422
-423
-424
-425
-426
-427
-428
-429
-430
-431
-432
-433
-434
-435
-436
-437
-438</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">filter</span><span class="p">(</span>
+<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+284
+285
+286
+287
+288
+289
+290
+291
+292
+293
+294
+295
+296
+297
+298
+299
+300
+301
+302
+303
+304
+305
+306
+307
+308
+309
+310
+311
+312
+313
+314
+315
+316
+317
+318
+319
+320
+321
+322
+323
+324
+325
+326
+327
+328
+329
+330
+331</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">filter</span><span class="p">(</span>
     <span class="n">f</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">,</span>
     <span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span>
     <span class="n">workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
@@ -1255,85 +1064,85 @@ data = (
 </div>
 <h2 id="pypeln.thread.api.flat_map"><code class="codehilite"><span class="n">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.thread.api.flat_map" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>284
-285
-286
-287
-288
-289
-290
-291
-292
-293
-294
-295
-296
-297
-298
-299
-300
-301
-302
-303
-304
-305
-306
-307
-308
-309
-310
-311
-312
-313
-314
-315
-316
-317
-318
-319
-320
-321
-322
-323
-324
-325
-326
-327
-328
-329
-330
-331
-332
-333
-334
-335
-336
-337
-338
-339
-340
-341
-342
-343
-344
-345
-346
-347
-348
-349
-350
-351
-352
-353
-354
-355
-356
-357
-358
-359
-360
-361
-362</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">flat_map</span><span class="p">(</span>
+<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+251
+252
+253
+254
+255</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">flat_map</span><span class="p">(</span>
     <span class="n">f</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">,</span>
     <span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span>
     <span class="n">workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
@@ -1515,45 +1324,45 @@ data = (
 </div>
 <h2 id="pypeln.thread.api.from_iterable"><code class="codehilite"><span class="n">from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="o">=&lt;</span><span class="k">class</span> <span class="err">&#39;</span><span class="nc">threading</span><span class="o">.</span><span class="n">Thread</span><span class="s1">&#39;&gt;)</span></code><a class="headerlink" href="#pypeln.thread.api.from_iterable" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>139
-140
-141
-142
-143
-144
-145
-146
-147
-148
-149
-150
-151
-152
-153
-154
-155
-156
-157
-158
-159
-160
-161
-162
-163
-164
-165
-166
-167
-168
-169
-170
-171
-172
-173
-174
-175
-176
-177</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">from_iterable</span><span class="p">(</span>
+<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">from_iterable</span><span class="p">(</span>
     <span class="n">iterable</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Iterable</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span>
     <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">worker_constructor</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Type</span> <span class="o">=</span> <span class="n">Thread</span><span class="p">,</span>
@@ -1650,69 +1459,69 @@ data = (
 </div>
 <h2 id="pypeln.thread.api.map"><code class="codehilite"><span class="nb">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.thread.api.map" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>208
-209
-210
-211
-212
-213
-214
-215
-216
-217
-218
-219
-220
-221
-222
-223
-224
-225
-226
-227
-228
-229
-230
-231
-232
-233
-234
-235
-236
-237
-238
-239
-240
-241
-242
-243
-244
-245
-246
-247
-248
-249
-250
-251
-252
-253
-254
-255
-256
-257
-258
-259
-260
-261
-262
-263
-264
-265
-266
-267
-268
-269
-270</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">map</span><span class="p">(</span>
+<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">map</span><span class="p">(</span>
     <span class="n">f</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">,</span>
     <span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span>
     <span class="n">workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
@@ -1865,39 +1674,39 @@ data = (
 </div>
 <h2 id="pypeln.thread.api.run"><code class="codehilite"><span class="n">run</span><span class="p">(</span><span class="n">stages</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.thread.api.run" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>578
-579
-580
-581
-582
-583
-584
-585
-586
-587
-588
-589
-590
-591
-592
-593
-594
-595
-596
-597
-598
-599
-600
-601
-602
-603
-604
-605
-606
-607
-608
-609
-610</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">stages</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Stage</span><span class="p">],</span> <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>471
+472
+473
+474
+475
+476
+477
+478
+479
+480
+481
+482
+483
+484
+485
+486
+487
+488
+489
+490
+491
+492
+493
+494
+495
+496
+497
+498
+499
+500
+501
+502
+503</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">stages</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Stage</span><span class="p">],</span> <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Iterates over one or more stages until their iterators run out of elements.</span>
 
@@ -1972,22 +1781,22 @@ data = (
 </div>
 <h2 id="pypeln.thread.api.to_iterable"><code class="codehilite"><span class="n">to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.thread.api.to_iterable" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>618
-619
-620
-621
-622
-623
-624
-625
-626
-627
-628
-629
-630
-631
-632
-633</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>511
+512
+513
+514
+515
+516
+517
+518
+519
+520
+521
+522
+523
+524
+525
+526</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Creates an iterable from a stage.</span>
 

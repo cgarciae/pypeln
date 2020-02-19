@@ -584,7 +584,9 @@ def run(stages: typing.List[Stage], maxsize: int = 0) -> None:
 #############################################################
 
 
-def to_iterable(stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0):
+def to_iterable(
+    stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0
+) -> typing.Iterable:
     """
     Creates an iterable from a stage.
 

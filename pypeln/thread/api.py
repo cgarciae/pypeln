@@ -476,10 +476,10 @@ def run(stages: typing.List[Stage], maxsize: int = 0) -> None:
     import pypeln as pl
 
     data = get_data()
-    stage = pl.process.each(slow_fn, data, workers = 6)
+    stage = pl.thread.each(slow_fn, data, workers = 6)
 
     # execute pipeline
-    pl.process.run(stage)
+    pl.thread.run(stage)
     ```
 
     Arguments:

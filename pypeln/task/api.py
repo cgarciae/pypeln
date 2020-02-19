@@ -175,11 +175,11 @@ def map(
 
     ```python
     import pypeln as pl
-    import time
+    import asyncio
     from random import random
 
-    def slow_add1(x):
-        time.sleep(random()) # <= some slow computation
+    async def slow_add1(x):
+        await asyncio.sleep(random()) # <= some slow computation
         return x + 1
 
     data = range(10) # [0, 1, 2, ..., 9]
@@ -255,11 +255,11 @@ def flat_map(
 
     ```python
     import pypeln as pl
-    import time
+    import asyncio
     from random import random
 
-    def slow_integer_pair(x):
-        time.sleep(random()) # <= some slow computation
+    async def slow_integer_pair(x):
+        await asyncio.sleep(random()) # <= some slow computation
 
         if x == 0:
             yield x
@@ -352,11 +352,11 @@ def filter(
 
     ```python
     import pypeln as pl
-    import time
+    import asyncio
     from random import random
 
-    def slow_gt3(x):
-        time.sleep(random()) # <= some slow computation
+    async def slow_gt3(x):
+        await asyncio.sleep(random()) # <= some slow computation
         return x > 3
 
     data = range(10) # [0, 1, 2, ..., 9]
@@ -432,10 +432,10 @@ def each(
     ```python
     import pypeln as pl
 
-    def process_image(image_path):
-        image = load_image(image_path)
-        image = transform_image(image)
-        save_image(image_path, image)
+    async def process_image(image_path):
+        image = await load_image(image_path)
+        image = await transform_image(image)
+        await save_image(image_path, image)
 
     files_paths = get_file_paths()
     stage = pl.task.each(process_image, file_paths, workers = 4)
@@ -552,10 +552,10 @@ def run(stages: typing.List[Stage], maxsize: int = 0) -> None:
     import pypeln as pl
 
     data = get_data()
-    stage = pl.process.each(slow_fn, data, workers = 6)
+    stage = pl.task.each(slow_fn, data, workers = 6)
 
     # execute pipeline
-    pl.process.run(stage)
+    pl.task.run(stage)
     ```
 
     Arguments:

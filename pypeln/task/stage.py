@@ -98,21 +98,26 @@ class Stage:
     def __iter__(self):
         return self.to_iterable(maxsize=0)
 
-    async def await_(self):
+    def __aiter__(self):
+        return self.to_async_iterable(maxsize=0).__aiter__()
 
-        maxsize = 0
+    async def to_async_iterable(self, maxsize):
+
         pipeline_namespace = utils.get_namespace()
         pipeline_namespace.error = False
         pipeline_error_queue = Queue()
 
-        f_coro, _input_queue = self.to_coroutine(
+        f_coro, output_queue = self.to_coroutine(
             maxsize=maxsize,
             pipeline_namespace=pipeline_namespace,
             pipeline_error_queue=pipeline_error_queue,
             loop=asyncio.get_event_loop(),
         )
 
-        output = await f_coro()
+        self.loop.create_task(f_coro())
+
+        async for x in output_queue:
+            yield x
 
         if pipeline_namespace.error:
             error_class, _, trace = pipeline_error_queue.get()
@@ -124,7 +129,8 @@ class Stage:
 
             raise error
 
-        return output
+    async def await_(self):
+        return [x async for x in self.to_async_iterable(maxsize=0)]
 
     def __await__(self):
         return self.await_().__await__()
@@ -189,23 +195,18 @@ class Stage:
 
         utils.run_on_loop(f_coro)
 
-        try:
-            for x in output_queue:
-                yield x
+        for x in output_queue:
+            yield x
 
-            if pipeline_namespace.error:
-                error_class, _, trace = pipeline_error_queue.get()
+        if pipeline_namespace.error:
+            error_class, _, trace = pipeline_error_queue.get()
 
-                try:
-                    error = error_class(f"\n\nOriginal {trace}")
-                except:
-                    raise Exception(f"\n\nError: {trace}")
+            try:
+                error = error_class(f"\n\nOriginal {trace}")
+            except:
+                raise Exception(f"\n\nError: {trace}")
 
-                raise error
-
-        except:
-
-            raise
+            raise error
 
     def to_coroutine(self, maxsize, pipeline_namespace, pipeline_error_queue, loop):
 
@@ -227,7 +228,7 @@ class Stage:
         )
 
         async def f_coro():
-            return await asyncio.gather(*[stage.run() for stage in pipeline_stages])
+            await asyncio.gather(*[stage.run() for stage in pipeline_stages])
 
         return f_coro, output_queue
 

@@ -8,7 +8,7 @@ from pypeln import utils as pypeln_utils
 from . import utils
 
 
-class Stage(pypeln_utils.BaseStage):
+class Stage:
     def __init__(
         self,
         f,
@@ -19,9 +19,6 @@ class Stage(pypeln_utils.BaseStage):
         dependencies,
         worker_constructor=None,
     ):
-        assert hasattr(self, "apply") != hasattr(
-            self, "process"
-        ), f"{self.__class__} must define either 'apply' or 'process'"
 
         if worker_constructor is None:
             worker_constructor = utils.CONTEXT.Process
@@ -44,6 +41,10 @@ class Stage(pypeln_utils.BaseStage):
         self.pipeline_namespace = None
         self.pipeline_error_queue = None
 
+    def process(self, **kwargs) -> None:
+        for x in self.input_queue:
+            self.apply(x, **kwargs)
+
     def run(self, index):
         try:
             if self.on_start is not None:
@@ -59,11 +60,7 @@ class Stage(pypeln_utils.BaseStage):
             if f_kwargs is None:
                 f_kwargs = {}
 
-            if hasattr(self, "apply"):
-                for x in self.input_queue:
-                    self.apply(x, **f_kwargs)
-            else:
-                self.process(**f_kwargs)
+            self.process(**f_kwargs)
 
             self.output_queues.done()
 
@@ -185,3 +182,6 @@ class Stage(pypeln_utils.BaseStage):
                 stage.input_queue.done()
 
             raise
+
+    def __or__(self, f):
+        return f(self)

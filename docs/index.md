@@ -1,6 +1,6 @@
 # Pypeln
 
-_Pypeln (pronounced as "pypeline") is a simple yet powerful python library for creating concurrent data pipelines._
+_Pypeln (pronounced as "pypeline") is a simple yet powerful Python library for creating concurrent data pipelines._
 
 #### Main Features
 

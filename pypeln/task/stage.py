@@ -5,19 +5,17 @@ import traceback
 from collections import namedtuple
 from queue import Queue
 from threading import Lock, Thread
+from abc import ABC, abstractmethod
 
 from pypeln import utils as pypeln_utils
 
 from . import utils
 
 
-class Stage(pypeln_utils.BaseStage):
+class Stage:
     def __init__(
         self, f, workers, maxsize, on_start, on_done, dependencies,
     ):
-        assert hasattr(self, "apply") != hasattr(
-            self, "process"
-        ), f"{self.__class__} must define either 'apply' or 'process'"
 
         self.f = f
         self.workers = workers
@@ -37,6 +35,12 @@ class Stage(pypeln_utils.BaseStage):
         self.pipeline_error_queue = None
         self.pipeline_stages = None
         self.loop = None
+
+    async def process(self, **kwargs) -> None:
+        async with utils.TaskPool(self.workers) as tasks:
+            async for x in self.input_queue:
+                task = self.apply(x, **kwargs)
+                await tasks.put(task)
 
     async def run(self):
         try:
@@ -226,3 +230,6 @@ class Stage(pypeln_utils.BaseStage):
             return await asyncio.gather(*[stage.run() for stage in pipeline_stages])
 
         return f_coro, output_queue
+
+    def __or__(self, f):
+        return f(self)

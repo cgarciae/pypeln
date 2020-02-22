@@ -10,7 +10,7 @@ from pypeln import utils as pypeln_utils
 from . import utils
 
 
-class Stage(pypeln_utils.BaseStage):
+class Stage:
     def __init__(
         self,
         f,
@@ -21,9 +21,6 @@ class Stage(pypeln_utils.BaseStage):
         dependencies,
         worker_constructor=None,
     ):
-        assert hasattr(self, "apply") != hasattr(
-            self, "process"
-        ), f"{self.__class__} must define either 'apply' or 'process'"
 
         if worker_constructor is None:
             worker_constructor = Thread
@@ -45,6 +42,10 @@ class Stage(pypeln_utils.BaseStage):
         self.stage_lock = None
         self.pipeline_namespace = None
         self.pipeline_error_queue = None
+
+    def process(self, **kwargs) -> None:
+        for x in self.input_queue:
+            self.apply(x, **kwargs)
 
     def run(self, index):
         try:
@@ -188,3 +189,5 @@ class Stage(pypeln_utils.BaseStage):
 
             raise
 
+    def __or__(self, f):
+        return f(self)

@@ -20,11 +20,6 @@ class Partial(object):
         return self.f(stage)
 
 
-class BaseStage(object):
-    def __or__(self, f):
-        return f(self)
-
-
 class Namespace(object):
     pass
 

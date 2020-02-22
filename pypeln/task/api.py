@@ -234,12 +234,18 @@ def map(
 
 class FlatMap(Stage):
     async def apply(self, x, **kwargs):
-        for y in self.f(x, **kwargs):
+        iterable = self.f(x, **kwargs)
 
-            if hasattr(y, "__await__"):
-                y = await y
+        if hasattr(iterable, "__aiter__"):
+            async for x in iterable:
+                await self.output_queues.put(x)
+        else:
+            for y in iterable:
 
-            await self.output_queues.put(y)
+                if hasattr(y, "__await__"):
+                    y = await y
+
+                await self.output_queues.put(y)
 
 
 def flat_map(

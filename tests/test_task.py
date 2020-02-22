@@ -1,3 +1,4 @@
+import asyncio
 import functools as ft
 import time
 
@@ -6,6 +7,7 @@ import hypothesis as hp
 from hypothesis import strategies as st
 
 import pypeln as pl
+from utils_io import run_async
 
 MAX_EXAMPLES = 15
 
@@ -313,6 +315,29 @@ def test_iterable_and_map(nums):
     nums_py = list(nums_py)
 
     assert nums_py == nums_pl
+
+
+############
+# await
+############
+
+
+@hp.given(nums=st.lists(st.integers()))
+@hp.settings(max_examples=MAX_EXAMPLES)
+@run_async
+async def test_await(nums):
+    X = [0]
+
+    async def impure_add1(x):
+        X[0] += 1
+
+        await asyncio.sleep(0.01)
+
+        return x + 1
+
+    await pl.task.map(impure_add1, nums)
+
+    assert X[0] == len(nums)
 
 
 if __name__ == "__main__":

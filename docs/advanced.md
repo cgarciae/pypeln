@@ -24,7 +24,7 @@ Pypeln has 3 types of stages, each stage has an associated worker and queue type
 
 Depending on the type of stage you use the following characteristics will vary: memory management, concurrency, parallelism, inter-stage communication overhead, worker initialization overhead:
 
-
+****
 | Stage Type | Memory      | Concurrency  | Parallelism  | Communication Overhead | Initialization Overhead |
 | ---------- | ----------- | ------------ | ------------ | ---------------------- | ----------------------- |
 | `process`  | independent | cpu + IO     | cpu + IO     | high                   | high                    |
@@ -116,6 +116,71 @@ Additionally:
 * If `f` defines a `worker_info` argument an object with information about the worker will be passed.
 * If `on_end` defines a `stage_status` an object with information about the stage will be passed. 
 
+## Asyncio Integration
+
+While you can consume `task` stages synchronously as you've seen, there are 2 ways to consume them using python `async` syntax:
+
+#### await
+You can call `await` con any `task.Stage` to get back the results of its computation:
+
+```python
+import pypeln as pl
+import asyncio
+from random import random
+
+async def slow_add1(x):
+    await asyncio.sleep(random()) # <= some slow computation
+    return x + 1
+
+async def slow_gt3(x):
+    await asyncio.sleep(random()) # <= some slow computation
+    return x > 3
+
+async def main()
+    data = range(10) # [0, 1, 2, ..., 9] 
+
+    stage = pl.task.map(slow_add1, data, workers=3, maxsize=4)
+    stage = pl.task.filter(slow_gt3, stage, workers=2)
+
+    data = await stage # e.g. [5, 6, 9, 4, 8, 10, 7]
+```
+When calling `await` on a stage you will get back the same result if you called `list` on it with be big difference that you wont block the current thread while waiting for the computation to materialize.
+
+!!! note
+    In this example you are responsible for running the `main` task in the event loop yourself.
+
+#### async for
+`task` Stages are asynchronous generators so you can iterate through them using `async for` to get access each new element as soon as it become available:
+
+```python
+import pypeln as pl
+import asyncio
+from random import random
+
+async def slow_add1(x):
+    await asyncio.sleep(random()) # <= some slow computation
+    return x + 1
+
+async def slow_gt3(x):
+    await asyncio.sleep(random()) # <= some slow computation
+    return x > 3
+
+async def main()
+    data = range(10) # [0, 1, 2, ..., 9] 
+
+    stage = pl.task.map(slow_add1, data, workers=3, maxsize=4)
+    stage = pl.task.filter(slow_gt3, stage, workers=2)
+
+    async for element in stage:
+        pritn(element) # 5 6 9 4 8 10 7
+```
+When iterating a stage using `async for` you will get back the same result as if you called the normal `for` on it with be big difference that you wont block the current thread while waiting for the next element.
+
+!!! note
+    In this example you are responsible for running the `main` task in the event loop yourself.
+
+### Event Loop
+When you run a `task` stage synchronously the tasks run on `pypeln`'s own event loop, however, if you itegrate them with other async code via `await` or `async for` these tasks will run on the current loop defined by `asyncio.get_event_loop()`.
 
 ## Pipe Operator
 
@@ -139,8 +204,3 @@ data = (
     | list
 )
 ```
-
-## Task & Async
-
-!!! note
-    Comming soon!

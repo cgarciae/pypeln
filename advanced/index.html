@@ -301,15 +301,42 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pipe-operator" class="md-nav__link">
-    Pipe Operator
+  <a href="#asyncio-integration" class="md-nav__link">
+    Asyncio Integration
   </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#await" class="md-nav__link">
+    await
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#async-for" class="md-nav__link">
+    async for
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#event-loop" class="md-nav__link">
+    Event Loop
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#task-async" class="md-nav__link">
-    Task &amp; Async
+  <a href="#pipe-operator" class="md-nav__link">
+    Pipe Operator
   </a>
   
 </li>
@@ -454,15 +481,42 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pipe-operator" class="md-nav__link">
-    Pipe Operator
+  <a href="#asyncio-integration" class="md-nav__link">
+    Asyncio Integration
   </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#await" class="md-nav__link">
+    await
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#async-for" class="md-nav__link">
+    async for
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#event-loop" class="md-nav__link">
+    Event Loop
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#task-async" class="md-nav__link">
-    Task &amp; Async
+  <a href="#pipe-operator" class="md-nav__link">
+    Pipe Operator
   </a>
   
 </li>
@@ -527,6 +581,7 @@ consume them.</li>
 </tbody>
 </table>
 <p>Depending on the type of stage you use the following characteristics will vary: memory management, concurrency, parallelism, inter-stage communication overhead, worker initialization overhead:</p>
+<hr />
 <table>
 <thead>
 <tr>
@@ -670,6 +725,65 @@ This example uses <code>pl.process</code> but it works the same for all the othe
 <li>If <code>f</code> defines a <code>worker_info</code> argument an object with information about the worker will be passed.</li>
 <li>If <code>on_end</code> defines a <code>stage_status</code> an object with information about the stage will be passed. </li>
 </ul>
+<h2 id="asyncio-integration">Asyncio Integration<a class="headerlink" href="#asyncio-integration" title="Permanent link">&para;</a></h2>
+<p>While you can consume <code>task</code> stages synchronously as you've seen, there are 2 ways to consume them using python <code>async</code> syntax:</p>
+<h4 id="await">await<a class="headerlink" href="#await" title="Permanent link">&para;</a></h4>
+<p>You can call <code>await</code> con any <code>task.Stage</code> to get back the results of its computation:</p>
+<p><div class="codehilite"><pre><span></span><code><span class="kn">import</span> <span class="nn">pypeln</span> <span class="k">as</span> <span class="nn">pl</span>
+<span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">random</span>
+
+<span class="k">async</span> <span class="k">def</span> <span class="nf">slow_add1</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="p">())</span> <span class="c1"># &lt;= some slow computation</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+
+<span class="k">async</span> <span class="k">def</span> <span class="nf">slow_gt3</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="p">())</span> <span class="c1"># &lt;= some slow computation</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">3</span>
+
+<span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">()</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="c1"># [0, 1, 2, ..., 9] </span>
+
+    <span class="n">stage</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">slow_add1</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">stage</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">slow_gt3</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="k">await</span> <span class="n">stage</span> <span class="c1"># e.g. [5, 6, 9, 4, 8, 10, 7]</span>
+</code></pre></div>
+When calling <code>await</code> on a stage you will get back the same result if you called <code>list</code> on it with be big difference that you wont block the current thread while waiting for the computation to materialize.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In this example you are responsible for running the <code>main</code> task in the event loop yourself.</p>
+</div>
+<h4 id="async-for">async for<a class="headerlink" href="#async-for" title="Permanent link">&para;</a></h4>
+<p><code>task</code> Stages are asynchronous generators so you can iterate through them using <code>async for</code> to get access each new element as soon as it become available:</p>
+<p><div class="codehilite"><pre><span></span><code><span class="kn">import</span> <span class="nn">pypeln</span> <span class="k">as</span> <span class="nn">pl</span>
+<span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">random</span>
+
+<span class="k">async</span> <span class="k">def</span> <span class="nf">slow_add1</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="p">())</span> <span class="c1"># &lt;= some slow computation</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+
+<span class="k">async</span> <span class="k">def</span> <span class="nf">slow_gt3</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="p">())</span> <span class="c1"># &lt;= some slow computation</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">3</span>
+
+<span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">()</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="c1"># [0, 1, 2, ..., 9] </span>
+
+    <span class="n">stage</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">slow_add1</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">stage</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">slow_gt3</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">async</span> <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">stage</span><span class="p">:</span>
+        <span class="n">pritn</span><span class="p">(</span><span class="n">element</span><span class="p">)</span> <span class="c1"># 5 6 9 4 8 10 7</span>
+</code></pre></div>
+When iterating a stage using <code>async for</code> you will get back the same result as if you called the normal <code>for</code> on it with be big difference that you wont block the current thread while waiting for the next element.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In this example you are responsible for running the <code>main</code> task in the event loop yourself.</p>
+</div>
+<h3 id="event-loop">Event Loop<a class="headerlink" href="#event-loop" title="Permanent link">&para;</a></h3>
+<p>When you run a <code>task</code> stage synchronously the tasks run on <code>pypeln</code>'s own event loop, however, if you itegrate them with other async code via <code>await</code> or <code>async for</code> these tasks will run on the current loop defined by <code>asyncio.get_event_loop()</code>.</p>
 <h2 id="pipe-operator">Pipe Operator<a class="headerlink" href="#pipe-operator" title="Permanent link">&para;</a></h2>
 <p>Most functions can return a <code>Partial</code> instead of a <code>Stage</code> if the <code>stage</code> argument is not given. These <code>Partial</code>s are callables that accept the missing <code>stage</code> parameter and call the computation. The following expressions are equivalent:</p>
 <div class="codehilite"><pre><span></span><code>pl.process.map(f, stage, **kwargs) &lt;=&gt; pl.process.map(f, **kwargs)(stage)
@@ -691,12 +805,6 @@ This example uses <code>pl.process</code> but it works the same for all the othe
     <span class="o">|</span> <span class="nb">list</span>
 <span class="p">)</span>
 </code></pre></div>
-
-<h2 id="task-async">Task &amp; Async<a class="headerlink" href="#task-async" title="Permanent link">&para;</a></h2>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Comming soon!</p>
-</div>
                 
                   
                 

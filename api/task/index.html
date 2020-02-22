@@ -480,13 +480,7 @@
 <p>The <code>task</code> module lets you create pipelines using objects from python's <a href="https://docs.python.org/3/library/asyncio.html">asyncio</a> module according to Pypeln's general <a href="https://cgarciae.github.io/pypeln/advanced/#architecture">architecture</a>. Use this module when you are in need to perform efficient asynchronous IO operations and DONT need to perform heavy CPU operations.</p>
 <h2 id="pypeln.task.api.concat"><code class="codehilite"><span class="n">concat</span><span class="p">(</span><span class="n">stages</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.task.api.concat" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/task/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>509
-510
-511
-512
-513
-514
-515
+<details class="note"><summary>Show source code in pypeln/task/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>515
 516
 517
 518
@@ -510,7 +504,13 @@
 536
 537
 538
-539</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">concat</span><span class="p">(</span><span class="n">stages</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Stage</span><span class="p">],</span> <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Stage</span><span class="p">:</span>
+539
+540
+541
+542
+543
+544
+545</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">concat</span><span class="p">(</span><span class="n">stages</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Stage</span><span class="p">],</span> <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Stage</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Concatenates / merges many stages into a single one by appending elements from each stage as they come, order is not preserved.</span>
 
@@ -597,13 +597,7 @@
 </div>
 <h2 id="pypeln.task.api.each"><code class="codehilite"><span class="n">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.task.api.each" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/task/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>420
-421
-422
-423
-424
-425
-426
+<details class="note"><summary>Show source code in pypeln/task/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>426
 427
 428
 429
@@ -673,7 +667,13 @@
 493
 494
 495
-496</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">each</span><span class="p">(</span>
+496
+497
+498
+499
+500
+501
+502</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">each</span><span class="p">(</span>
     <span class="n">f</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">,</span>
     <span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span>
     <span class="n">workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
@@ -849,13 +849,7 @@
 </div>
 <h2 id="pypeln.task.api.filter"><code class="codehilite"><span class="nb">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.task.api.filter" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/task/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>342
-343
-344
-345
-346
-347
-348
+<details class="note"><summary>Show source code in pypeln/task/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>348
 349
 350
 351
@@ -911,7 +905,13 @@
 401
 402
 403
-404</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">filter</span><span class="p">(</span>
+404
+405
+406
+407
+408
+409
+410</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">filter</span><span class="p">(</span>
     <span class="n">f</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">,</span>
     <span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span>
     <span class="n">workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
@@ -1064,13 +1064,7 @@
 </div>
 <h2 id="pypeln.task.api.flat_map"><code class="codehilite"><span class="n">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.task.api.flat_map" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/task/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>245
-246
-247
-248
-249
-250
-251
+<details class="note"><summary>Show source code in pypeln/task/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>251
 252
 253
 254
@@ -1142,7 +1136,13 @@
 320
 321
 322
-323</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">flat_map</span><span class="p">(</span>
+323
+324
+325
+326
+327
+328
+329</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">flat_map</span><span class="p">(</span>
     <span class="n">f</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">,</span>
     <span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span>
     <span class="n">workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
@@ -1664,13 +1664,7 @@
 </div>
 <h2 id="pypeln.task.api.run"><code class="codehilite"><span class="n">run</span><span class="p">(</span><span class="n">stages</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.task.api.run" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/task/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>547
-548
-549
-550
-551
-552
-553
+<details class="note"><summary>Show source code in pypeln/task/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>553
 554
 555
 556
@@ -1696,7 +1690,13 @@
 576
 577
 578
-579</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">stages</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Stage</span><span class="p">],</span> <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+579
+580
+581
+582
+583
+584
+585</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">stages</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Stage</span><span class="p">],</span> <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Iterates over one or more stages until their iterators run out of elements.</span>
 
@@ -1771,13 +1771,7 @@
 </div>
 <h2 id="pypeln.task.api.to_iterable"><code class="codehilite"><span class="n">to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.task.api.to_iterable" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/task/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>587
-588
-589
-590
-591
-592
-593
+<details class="note"><summary>Show source code in pypeln/task/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>593
 594
 595
 596
@@ -1788,7 +1782,13 @@
 601
 602
 603
-604</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">to_iterable</span><span class="p">(</span>
+604
+605
+606
+607
+608
+609
+610</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">to_iterable</span><span class="p">(</span>
     <span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">typing</span><span class="o">.</span><span class="n">Iterable</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>

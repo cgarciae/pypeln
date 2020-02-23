@@ -11,6 +11,8 @@ _Pypeln (pronounced as "pypeline") is a simple yet powerful Python library for c
 
 For more information take a look at the [Documentation](https://cgarciae.github.io/pypeln).
 
+![diagram](https://github.com/cgarciae/pypeln/blob/master/docs/images/diagram.png?raw=true)
+
 ## Installation
 
 Install Pypeln using pip:

@@ -703,7 +703,7 @@
 
 <span class="sd">    ```python</span>
 <span class="sd">    files_paths = get_file_paths()</span>
-<span class="sd">    pl.thread.each(process_image, file_paths, workers=4, run = True)</span>
+<span class="sd">    pl.thread.each(process_image, file_paths, workers=4, run=True)</span>
 <span class="sd">    ```</span>
 
 <span class="sd">    !!! note</span>
@@ -719,7 +719,7 @@
 <span class="sd">        run: Whether or not to execute the stage immediately.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        If the `stage` parameters is not given then this function returns a `Partial`, else if `return = False` (default) it return a new stage, if `run = True` then it runs the stage and returns `None`.</span>
+<span class="sd">        If the `stage` parameters is not given then this function returns a `Partial`, else if `run=False` (default) it return a new stage, if `run=True` then it runs the stage and returns `None`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
@@ -769,7 +769,7 @@
 
 <p>or alternatively</p>
 <div class="codehilite"><pre><span></span><code><span class="n">files_paths</span> <span class="o">=</span> <span class="n">get_file_paths</span><span class="p">()</span>
-<span class="n">pl</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">each</span><span class="p">(</span><span class="n">process_image</span><span class="p">,</span> <span class="n">file_paths</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">run</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">pl</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">each</span><span class="p">(</span><span class="n">process_image</span><span class="p">,</span> <span class="n">file_paths</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </code></pre></div>
 
 <div class="admonition note">
@@ -842,7 +842,7 @@
 <tbody>
 <tr>
 <td><code>Stage</code></td>
-<td>If the <code>stage</code> parameters is not given then this function returns a <code>Partial</code>, else if <code>return = False</code> (default) it return a new stage, if <code>run = True</code> then it runs the stage and returns <code>None</code>.</td>
+<td>If the <code>stage</code> parameters is not given then this function returns a <code>Partial</code>, else if <code>run=False</code> (default) it return a new stage, if <code>run=True</code> then it runs the stage and returns <code>None</code>.</td>
 </tr>
 </tbody>
 </table>

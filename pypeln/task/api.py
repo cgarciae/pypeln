@@ -453,7 +453,7 @@ def each(
 
     ```python
     files_paths = get_file_paths()
-    pl.task.each(process_image, file_paths, workers=4, run = True)
+    pl.task.each(process_image, file_paths, workers=4, run=True)
     ```
 
     !!! note
@@ -469,7 +469,7 @@ def each(
         run: Whether or not to execute the stage immediately.
 
     Returns:
-        If the `stage` parameters is not given then this function returns a `Partial`, else if `return = False` (default) it return a new stage, if `run = True` then it runs the stage and returns `None`.
+        If the `stage` parameters is not given then this function returns a `Partial`, else if `run=False` (default) it return a new stage, if `run=True` then it runs the stage and returns `None`.
     """
 
     if pypeln_utils.is_undefined(stage):

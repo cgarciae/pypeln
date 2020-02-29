@@ -1788,7 +1788,12 @@
 607
 608
 609
-610</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">to_iterable</span><span class="p">(</span>
+610
+611
+612
+613
+614
+615</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">to_iterable</span><span class="p">(</span>
     <span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">typing</span><span class="o">.</span><span class="n">Iterable</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -1804,8 +1809,13 @@
 
     <span class="k">if</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">Stage</span><span class="p">):</span>
+        <span class="n">iterable</span> <span class="o">=</span> <span class="n">stage</span><span class="o">.</span><span class="n">to_iterable</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">stage</span><span class="o">.</span><span class="n">to_iterable</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">)</span>
+        <span class="n">iterable</span> <span class="o">=</span> <span class="n">stage</span>
+
+    <span class="k">return</span> <span class="n">iterable</span>
 </code></pre></div>
 </td></tr></table>
 

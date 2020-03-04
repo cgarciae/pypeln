@@ -111,6 +111,29 @@ def test_worker_info():
     assert nums_pl.issubset(set(range(n_workers)))
 
 
+def test_kwargs():
+
+    nums = range(100)
+    n_workers = 4
+    letters = "abc"
+    namespace = pl.process.get_namespace()
+    namespace.on_done = None
+
+    def on_start():
+        return dict(y=letters)
+
+    def on_done(y):
+        namespace.on_done = y
+
+    nums_pl = pl.process.map(
+        lambda x, y: y, nums, on_start=on_start, on_done=on_done, workers=n_workers,
+    )
+    nums_pl = list(nums_pl)
+
+    assert namespace.on_done == letters
+    assert nums_pl == [letters] * len(nums)
+
+
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_square_event_end(nums):

@@ -1,11 +1,9 @@
 """
-The `task` module lets you create pipelines using objects from python's [asyncio](https://docs.python.org/3/library/asyncio.html) module according to Pypeln's general [architecture](https://cgarciae.github.io/pypeln/advanced/#architecture). Use this module when you are in need to perform efficient asynchronous IO operations and DONT need to perform heavy CPU operations.
-"""
+The `sync` module follows same API as the rest of the modules but runs the code synchronously using normal python generators. This module is intended to be used for debugging purposes as synchronous code tends to be easier to debug than concurrent code in Python (e.g. vscode's debugger doesn't work well (if at all) with the multiprocessing and threading modules).
 
-import asyncio
-import sys
-import time
-import traceback
+Common arguments such as `workers` and `maxsize` are accepted by this module's 
+functions for API compatibility purposes but are ignored.
+"""
 import typing
 from threading import Thread
 
@@ -15,7 +13,7 @@ from . import utils
 from .stage import Stage
 
 #############################################################
-# to_stage
+# from_iterable
 #############################################################
 
 
@@ -25,90 +23,22 @@ class FromIterable(Stage):
 
         self.iterable = iterable
 
-    async def process(self):
-        async for x in self.to_async_iterable():
-            if self.pipeline_namespace.error:
-                return
-
-            await self.output_queues.put(x)
-
-    async def to_async_iterable(self):
-        if hasattr(self.iterable, "__aiter__"):
-            async for x in self.iterable:
-                yield x
-        elif not hasattr(self.iterable, "__iter__"):
-            raise ValueError(
-                f"Object {self.iterable} most be either iterable or async iterable."
-            )
-
-        if False and type(self.iterable) in (list, dict, tuple, set):
-            for i, x in enumerate(self.iterable):
-                yield x
-
-                if i % 1000 == 0:
-                    await asyncio.sleep(0)
-
-        else:
-            queue = utils.IterableQueue(
-                maxsize=self.maxsize,
-                total_done=1,
-                pipeline_namespace=self.pipeline_namespace,
-                loop=self.loop,
-            )
-
-            task = self.loop.run_in_executor(None, lambda: self.consume_iterable(queue))
-            async for x in queue:
-                yield x
-
-            await task
-
-    def consume_iterable(self, queue):
-        try:
-            for x in self.iterable:
-                while True:
-                    if not queue.full():
-                        self.loop.call_soon_threadsafe(queue.put_nowait, x)
-                        break
-                    else:
-                        time.sleep(utils.TIMEOUT)
-
-            while True:
-                if not queue.full():
-                    self.loop.call_soon_threadsafe(queue.done_nowait)
-                    break
-                else:
-                    time.sleep(utils.TIMEOUT)
-
-        except BaseException as e:
-            try:
-                for stage in self.pipeline_stages:
-                    self.loop.call_soon_threadsafe(stage.input_queue.done_nowait)
-
-                self.loop.call_soon_threadsafe(
-                    self.pipeline_error_queue.put_nowait,
-                    (type(e), e, "".join(traceback.format_exception(*sys.exc_info()))),
-                )
-                self.pipeline_namespace.error = True
-                self.loop.call_soon_threadsafe(queue.done_nowait)
-            except BaseException as e:
-                print(e)
+    def process(self):
+        yield from self.iterable
 
 
 def from_iterable(
     iterable: typing.Iterable = pypeln_utils.UNDEFINED,
     maxsize: int = None,
-    worker_constructor: typing.Type = Thread,
+    worker_constructor: typing.Type = None,
 ) -> Stage:
     """
-    Creates a stage from an iterable. This function gives you more control of how a stage is created through the `worker_constructor` parameter which can be either:
-    
-    * `threading.Thread`: (default) is efficient for iterables that already have the data in memory like lists or numpy arrays because threads can share memory so no serialization is needed. 
-    * `multiprocessing.Process`: is efficient for iterables who's data is not in memory like arbitrary generators and benefit from escaping the GIL. This is inefficient for iterables which have data in memory because they have to be serialized when sent to the background process.
+    Creates a stage from an iterable.
 
     Arguments:
         iterable: a source iterable.
         maxsize: this parameter is not used and only kept for API compatibility with the other modules.
-        worker_constructor: defines the worker type for the producer stage.
+        worker_constructor: this parameter is not used and only kept for API compatibility with the other modules.
 
     Returns:
         If the `iterable` parameters is given then this function returns a new stage, else it returns a `Partial`.
@@ -116,17 +46,13 @@ def from_iterable(
 
     if pypeln_utils.is_undefined(iterable):
         return pypeln_utils.Partial(
-            lambda iterable: from_iterable(iterable, maxsize=None,)
+            lambda iterable: from_iterable(
+                iterable, maxsize=None, worker_constructor=worker_constructor
+            )
         )
 
     return FromIterable(
-        iterable=iterable,
-        f=None,
-        workers=1,
-        maxsize=0,
-        on_start=None,
-        on_done=None,
-        dependencies=[],
+        iterable=iterable, f=None, on_start=None, on_done=None, dependencies=[],
     )
 
 
@@ -140,7 +66,7 @@ def to_stage(obj):
     if isinstance(obj, Stage):
         return obj
 
-    elif hasattr(obj, "__iter__") or hasattr(obj, "__aiter__"):
+    elif hasattr(obj, "__iter__"):
         return from_iterable(obj)
 
     else:
@@ -153,49 +79,42 @@ def to_stage(obj):
 
 
 class Map(Stage):
-    async def apply(self, x, **kwargs):
+    def apply(self, x, **kwargs):
         y = self.f(x, **kwargs)
-
-        if hasattr(y, "__await__"):
-            y = await y
-
-        await self.output_queues.put(y)
+        yield y
 
 
 def map(
     f: typing.Callable,
     stage: Stage = pypeln_utils.UNDEFINED,
-    workers: int = 1,
-    maxsize: int = 0,
+    workers: int = None,
+    maxsize: int = None,
     on_start: typing.Callable = None,
     on_done: typing.Callable = None,
 ) -> Stage:
     """
-    Creates a stage that maps a function `f` over the data. Its intended to behave like python's built-in `map` function but with the added concurrency.
+    Creates a stage that maps a function `f` over the data. Its should behave exactly like python's built-in `map` function.
 
     ```python
     import pypeln as pl
-    import asyncio
+    import time
     from random import random
 
-    async def slow_add1(x):
-        await asyncio.sleep(random()) # <= some slow computation
+    def slow_add1(x):
+        time.sleep(random()) # <= some slow computation
         return x + 1
 
     data = range(10) # [0, 1, 2, ..., 9]
-    stage = pl.task.map(slow_add1, data, workers=3, maxsize=4)
+    stage = pl.sync.map(slow_add1, data, workers=3, maxsize=4)
 
-    data = list(stage) # e.g. [2, 1, 5, 6, 3, 4, 7, 8, 9, 10]
+    data = list(stage) # [1, 2, 3, ..., 10]
     ```
-
-    !!! note
-        Because of concurrency order is not guaranteed. 
 
     Arguments:
         f: A function with signature `f(x, **kwargs) -> y`, where `kwargs` is the return of `on_start` if present.
         stage: A stage or iterable.
-        workers: The number of workers the stage should contain.
-        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+        workers: This parameter is not used and only kept for API compatibility with the other modules.
+        maxsize: This parameter is not used and only kept for API compatibility with the other modules.
         on_start: A function with signature `on_start(worker_info?) -> kwargs`, where `kwargs` can be a `dict` of keyword arguments that will be passed to `f` and `on_done`. If you define a `worker_info` argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.
         on_done: A function with signature `on_done(stage_status?, **kwargs)`, where `kwargs` is the return of `on_start` if present. If you define a `stage_status` argument an object with information about the stage will be passed. This function is executed once per worker when the worker finishes.
 
@@ -217,14 +136,7 @@ def map(
 
     stage = to_stage(stage)
 
-    return Map(
-        f=f,
-        workers=workers,
-        maxsize=maxsize,
-        on_start=on_start,
-        on_done=on_done,
-        dependencies=[stage],
-    )
+    return Map(f=f, on_start=on_start, on_done=on_done, dependencies=[stage],)
 
 
 #############################################################
@@ -233,19 +145,8 @@ def map(
 
 
 class FlatMap(Stage):
-    async def apply(self, x, **kwargs):
-        iterable = self.f(x, **kwargs)
-
-        if hasattr(iterable, "__aiter__"):
-            async for x in iterable:
-                await self.output_queues.put(x)
-        else:
-            for y in iterable:
-
-                if hasattr(y, "__await__"):
-                    y = await y
-
-                await self.output_queues.put(y)
+    def apply(self, x, **kwargs):
+        yield from self.f(x, **kwargs)
 
 
 def flat_map(
@@ -257,15 +158,15 @@ def flat_map(
     on_done: typing.Callable = None,
 ) -> Stage:
     """
-    Creates a stage that maps a function `f` over the data, however unlike `pypeln.task.map` in this case `f` returns an iterable. As its name implies, `flat_map` will flatten out these iterables so the resulting stage just contains their elements.
+    Creates a stage that maps a function `f` over the data, however unlike `pypeln.sync.map` in this case `f` returns an iterable. As its name implies, `flat_map` will flatten out these iterables so the resulting stage just contains their elements.
 
     ```python
     import pypeln as pl
-    import asyncio
+    import time
     from random import random
 
-    async def slow_integer_pair(x):
-        await asyncio.sleep(random()) # <= some slow computation
+    def slow_integer_pair(x):
+        time.sleep(random()) # <= some slow computation
 
         if x == 0:
             yield x
@@ -274,21 +175,19 @@ def flat_map(
             yield -x
 
     data = range(10) # [0, 1, 2, ..., 9]
-    stage = pl.task.flat_map(slow_integer_pair, data, workers=3, maxsize=4)
+    stage = pl.sync.flat_map(slow_integer_pair, data, workers=3, maxsize=4)
 
-    list(stage) # e.g. [2, -2, 3, -3, 0, 1, -1, 6, -6, 4, -4, ...]
+    list(stage) # [0, 1, -1, 2, -2, ..., 9, -9]
     ```
 
-    !!! note
-        Because of concurrency order is not guaranteed. 
         
-    `flat_map` is a more general operation, you can actually implement `pypeln.task.map` and `pypeln.task.filter` with it, for example:
+    `flat_map` is a more general operation, you can actually implement `pypeln.sync.map` and `pypeln.sync.filter` with it, for example:
 
     ```python
     import pypeln as pl
 
-    pl.task.map(f, stage) = pl.task.flat_map(lambda x: [f(x)], stage)
-    pl.task.filter(f, stage) = pl.task.flat_map(lambda x: [x] if f(x) else [], stage)
+    pl.sync.map(f, stage) = pl.sync.flat_map(lambda x: [f(x)], stage)
+    pl.sync.filter(f, stage) = pl.sync.flat_map(lambda x: [x] if f(x) else [], stage)
     ```
 
     Using `flat_map` with a generator function is very useful as e.g. you are able to filter out unwanted elements when there are exceptions, missing data, etc.
@@ -296,8 +195,8 @@ def flat_map(
     Arguments:
         f: A function with signature `f(x, **kwargs) -> Iterable`, where `kwargs` is the return of `on_start` if present.
         stage: A stage or iterable.
-        workers: The number of workers the stage should contain.
-        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+        workers: This parameter is not used and only kept for API compatibility with the other modules.
+        maxsize: This parameter is not used and only kept for API compatibility with the other modules.
         on_start: A function with signature `on_start(worker_info?) -> kwargs`, where `kwargs` can be a `dict` of keyword arguments that will be passed to `f` and `on_done`. If you define a `worker_info` argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.
         on_done: A function with signature `on_done(stage_status?, **kwargs)`, where `kwargs` is the return of `on_start` if present. If you define a `stage_status` argument an object with information about the stage will be passed. This function is executed once per worker when the worker finishes.
 
@@ -319,14 +218,7 @@ def flat_map(
 
     stage = to_stage(stage)
 
-    return FlatMap(
-        f=f,
-        workers=workers,
-        maxsize=maxsize,
-        on_start=on_start,
-        on_done=on_done,
-        dependencies=[stage],
-    )
+    return FlatMap(f=f, on_start=on_start, on_done=on_done, dependencies=[stage],)
 
 
 #############################################################
@@ -335,14 +227,9 @@ def flat_map(
 
 
 class Filter(Stage):
-    async def apply(self, x, **kwargs):
-        y = self.f(x, **kwargs)
-
-        if hasattr(y, "__await__"):
-            y = await y
-
-        if y:
-            await self.output_queues.put(x)
+    def apply(self, x, **kwargs):
+        if self.f(x, **kwargs):
+            yield x
 
 
 def filter(
@@ -354,31 +241,28 @@ def filter(
     on_done: typing.Callable = None,
 ) -> Stage:
     """
-    Creates a stage that filter the data given a predicate function `f`. It is intended to behave like python's built-in `filter` function but with the added concurrency.
+    Creates a stage that filter the data given a predicate function `f`. exactly like python's built-in `filter` function.
 
     ```python
     import pypeln as pl
-    import asyncio
+    import time
     from random import random
 
-    async def slow_gt3(x):
-        await asyncio.sleep(random()) # <= some slow computation
+    def slow_gt3(x):
+        time.sleep(random()) # <= some slow computation
         return x > 3
 
     data = range(10) # [0, 1, 2, ..., 9]
-    stage = pl.task.filter(slow_gt3, data, workers=3, maxsize=4)
+    stage = pl.sync.filter(slow_gt3, data, workers=3, maxsize=4)
 
-    data = list(stage) # e.g. [5, 6, 3, 4, 7, 8, 9]
+    data = list(stage) # [3, 4, 5, ..., 9]
     ```
-
-    !!! note
-        Because of concurrency order is not guaranteed.
 
     Arguments:
         f: A function with signature `f(x, **kwargs) -> bool`, where `kwargs` is the return of `on_start` if present.
         stage: A stage or iterable.
-        workers: The number of workers the stage should contain.
-        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+        workers: This parameter is not used and only kept for API compatibility with the other modules.
+        maxsize: This parameter is not used and only kept for API compatibility with the other modules.
         on_start: A function with signature `on_start(worker_info?) -> kwargs`, where `kwargs` can be a `dict` of keyword arguments that will be passed to `f` and `on_done`. If you define a `worker_info` argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.
         on_done: A function with signature `on_done(stage_status?, **kwargs)`, where `kwargs` is the return of `on_start` if present. If you define a `stage_status` argument an object with information about the stage will be passed. This function is executed once per worker when the worker finishes.
 
@@ -400,14 +284,7 @@ def filter(
 
     stage = to_stage(stage)
 
-    return Filter(
-        f=f,
-        workers=workers,
-        maxsize=maxsize,
-        on_start=on_start,
-        on_done=on_done,
-        dependencies=[stage],
-    )
+    return Filter(f=f, on_start=on_start, on_done=on_done, dependencies=[stage],)
 
 
 #############################################################
@@ -416,11 +293,8 @@ def filter(
 
 
 class Each(Stage):
-    async def apply(self, x, **kwargs):
-        y = self.f(x, **kwargs)
-
-        if hasattr(y, "__await__"):
-            y = await y
+    def apply(self, x, **kwargs):
+        self.f(x, **kwargs)
 
 
 def each(
@@ -438,14 +312,14 @@ def each(
     ```python
     import pypeln as pl
 
-    async def process_image(image_path):
-        image = await load_image(image_path)
-        image = await transform_image(image)
-        await save_image(image_path, image)
+    def process_image(image_path):
+        image = load_image(image_path)
+        image = transform_image(image)
+        save_image(image_path, image)
 
     files_paths = get_file_paths()
-    stage = pl.task.each(process_image, file_paths, workers=4)
-    pl.task.run(stage)
+    stage = pl.sync.each(process_image, file_paths, workers=4)
+    pl.sync.run(stage)
 
     ```
 
@@ -453,7 +327,7 @@ def each(
 
     ```python
     files_paths = get_file_paths()
-    pl.task.each(process_image, file_paths, workers=4, run=True)
+    pl.sync.each(process_image, file_paths, workers=4, run=True)
     ```
 
     !!! note
@@ -462,8 +336,8 @@ def each(
     Arguments:
         f: A function with signature `f(x, **kwargs) -> None`, where `kwargs` is the return of `on_start` if present.
         stage: A stage or iterable.
-        workers: The number of workers the stage should contain.
-        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+        workers: This parameter is not used and only kept for API compatibility with the other modules.
+        maxsize: This parameter is not used and only kept for API compatibility with the other modules.
         on_start: A function with signature `on_start(worker_info?) -> kwargs`, where `kwargs` can be a `dict` of keyword arguments that will be passed to `f` and `on_done`. If you define a `worker_info` argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.
         on_done: A function with signature `on_done(stage_status?, **kwargs)`, where `kwargs` is the return of `on_start` if present. If you define a `stage_status` argument an object with information about the stage will be passed. This function is executed once per worker when the worker finishes.
         run: Whether or not to execute the stage immediately.
@@ -486,14 +360,7 @@ def each(
 
     stage = to_stage(stage)
 
-    stage = Each(
-        f=f,
-        workers=workers,
-        maxsize=maxsize,
-        on_start=on_start,
-        on_done=on_done,
-        dependencies=[stage],
-    )
+    stage = Each(f=f, on_start=on_start, on_done=on_done, dependencies=[stage],)
 
     if not run:
         return stage
@@ -508,13 +375,13 @@ def each(
 
 
 class Concat(Stage):
-    async def apply(self, x):
-        await self.output_queues.put(x)
+    def apply(self, x):
+        yield x
 
 
 def concat(stages: typing.List[Stage], maxsize: int = 0) -> Stage:
     """
-    Concatenates / merges many stages into a single one by appending elements from each stage as they come, order is not preserved.
+    Concatenates / merges many stages into a single one by appending elements from each stage in order, that is, it yields an element from the frist stage, then an element from the second stage and so on until it reaches the last stage and starts again. When a stage has no more elements its taken out of the process.
 
     ```python
     import pypeln as pl
@@ -522,12 +389,12 @@ def concat(stages: typing.List[Stage], maxsize: int = 0) -> Stage:
     stage_1 = [1, 2, 3]
     stage_2 = [4, 5, 6, 7]
 
-    stage_3 = pl.task.concat([stage_1, stage_2]) # e.g. [1, 4, 5, 2, 6, 3, 7]
+    stage_3 = pl.sync.concat([stage_1, stage_2]) # [1, 4, 2, 5, 3, 6, 7]
     ```
 
     Arguments:
         stages: a list of stages or iterables.
-        maxsize: the maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+        maxsize: This parameter is not used and only kept for API compatibility with the other modules.
 
     Returns:
         A stage object.
@@ -535,14 +402,7 @@ def concat(stages: typing.List[Stage], maxsize: int = 0) -> Stage:
 
     stages = [to_stage(stage) for stage in stages]
 
-    return Concat(
-        f=None,
-        workers=1,
-        maxsize=maxsize,
-        on_start=None,
-        on_done=None,
-        dependencies=stages,
-    )
+    return Concat(f=None, on_start=None, on_done=None, dependencies=stages,)
 
 
 #############################################################
@@ -558,15 +418,15 @@ def run(stages: typing.List[Stage], maxsize: int = 0) -> None:
     import pypeln as pl
 
     data = get_data()
-    stage = pl.task.each(slow_fn, data, workers=6)
+    stage = pl.sync.each(slow_fn, data, workers=6)
 
     # execute pipeline
-    pl.task.run(stage)
+    pl.sync.run(stage)
     ```
 
     Arguments:
         stages: A stage/iterable or list of stages/iterables to be iterated over. If a list is passed, stages are first merged using `concat` before iterating.
-        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+        maxsize: This parameter is not used and only kept for API compatibility with the other modules.
 
     """
 
@@ -598,7 +458,7 @@ def to_iterable(
 
     Arguments:
         stage: A stage object.
-        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+        maxsize: This parameter is not used and only kept for API compatibility with the other modules.
 
     Returns:
         If the `stage` parameters is given then this function returns an iterable, else it returns a `Partial`.

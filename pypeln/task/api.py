@@ -257,7 +257,7 @@ def flat_map(
     on_done: typing.Callable = None,
 ) -> Stage:
     """
-    Creates a stage that maps a function `f` over the data, however unlike `pypeln.process.map` in this case `f` returns an iterable. As its name implies, `flat_map` will flatten out these iterables so the resulting stage just contains their elements.
+    Creates a stage that maps a function `f` over the data, however unlike `pypeln.task.map` in this case `f` returns an iterable. As its name implies, `flat_map` will flatten out these iterables so the resulting stage just contains their elements.
 
     ```python
     import pypeln as pl
@@ -282,7 +282,7 @@ def flat_map(
     !!! note
         Because of concurrency order is not guaranteed. 
         
-    `flat_map` is a more general operation, you can actually implement `pypeln.process.map` and `pypeln.process.filter` with it, for example:
+    `flat_map` is a more general operation, you can actually implement `pypeln.task.map` and `pypeln.task.filter` with it, for example:
 
     ```python
     import pypeln as pl

@@ -50,38 +50,29 @@ class Stage:
                 if "worker_info" in inspect.getfullargspec(self.on_start).args:
                     on_start_kwargs["worker_info"] = utils.WorkerInfo(index=0)
 
-                f_kwargs = self.on_start(**on_start_kwargs)
+                kwargs = self.on_start(**on_start_kwargs)
             else:
-                f_kwargs = {}
+                kwargs = {}
 
-            if f_kwargs is None:
-                f_kwargs = {}
+            if kwargs is None:
+                kwargs = {}
 
-            if hasattr(f_kwargs, "__await__"):
-                f_kwargs = await f_kwargs
+            if hasattr(kwargs, "__await__"):
+                kwargs = await kwargs
 
-            if hasattr(self, "apply"):
-                async with utils.TaskPool(self.workers) as tasks:
-
-                    async for x in self.input_queue:
-                        task = self.apply(x, **f_kwargs)
-                        await tasks.put(task)
-            else:
-                await self.process(**f_kwargs)
-
-            await self.output_queues.done()
+            await self.process(**kwargs)
 
             if self.on_done is not None:
 
-                on_done_kwargs = {}
-
                 if "stage_status" in inspect.getfullargspec(self.on_done).args:
-                    on_done_kwargs["stage_status"] = utils.StageStatus()
+                    kwargs["stage_status"] = utils.StageStatus()
 
-                done_resp = self.on_done(**on_done_kwargs)
+                done_resp = self.on_done(**kwargs)
 
                 if hasattr(done_resp, "__await__"):
                     await done_resp
+
+            await self.output_queues.done()
 
         except BaseException as e:
             for stage in self.pipeline_stages:

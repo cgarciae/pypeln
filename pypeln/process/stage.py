@@ -53,29 +53,27 @@ class Stage:
                 if "worker_info" in inspect.getfullargspec(self.on_start).args:
                     on_start_kwargs["worker_info"] = utils.WorkerInfo(index=index)
 
-                f_kwargs = self.on_start(**on_start_kwargs)
+                kwargs = self.on_start(**on_start_kwargs)
             else:
-                f_kwargs = {}
+                kwargs = {}
 
-            if f_kwargs is None:
-                f_kwargs = {}
+            if kwargs is None:
+                kwargs = {}
 
-            self.process(**f_kwargs)
-
-            self.output_queues.done()
+            self.process(**kwargs)
 
             if self.on_done is not None:
                 with self.stage_lock:
                     self.stage_namespace.active_workers -= 1
 
-                on_done_kwargs = {}
-
                 if "stage_status" in inspect.getfullargspec(self.on_done).args:
-                    on_done_kwargs["stage_status"] = utils.StageStatus(
+                    kwargs["stage_status"] = utils.StageStatus(
                         namespace=self.stage_namespace, lock=self.stage_lock
                     )
 
-                self.on_done(**on_done_kwargs)
+                self.on_done(**kwargs)
+
+            self.output_queues.done()
 
         except BaseException as e:
             try:

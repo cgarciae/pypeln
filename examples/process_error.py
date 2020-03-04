@@ -2,7 +2,7 @@ import pypeln as pl
 from tqdm import tqdm
 import time
 
-total = 10_000
+total = 300_000
 
 
 def f(x):

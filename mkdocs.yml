@@ -12,6 +12,7 @@ nav:
       - process: api/process.md
       - thread: api/thread.md
       - task: api/task.md
+      - sync: api/sync.md
 
 extra:
   search:

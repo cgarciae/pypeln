@@ -4,7 +4,7 @@ from multiprocessing.queues import Full, Empty
 
 from pypeln import utils as pypeln_utils
 
-CONTEXT = get_context("fork")
+CONTEXT = get_context("spawn")
 
 _MANAGER = None
 

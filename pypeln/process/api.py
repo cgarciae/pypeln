@@ -21,7 +21,7 @@ class FromIterable(Stage):
 
         self.iterable = iterable
 
-    def process(self):
+    def process(self, worker_namespace):
 
         for x in self.iterable:
             if self.pipeline_namespace.error:
@@ -63,6 +63,7 @@ def from_iterable(
         worker_constructor=worker_constructor,
         workers=1,
         maxsize=0,
+        timeout=0,
         on_start=None,
         on_done=None,
         dependencies=[],
@@ -102,6 +103,7 @@ def map(
     stage: Stage = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
+    timeout: int = 0,
     on_start: typing.Callable = None,
     on_done: typing.Callable = None,
 ) -> Stage:
@@ -145,6 +147,7 @@ def map(
                 stage=stage,
                 workers=workers,
                 maxsize=maxsize,
+                timeout=timeout,
                 on_start=on_start,
                 on_done=on_done,
             )
@@ -156,6 +159,7 @@ def map(
         f=f,
         workers=workers,
         maxsize=maxsize,
+        timeout=timeout,
         on_start=on_start,
         on_done=on_done,
         dependencies=[stage],
@@ -178,6 +182,7 @@ def flat_map(
     stage: Stage = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
+    timeout: int = 0,
     on_start: typing.Callable = None,
     on_done: typing.Callable = None,
 ) -> Stage:
@@ -237,6 +242,7 @@ def flat_map(
                 stage=stage,
                 workers=workers,
                 maxsize=maxsize,
+                timeout=timeout,
                 on_start=on_start,
                 on_done=on_done,
             )
@@ -248,6 +254,7 @@ def flat_map(
         f=f,
         workers=workers,
         maxsize=maxsize,
+        timeout=timeout,
         on_start=on_start,
         on_done=on_done,
         dependencies=[stage],
@@ -270,6 +277,7 @@ def filter(
     stage: Stage = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
+    timeout: int = 0,
     on_start: typing.Callable = None,
     on_done: typing.Callable = None,
 ) -> Stage:
@@ -313,6 +321,7 @@ def filter(
                 stage=stage,
                 workers=workers,
                 maxsize=maxsize,
+                timeout=timeout,
                 on_start=on_start,
                 on_done=on_done,
             )
@@ -324,6 +333,7 @@ def filter(
         f=f,
         workers=workers,
         maxsize=maxsize,
+        timeout=timeout,
         on_start=on_start,
         on_done=on_done,
         dependencies=[stage],
@@ -345,6 +355,7 @@ def each(
     stage: Stage = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
+    timeout: int = 0,
     on_start: typing.Callable = None,
     on_done: typing.Callable = None,
     run: bool = False,
@@ -396,6 +407,7 @@ def each(
                 stage=stage,
                 workers=workers,
                 maxsize=maxsize,
+                timeout=timeout,
                 on_start=on_start,
                 on_done=on_done,
             )
@@ -407,6 +419,7 @@ def each(
         f=f,
         workers=workers,
         maxsize=maxsize,
+        timeout=timeout,
         on_start=on_start,
         on_done=on_done,
         dependencies=[stage],
@@ -456,6 +469,7 @@ def concat(stages: typing.List[Stage], maxsize: int = 0) -> Stage:
         f=None,
         workers=1,
         maxsize=maxsize,
+        timeout=0,
         on_start=None,
         on_done=None,
         dependencies=stages,

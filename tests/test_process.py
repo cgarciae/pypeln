@@ -95,6 +95,22 @@ def test_map_square_event_start(nums):
     assert namespace.x == 1
 
 
+def test_timeout():
+
+    nums = list(range(10))
+
+    def f(x):
+        if x == 2:
+            time.sleep(1000)
+
+        return x
+
+    nums_pl = pl.process.map(f, nums, timeout=0.5)
+    nums_pl = list(nums_pl)
+
+    assert len(nums_pl) == 9
+
+
 def test_worker_info():
 
     nums = range(100)

@@ -3,21 +3,22 @@ import sys
 import traceback
 from collections import namedtuple
 from queue import Queue
-from threading import Lock
-from threading import Thread
+from threading import Lock, Thread
+
+import stopit
 
 from pypeln import utils as pypeln_utils
+
 from . import utils
 
 
 class Stage:
-    def __init__(
-        self, f, on_start, on_done, dependencies,
-    ):
+    def __init__(self, f, on_start, on_done, dependencies, timeout):
 
         self.f = f
         self.on_start = on_start
         self.on_done = on_done
+        self.timeout = timeout
         self.dependencies = dependencies
 
     def iter_dependencies(self):
@@ -33,7 +34,12 @@ class Stage:
 
     def process(self, **kwargs) -> None:
         for x in self.iter_dependencies():
-            yield from self.apply(x, **kwargs)
+            with (
+                stopit.ThreadingTimeout(self.timeout)
+                if self.timeout
+                else utils.NoOpContext()
+            ):
+                yield from self.apply(x, **kwargs)
 
     def run(self):
         if self.on_start is not None:

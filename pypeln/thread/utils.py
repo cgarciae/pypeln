@@ -5,8 +5,8 @@ from threading import Lock
 from pypeln import utils as pypeln_utils
 
 
-def get_namespace():
-    return pypeln_utils.Namespace()
+def get_namespace(**kwargs):
+    return pypeln_utils.Namespace(**kwargs)
 
 
 class IterableQueue(object):
@@ -100,3 +100,8 @@ WorkerInfo = namedtuple("WorkerInfo", ["index"])
 class StageReuseError(Exception):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+
+class StopThreadException(BaseException):
+    def __str__(self):
+        return "StopThreadException"

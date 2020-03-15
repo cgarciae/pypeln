@@ -52,7 +52,12 @@ def from_iterable(
         )
 
     return FromIterable(
-        iterable=iterable, f=None, on_start=None, on_done=None, dependencies=[],
+        iterable=iterable,
+        f=None,
+        timeout=0,
+        on_start=None,
+        on_done=None,
+        dependencies=[],
     )
 
 
@@ -89,6 +94,7 @@ def map(
     stage: Stage = pypeln_utils.UNDEFINED,
     workers: int = None,
     maxsize: int = None,
+    timeout: float = 0,
     on_start: typing.Callable = None,
     on_done: typing.Callable = None,
 ) -> Stage:
@@ -129,6 +135,7 @@ def map(
                 stage=stage,
                 workers=workers,
                 maxsize=maxsize,
+                timeout=timeout,
                 on_start=on_start,
                 on_done=on_done,
             )
@@ -136,7 +143,9 @@ def map(
 
     stage = to_stage(stage)
 
-    return Map(f=f, on_start=on_start, on_done=on_done, dependencies=[stage],)
+    return Map(
+        f=f, on_start=on_start, on_done=on_done, timeout=timeout, dependencies=[stage],
+    )
 
 
 #############################################################
@@ -154,6 +163,7 @@ def flat_map(
     stage: Stage = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
+    timeout: float = 0,
     on_start: typing.Callable = None,
     on_done: typing.Callable = None,
 ) -> Stage:
@@ -211,6 +221,7 @@ def flat_map(
                 stage=stage,
                 workers=workers,
                 maxsize=maxsize,
+                timeout=timeout,
                 on_start=on_start,
                 on_done=on_done,
             )
@@ -218,7 +229,9 @@ def flat_map(
 
     stage = to_stage(stage)
 
-    return FlatMap(f=f, on_start=on_start, on_done=on_done, dependencies=[stage],)
+    return FlatMap(
+        f=f, on_start=on_start, on_done=on_done, timeout=timeout, dependencies=[stage],
+    )
 
 
 #############################################################
@@ -237,6 +250,7 @@ def filter(
     stage: Stage = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
+    timeout: float = 0,
     on_start: typing.Callable = None,
     on_done: typing.Callable = None,
 ) -> Stage:
@@ -277,6 +291,7 @@ def filter(
                 stage=stage,
                 workers=workers,
                 maxsize=maxsize,
+                timeout=timeout,
                 on_start=on_start,
                 on_done=on_done,
             )
@@ -284,7 +299,9 @@ def filter(
 
     stage = to_stage(stage)
 
-    return Filter(f=f, on_start=on_start, on_done=on_done, dependencies=[stage],)
+    return Filter(
+        f=f, on_start=on_start, on_done=on_done, timeout=timeout, dependencies=[stage],
+    )
 
 
 #############################################################
@@ -302,6 +319,7 @@ def each(
     stage: Stage = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
+    timeout: float = 0,
     on_start: typing.Callable = None,
     on_done: typing.Callable = None,
     run: bool = False,
@@ -353,6 +371,7 @@ def each(
                 stage=stage,
                 workers=workers,
                 maxsize=maxsize,
+                timeout=timeout,
                 on_start=on_start,
                 on_done=on_done,
             )
@@ -360,7 +379,9 @@ def each(
 
     stage = to_stage(stage)
 
-    stage = Each(f=f, on_start=on_start, on_done=on_done, dependencies=[stage],)
+    stage = Each(
+        f=f, on_start=on_start, on_done=on_done, timeout=timeout, dependencies=[stage],
+    )
 
     if not run:
         return stage
@@ -402,7 +423,7 @@ def concat(stages: typing.List[Stage], maxsize: int = 0) -> Stage:
 
     stages = [to_stage(stage) for stage in stages]
 
-    return Concat(f=None, on_start=None, on_done=None, dependencies=stages,)
+    return Concat(f=None, on_start=None, on_done=None, timeout=0, dependencies=stages,)
 
 
 #############################################################

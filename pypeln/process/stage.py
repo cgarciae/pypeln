@@ -83,6 +83,8 @@ class Stage:
 
         except BaseException as e:
             self.signal_error(e)
+        finally:
+            worker_namespace.done = True
 
     def __iter__(self):
         return self.to_iterable(maxsize=0)
@@ -151,7 +153,7 @@ class Stage:
 
         for stage in pipeline_stages:
             for index in range(stage.workers):
-                worker_namespace = utils.get_namespace(task_start_time=None)
+                worker_namespace = utils.get_namespace(task_start_time=None, done=False)
 
                 workers.append(
                     dict(
@@ -208,7 +210,10 @@ class Stage:
             while not self._iter_done:
 
                 for worker in workers:
-                    if worker["worker_namespace"].task_start_time is not None:
+                    if (
+                        not worker["worker_namespace"].done
+                        and worker["worker_namespace"].task_start_time is not None
+                    ):
                         if (
                             time.time() - worker["worker_namespace"].task_start_time
                             > worker["stage"].timeout

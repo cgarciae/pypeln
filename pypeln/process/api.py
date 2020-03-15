@@ -103,7 +103,7 @@ def map(
     stage: Stage = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
-    timeout: int = 0,
+    timeout: float = 0,
     on_start: typing.Callable = None,
     on_done: typing.Callable = None,
 ) -> Stage:
@@ -182,7 +182,7 @@ def flat_map(
     stage: Stage = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
-    timeout: int = 0,
+    timeout: float = 0,
     on_start: typing.Callable = None,
     on_done: typing.Callable = None,
 ) -> Stage:
@@ -277,7 +277,7 @@ def filter(
     stage: Stage = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
-    timeout: int = 0,
+    timeout: float = 0,
     on_start: typing.Callable = None,
     on_done: typing.Callable = None,
 ) -> Stage:
@@ -355,7 +355,7 @@ def each(
     stage: Stage = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
-    timeout: int = 0,
+    timeout: float = 0,
     on_start: typing.Callable = None,
     on_done: typing.Callable = None,
     run: bool = False,

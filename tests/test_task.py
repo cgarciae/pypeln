@@ -98,6 +98,38 @@ def test_map_square_event_start(nums):
     assert namespace.x == 1
 
 
+def test_timeout():
+
+    nums = list(range(10))
+
+    async def f(x):
+        if x == 2:
+            await asyncio.sleep(1000)
+
+        return x
+
+    nums_pl = pl.task.map(f, nums, timeout=0.5)
+    nums_pl = list(nums_pl)
+
+    assert len(nums_pl) == 9
+
+
+@run_async
+async def test_timeout_async():
+
+    nums = list(range(10))
+
+    async def f(x):
+        if x == 2:
+            await asyncio.sleep(1000)
+
+        return x
+
+    nums_pl = await pl.task.map(f, nums, timeout=0.5)
+
+    assert len(nums_pl) == 9
+
+
 def test_worker_info():
 
     nums = range(100)

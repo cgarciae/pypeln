@@ -14,7 +14,7 @@ from . import utils
 
 class Stage:
     def __init__(
-        self, f, workers, maxsize, on_start, on_done, dependencies,
+        self, f, workers, maxsize, on_start, on_done, dependencies, timeout,
     ):
 
         self.f = f
@@ -22,13 +22,13 @@ class Stage:
         self.maxsize = maxsize
         self.on_start = on_start
         self.on_done = on_done
+        self.timeout = timeout
         self.dependencies = dependencies
         self.output_queues = utils.MultiQueue()
         ######################################
         # build fields
         ######################################
         self.input_queue = None
-        self.namespace = None
         self.stage_namespace = None
         self.stage_lock = None
         self.pipeline_namespace = None
@@ -40,6 +40,10 @@ class Stage:
         async with utils.TaskPool(self.workers) as tasks:
             async for x in self.input_queue:
                 task = self.apply(x, **kwargs)
+
+                if self.timeout:
+                    task = asyncio.wait_for(task, timeout=self.timeout)
+
                 await tasks.put(task)
 
     async def run(self):

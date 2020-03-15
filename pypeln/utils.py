@@ -21,7 +21,9 @@ class Partial(object):
 
 
 class Namespace(object):
-    pass
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
 
 class Done(object):

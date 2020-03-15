@@ -124,6 +124,7 @@ def from_iterable(
         f=None,
         workers=1,
         maxsize=0,
+        timeout=0,
         on_start=None,
         on_done=None,
         dependencies=[],
@@ -167,6 +168,7 @@ def map(
     stage: Stage = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
+    timeout: float = 0,
     on_start: typing.Callable = None,
     on_done: typing.Callable = None,
 ) -> Stage:
@@ -196,6 +198,7 @@ def map(
         stage: A stage or iterable.
         workers: The number of workers the stage should contain.
         maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+        timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. 
         on_start: A function with signature `on_start(worker_info?) -> kwargs`, where `kwargs` can be a `dict` of keyword arguments that will be passed to `f` and `on_done`. If you define a `worker_info` argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.
         on_done: A function with signature `on_done(stage_status?, **kwargs)`, where `kwargs` is the return of `on_start` if present. If you define a `stage_status` argument an object with information about the stage will be passed. This function is executed once per worker when the worker finishes.
 
@@ -210,6 +213,7 @@ def map(
                 stage=stage,
                 workers=workers,
                 maxsize=maxsize,
+                timeout=timeout,
                 on_start=on_start,
                 on_done=on_done,
             )
@@ -221,6 +225,7 @@ def map(
         f=f,
         workers=workers,
         maxsize=maxsize,
+        timeout=timeout,
         on_start=on_start,
         on_done=on_done,
         dependencies=[stage],
@@ -253,6 +258,7 @@ def flat_map(
     stage: Stage = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
+    timeout: float = 0,
     on_start: typing.Callable = None,
     on_done: typing.Callable = None,
 ) -> Stage:
@@ -298,6 +304,7 @@ def flat_map(
         stage: A stage or iterable.
         workers: The number of workers the stage should contain.
         maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+        timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. 
         on_start: A function with signature `on_start(worker_info?) -> kwargs`, where `kwargs` can be a `dict` of keyword arguments that will be passed to `f` and `on_done`. If you define a `worker_info` argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.
         on_done: A function with signature `on_done(stage_status?, **kwargs)`, where `kwargs` is the return of `on_start` if present. If you define a `stage_status` argument an object with information about the stage will be passed. This function is executed once per worker when the worker finishes.
 
@@ -312,6 +319,7 @@ def flat_map(
                 stage=stage,
                 workers=workers,
                 maxsize=maxsize,
+                timeout=timeout,
                 on_start=on_start,
                 on_done=on_done,
             )
@@ -323,6 +331,7 @@ def flat_map(
         f=f,
         workers=workers,
         maxsize=maxsize,
+        timeout=timeout,
         on_start=on_start,
         on_done=on_done,
         dependencies=[stage],
@@ -350,6 +359,7 @@ def filter(
     stage: Stage = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
+    timeout: float = 0,
     on_start: typing.Callable = None,
     on_done: typing.Callable = None,
 ) -> Stage:
@@ -379,6 +389,7 @@ def filter(
         stage: A stage or iterable.
         workers: The number of workers the stage should contain.
         maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+        timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. 
         on_start: A function with signature `on_start(worker_info?) -> kwargs`, where `kwargs` can be a `dict` of keyword arguments that will be passed to `f` and `on_done`. If you define a `worker_info` argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.
         on_done: A function with signature `on_done(stage_status?, **kwargs)`, where `kwargs` is the return of `on_start` if present. If you define a `stage_status` argument an object with information about the stage will be passed. This function is executed once per worker when the worker finishes.
 
@@ -393,6 +404,7 @@ def filter(
                 stage=stage,
                 workers=workers,
                 maxsize=maxsize,
+                timeout=timeout,
                 on_start=on_start,
                 on_done=on_done,
             )
@@ -404,6 +416,7 @@ def filter(
         f=f,
         workers=workers,
         maxsize=maxsize,
+        timeout=timeout,
         on_start=on_start,
         on_done=on_done,
         dependencies=[stage],
@@ -428,6 +441,7 @@ def each(
     stage: Stage = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
+    timeout: float = 0,
     on_start: typing.Callable = None,
     on_done: typing.Callable = None,
     run: bool = False,
@@ -464,6 +478,7 @@ def each(
         stage: A stage or iterable.
         workers: The number of workers the stage should contain.
         maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+        timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. 
         on_start: A function with signature `on_start(worker_info?) -> kwargs`, where `kwargs` can be a `dict` of keyword arguments that will be passed to `f` and `on_done`. If you define a `worker_info` argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.
         on_done: A function with signature `on_done(stage_status?, **kwargs)`, where `kwargs` is the return of `on_start` if present. If you define a `stage_status` argument an object with information about the stage will be passed. This function is executed once per worker when the worker finishes.
         run: Whether or not to execute the stage immediately.
@@ -479,6 +494,7 @@ def each(
                 stage=stage,
                 workers=workers,
                 maxsize=maxsize,
+                timeout=timeout,
                 on_start=on_start,
                 on_done=on_done,
             )
@@ -490,6 +506,7 @@ def each(
         f=f,
         workers=workers,
         maxsize=maxsize,
+        timeout=timeout,
         on_start=on_start,
         on_done=on_done,
         dependencies=[stage],
@@ -539,6 +556,7 @@ def concat(stages: typing.List[Stage], maxsize: int = 0) -> Stage:
         f=None,
         workers=1,
         maxsize=maxsize,
+        timeout=0,
         on_start=None,
         on_done=None,
         dependencies=stages,

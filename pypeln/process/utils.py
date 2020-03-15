@@ -1,21 +1,22 @@
 from collections import namedtuple
 from multiprocessing import get_context
+import multiprocessing as mp
 from multiprocessing.queues import Full, Empty
 
 from pypeln import utils as pypeln_utils
 
-CONTEXT = get_context("spawn")
-
+# CONTEXT = get_context("fork")
+CONTEXT = mp
 _MANAGER = None
 
 
-def get_namespace():
+def get_namespace(**kwargs):
     global _MANAGER
 
     if _MANAGER is None:
         _MANAGER = CONTEXT.Manager()
 
-    return _MANAGER.Namespace()
+    return _MANAGER.Namespace(**kwargs)
 
 
 class IterableQueue(object):

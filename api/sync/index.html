@@ -494,30 +494,30 @@
 functions for API compatibility purposes but are ignored.</p>
 <h2 id="pypeln.sync.api.concat"><code class="codehilite"><span class="n">concat</span><span class="p">(</span><span class="n">stages</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.sync.api.concat" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/sync/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>382
-383
-384
-385
-386
-387
-388
-389
-390
-391
-392
-393
-394
-395
-396
-397
-398
-399
-400
-401
-402
-403
-404
-405</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">concat</span><span class="p">(</span><span class="n">stages</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Stage</span><span class="p">],</span> <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Stage</span><span class="p">:</span>
+<details class="note"><summary>Show source code in pypeln/sync/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>419
+420
+421
+422
+423
+424
+425
+426
+427
+428
+429
+430
+431
+432
+433
+434
+435
+436
+437
+438
+439
+440
+441
+442</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">concat</span><span class="p">(</span><span class="n">stages</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Stage</span><span class="p">],</span> <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Stage</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Concatenates / merges many stages into a single one by appending elements from each stage in order, that is, it yields an element from the frist stage, then an element from the second stage and so on until it reaches the last stage and starts again. When a stage has no more elements its taken out of the process.</span>
 
@@ -540,7 +540,7 @@ functions for API compatibility purposes but are ignored.</p>
 
     <span class="n">stages</span> <span class="o">=</span> <span class="p">[</span><span class="n">to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span> <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="n">stages</span><span class="p">]</span>
 
-    <span class="k">return</span> <span class="n">Concat</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dependencies</span><span class="o">=</span><span class="n">stages</span><span class="p">,)</span>
+    <span class="k">return</span> <span class="n">Concat</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dependencies</span><span class="o">=</span><span class="n">stages</span><span class="p">,)</span>
 </code></pre></div>
 </td></tr></table>
 
@@ -595,38 +595,9 @@ functions for API compatibility purposes but are ignored.</p>
 </tbody>
 </table>
 </div>
-<h2 id="pypeln.sync.api.each"><code class="codehilite"><span class="n">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.sync.api.each" title="Permanent link">&para;</a></h2>
+<h2 id="pypeln.sync.api.each"><code class="codehilite"><span class="n">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.sync.api.each" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/sync/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>300
-301
-302
-303
-304
-305
-306
-307
-308
-309
-310
-311
-312
-313
-314
-315
-316
-317
-318
-319
-320
-321
-322
-323
-324
-325
-326
-327
-328
-329
+<details class="note"><summary>Show source code in pypeln/sync/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>329
 330
 331
 332
@@ -666,11 +637,49 @@ functions for API compatibility purposes but are ignored.</p>
 366
 367
 368
-369</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">each</span><span class="p">(</span>
+369
+370
+371
+372
+373
+374
+375
+376
+377
+378
+379
+380
+381
+382
+383
+384
+385
+386
+387
+388
+389
+390
+391
+392
+393
+394
+395
+396
+397
+398
+399
+400
+401
+402
+403
+404
+405
+406</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">each</span><span class="p">(</span>
     <span class="n">f</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">,</span>
     <span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span>
     <span class="n">workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
     <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="n">on_start</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">on_done</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -707,9 +716,13 @@ functions for API compatibility purposes but are ignored.</p>
 <span class="sd">        stage: A stage or iterable.</span>
 <span class="sd">        workers: This parameter is not used and only kept for API compatibility with the other modules.</span>
 <span class="sd">        maxsize: This parameter is not used and only kept for API compatibility with the other modules.</span>
+<span class="sd">        timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. </span>
 <span class="sd">        on_start: A function with signature `on_start(worker_info?) -&gt; kwargs`, where `kwargs` can be a `dict` of keyword arguments that will be passed to `f` and `on_done`. If you define a `worker_info` argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.</span>
 <span class="sd">        on_done: A function with signature `on_done(stage_status?, **kwargs)`, where `kwargs` is the return of `on_start` if present. If you define a `stage_status` argument an object with information about the stage will be passed. This function is executed once per worker when the worker finishes.</span>
 <span class="sd">        run: Whether or not to execute the stage immediately.</span>
+
+<span class="sd">    !!! warning</span>
+<span class="sd">        To implement `timeout` we use `stopit.async_raise` which has some limitations for stoping threads. </span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        If the `stage` parameters is not given then this function returns a `Partial`, else if `run=False` (default) it return a new stage, if `run=True` then it runs the stage and returns `None`.</span>
@@ -722,6 +735,7 @@ functions for API compatibility purposes but are ignored.</p>
                 <span class="n">stage</span><span class="o">=</span><span class="n">stage</span><span class="p">,</span>
                 <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span>
                 <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span>
+                <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span>
                 <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span>
                 <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">,</span>
             <span class="p">)</span>
@@ -729,7 +743,9 @@ functions for API compatibility purposes but are ignored.</p>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
-    <span class="n">stage</span> <span class="o">=</span> <span class="n">Each</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="n">f</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">,</span> <span class="n">dependencies</span><span class="o">=</span><span class="p">[</span><span class="n">stage</span><span class="p">],)</span>
+    <span class="n">stage</span> <span class="o">=</span> <span class="n">Each</span><span class="p">(</span>
+        <span class="n">f</span><span class="o">=</span><span class="n">f</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span> <span class="n">dependencies</span><span class="o">=</span><span class="p">[</span><span class="n">stage</span><span class="p">],</span>
+    <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">run</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">stage</span>
@@ -798,6 +814,12 @@ functions for API compatibility purposes but are ignored.</p>
 <td><code>0</code></td>
 </tr>
 <tr>
+<td><code>timeout</code></td>
+<td><code>float</code></td>
+<td>Seconds before stoping the worker if its current task is not yet completed. Defaults to <code>0</code> which means its unbounded.</td>
+<td><code>0</code></td>
+</tr>
+<tr>
 <td><code>on_start</code></td>
 <td><code>Callable</code></td>
 <td>A function with signature <code>on_start(worker_info?) -&gt; kwargs</code>, where <code>kwargs</code> can be a <code>dict</code> of keyword arguments that will be passed to <code>f</code> and <code>on_done</code>. If you define a <code>worker_info</code> argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.</td>
@@ -817,6 +839,10 @@ functions for API compatibility purposes but are ignored.</p>
 </tr>
 </tbody>
 </table>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>To implement <code>timeout</code> we use <code>stopit.async_raise</code> which has some limitations for stoping threads. </p>
+</div>
 <p><strong>Returns</strong></p>
 <table>
 <thead>
@@ -833,30 +859,9 @@ functions for API compatibility purposes but are ignored.</p>
 </tbody>
 </table>
 </div>
-<h2 id="pypeln.sync.api.filter"><code class="codehilite"><span class="nb">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.sync.api.filter" title="Permanent link">&para;</a></h2>
+<h2 id="pypeln.sync.api.filter"><code class="codehilite"><span class="nb">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.sync.api.filter" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/sync/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>235
-236
-237
-238
-239
-240
-241
-242
-243
-244
-245
-246
-247
-248
-249
-250
-251
-252
-253
-254
-255
-256
+<details class="note"><summary>Show source code in pypeln/sync/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>256
 257
 258
 259
@@ -887,11 +892,41 @@ functions for API compatibility purposes but are ignored.</p>
 284
 285
 286
-287</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">filter</span><span class="p">(</span>
+287
+288
+289
+290
+291
+292
+293
+294
+295
+296
+297
+298
+299
+300
+301
+302
+303
+304
+305
+306
+307
+308
+309
+310
+311
+312
+313
+314
+315
+316</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">filter</span><span class="p">(</span>
     <span class="n">f</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">,</span>
     <span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span>
     <span class="n">workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
     <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="n">on_start</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">on_done</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Stage</span><span class="p">:</span>
@@ -918,8 +953,12 @@ functions for API compatibility purposes but are ignored.</p>
 <span class="sd">        stage: A stage or iterable.</span>
 <span class="sd">        workers: This parameter is not used and only kept for API compatibility with the other modules.</span>
 <span class="sd">        maxsize: This parameter is not used and only kept for API compatibility with the other modules.</span>
+<span class="sd">        timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. </span>
 <span class="sd">        on_start: A function with signature `on_start(worker_info?) -&gt; kwargs`, where `kwargs` can be a `dict` of keyword arguments that will be passed to `f` and `on_done`. If you define a `worker_info` argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.</span>
 <span class="sd">        on_done: A function with signature `on_done(stage_status?, **kwargs)`, where `kwargs` is the return of `on_start` if present. If you define a `stage_status` argument an object with information about the stage will be passed. This function is executed once per worker when the worker finishes.</span>
+
+<span class="sd">    !!! warning</span>
+<span class="sd">        To implement `timeout` we use `stopit.async_raise` which has some limitations for stoping threads.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.</span>
@@ -932,6 +971,7 @@ functions for API compatibility purposes but are ignored.</p>
                 <span class="n">stage</span><span class="o">=</span><span class="n">stage</span><span class="p">,</span>
                 <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span>
                 <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span>
+                <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span>
                 <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span>
                 <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">,</span>
             <span class="p">)</span>
@@ -939,7 +979,9 @@ functions for API compatibility purposes but are ignored.</p>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">Filter</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="n">f</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">,</span> <span class="n">dependencies</span><span class="o">=</span><span class="p">[</span><span class="n">stage</span><span class="p">],)</span>
+    <span class="k">return</span> <span class="n">Filter</span><span class="p">(</span>
+        <span class="n">f</span><span class="o">=</span><span class="n">f</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span> <span class="n">dependencies</span><span class="o">=</span><span class="p">[</span><span class="n">stage</span><span class="p">],</span>
+    <span class="p">)</span>
 </code></pre></div>
 </td></tr></table>
 
@@ -995,6 +1037,12 @@ functions for API compatibility purposes but are ignored.</p>
 <td><code>0</code></td>
 </tr>
 <tr>
+<td><code>timeout</code></td>
+<td><code>float</code></td>
+<td>Seconds before stoping the worker if its current task is not yet completed. Defaults to <code>0</code> which means its unbounded.</td>
+<td><code>0</code></td>
+</tr>
+<tr>
 <td><code>on_start</code></td>
 <td><code>Callable</code></td>
 <td>A function with signature <code>on_start(worker_info?) -&gt; kwargs</code>, where <code>kwargs</code> can be a <code>dict</code> of keyword arguments that will be passed to <code>f</code> and <code>on_done</code>. If you define a <code>worker_info</code> argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.</td>
@@ -1008,6 +1056,10 @@ functions for API compatibility purposes but are ignored.</p>
 </tr>
 </tbody>
 </table>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>To implement <code>timeout</code> we use <code>stopit.async_raise</code> which has some limitations for stoping threads.</p>
+</div>
 <p><strong>Returns</strong></p>
 <table>
 <thead>
@@ -1024,22 +1076,9 @@ functions for API compatibility purposes but are ignored.</p>
 </tbody>
 </table>
 </div>
-<h2 id="pypeln.sync.api.flat_map"><code class="codehilite"><span class="n">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.sync.api.flat_map" title="Permanent link">&para;</a></h2>
+<h2 id="pypeln.sync.api.flat_map"><code class="codehilite"><span class="n">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.sync.api.flat_map" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/sync/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>152
-153
-154
-155
-156
-157
-158
-159
-160
-161
-162
-163
-164
-165
+<details class="note"><summary>Show source code in pypeln/sync/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>165
 166
 167
 168
@@ -1095,11 +1134,33 @@ functions for API compatibility purposes but are ignored.</p>
 218
 219
 220
-221</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">flat_map</span><span class="p">(</span>
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">flat_map</span><span class="p">(</span>
     <span class="n">f</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">,</span>
     <span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span>
     <span class="n">workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
     <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="n">on_start</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">on_done</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Stage</span><span class="p">:</span>
@@ -1143,8 +1204,12 @@ functions for API compatibility purposes but are ignored.</p>
 <span class="sd">        stage: A stage or iterable.</span>
 <span class="sd">        workers: This parameter is not used and only kept for API compatibility with the other modules.</span>
 <span class="sd">        maxsize: This parameter is not used and only kept for API compatibility with the other modules.</span>
+<span class="sd">        timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. </span>
 <span class="sd">        on_start: A function with signature `on_start(worker_info?) -&gt; kwargs`, where `kwargs` can be a `dict` of keyword arguments that will be passed to `f` and `on_done`. If you define a `worker_info` argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.</span>
 <span class="sd">        on_done: A function with signature `on_done(stage_status?, **kwargs)`, where `kwargs` is the return of `on_start` if present. If you define a `stage_status` argument an object with information about the stage will be passed. This function is executed once per worker when the worker finishes.</span>
+
+<span class="sd">    !!! warning</span>
+<span class="sd">        To implement `timeout` we use `stopit.async_raise` which has some limitations for stoping threads.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.</span>
@@ -1157,6 +1222,7 @@ functions for API compatibility purposes but are ignored.</p>
                 <span class="n">stage</span><span class="o">=</span><span class="n">stage</span><span class="p">,</span>
                 <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span>
                 <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span>
+                <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span>
                 <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span>
                 <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">,</span>
             <span class="p">)</span>
@@ -1164,7 +1230,9 @@ functions for API compatibility purposes but are ignored.</p>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">FlatMap</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="n">f</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">,</span> <span class="n">dependencies</span><span class="o">=</span><span class="p">[</span><span class="n">stage</span><span class="p">],)</span>
+    <span class="k">return</span> <span class="n">FlatMap</span><span class="p">(</span>
+        <span class="n">f</span><span class="o">=</span><span class="n">f</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span> <span class="n">dependencies</span><span class="o">=</span><span class="p">[</span><span class="n">stage</span><span class="p">],</span>
+    <span class="p">)</span>
 </code></pre></div>
 </td></tr></table>
 
@@ -1233,6 +1301,12 @@ functions for API compatibility purposes but are ignored.</p>
 <td><code>0</code></td>
 </tr>
 <tr>
+<td><code>timeout</code></td>
+<td><code>float</code></td>
+<td>Seconds before stoping the worker if its current task is not yet completed. Defaults to <code>0</code> which means its unbounded.</td>
+<td><code>0</code></td>
+</tr>
+<tr>
 <td><code>on_start</code></td>
 <td><code>Callable</code></td>
 <td>A function with signature <code>on_start(worker_info?) -&gt; kwargs</code>, where <code>kwargs</code> can be a <code>dict</code> of keyword arguments that will be passed to <code>f</code> and <code>on_done</code>. If you define a <code>worker_info</code> argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.</td>
@@ -1246,6 +1320,10 @@ functions for API compatibility purposes but are ignored.</p>
 </tr>
 </tbody>
 </table>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>To implement <code>timeout</code> we use <code>stopit.async_raise</code> which has some limitations for stoping threads.</p>
+</div>
 <p><strong>Returns</strong></p>
 <table>
 <thead>
@@ -1290,7 +1368,12 @@ functions for API compatibility purposes but are ignored.</p>
 53
 54
 55
-56</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">from_iterable</span><span class="p">(</span>
+56
+57
+58
+59
+60
+61</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">from_iterable</span><span class="p">(</span>
     <span class="n">iterable</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Iterable</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span>
     <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">worker_constructor</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Type</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1315,7 +1398,12 @@ functions for API compatibility purposes but are ignored.</p>
         <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">FromIterable</span><span class="p">(</span>
-        <span class="n">iterable</span><span class="o">=</span><span class="n">iterable</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dependencies</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">iterable</span><span class="o">=</span><span class="n">iterable</span><span class="p">,</span>
+        <span class="n">f</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">on_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">on_done</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">dependencies</span><span class="o">=</span><span class="p">[],</span>
     <span class="p">)</span>
 </code></pre></div>
 </td></tr></table>
@@ -1369,14 +1457,9 @@ functions for API compatibility purposes but are ignored.</p>
 </tbody>
 </table>
 </div>
-<h2 id="pypeln.sync.api.map"><code class="codehilite"><span class="nb">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.sync.api.map" title="Permanent link">&para;</a></h2>
+<h2 id="pypeln.sync.api.map"><code class="codehilite"><span class="nb">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.sync.api.map" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/sync/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span> 87
- 88
- 89
- 90
- 91
- 92
+<details class="note"><summary>Show source code in pypeln/sync/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span> 92
  93
  94
  95
@@ -1423,11 +1506,25 @@ functions for API compatibility purposes but are ignored.</p>
 136
 137
 138
-139</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">map</span><span class="p">(</span>
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">map</span><span class="p">(</span>
     <span class="n">f</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">,</span>
     <span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span>
     <span class="n">workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="n">on_start</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">on_done</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Stage</span><span class="p">:</span>
@@ -1454,8 +1551,12 @@ functions for API compatibility purposes but are ignored.</p>
 <span class="sd">        stage: A stage or iterable.</span>
 <span class="sd">        workers: This parameter is not used and only kept for API compatibility with the other modules.</span>
 <span class="sd">        maxsize: This parameter is not used and only kept for API compatibility with the other modules.</span>
+<span class="sd">        timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. </span>
 <span class="sd">        on_start: A function with signature `on_start(worker_info?) -&gt; kwargs`, where `kwargs` can be a `dict` of keyword arguments that will be passed to `f` and `on_done`. If you define a `worker_info` argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.</span>
 <span class="sd">        on_done: A function with signature `on_done(stage_status?, **kwargs)`, where `kwargs` is the return of `on_start` if present. If you define a `stage_status` argument an object with information about the stage will be passed. This function is executed once per worker when the worker finishes.</span>
+
+<span class="sd">    !!! warning</span>
+<span class="sd">        To implement `timeout` we use `stopit.async_raise` which has some limitations for stoping threads.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.</span>
@@ -1468,6 +1569,7 @@ functions for API compatibility purposes but are ignored.</p>
                 <span class="n">stage</span><span class="o">=</span><span class="n">stage</span><span class="p">,</span>
                 <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">,</span>
                 <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span>
+                <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span>
                 <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span>
                 <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">,</span>
             <span class="p">)</span>
@@ -1475,7 +1577,9 @@ functions for API compatibility purposes but are ignored.</p>
 
     <span class="n">stage</span> <span class="o">=</span> <span class="n">to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">Map</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="n">f</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">,</span> <span class="n">dependencies</span><span class="o">=</span><span class="p">[</span><span class="n">stage</span><span class="p">],)</span>
+    <span class="k">return</span> <span class="n">Map</span><span class="p">(</span>
+        <span class="n">f</span><span class="o">=</span><span class="n">f</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="n">on_done</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span> <span class="n">dependencies</span><span class="o">=</span><span class="p">[</span><span class="n">stage</span><span class="p">],</span>
+    <span class="p">)</span>
 </code></pre></div>
 </td></tr></table>
 
@@ -1531,6 +1635,12 @@ functions for API compatibility purposes but are ignored.</p>
 <td><code>None</code></td>
 </tr>
 <tr>
+<td><code>timeout</code></td>
+<td><code>float</code></td>
+<td>Seconds before stoping the worker if its current task is not yet completed. Defaults to <code>0</code> which means its unbounded.</td>
+<td><code>0</code></td>
+</tr>
+<tr>
 <td><code>on_start</code></td>
 <td><code>Callable</code></td>
 <td>A function with signature <code>on_start(worker_info?) -&gt; kwargs</code>, where <code>kwargs</code> can be a <code>dict</code> of keyword arguments that will be passed to <code>f</code> and <code>on_done</code>. If you define a <code>worker_info</code> argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.</td>
@@ -1544,6 +1654,10 @@ functions for API compatibility purposes but are ignored.</p>
 </tr>
 </tbody>
 </table>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>To implement <code>timeout</code> we use <code>stopit.async_raise</code> which has some limitations for stoping threads.</p>
+</div>
 <p><strong>Returns</strong></p>
 <table>
 <thead>
@@ -1562,39 +1676,39 @@ functions for API compatibility purposes but are ignored.</p>
 </div>
 <h2 id="pypeln.sync.api.run"><code class="codehilite"><span class="n">run</span><span class="p">(</span><span class="n">stages</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.sync.api.run" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/sync/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>413
-414
-415
-416
-417
-418
-419
-420
-421
-422
-423
-424
-425
-426
-427
-428
-429
-430
-431
-432
-433
-434
-435
-436
-437
-438
-439
-440
-441
-442
-443
-444
-445</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">stages</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Stage</span><span class="p">],</span> <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<details class="note"><summary>Show source code in pypeln/sync/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>450
+451
+452
+453
+454
+455
+456
+457
+458
+459
+460
+461
+462
+463
+464
+465
+466
+467
+468
+469
+470
+471
+472
+473
+474
+475
+476
+477
+478
+479
+480
+481
+482</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">stages</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Stage</span><span class="p">],</span> <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Iterates over one or more stages until their iterators run out of elements.</span>
 
@@ -1669,29 +1783,29 @@ functions for API compatibility purposes but are ignored.</p>
 </div>
 <h2 id="pypeln.sync.api.to_iterable"><code class="codehilite"><span class="n">to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.sync.api.to_iterable" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/sync/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>453
-454
-455
-456
-457
-458
-459
-460
-461
-462
-463
-464
-465
-466
-467
-468
-469
-470
-471
-472
-473
-474
-475</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">to_iterable</span><span class="p">(</span>
+<details class="note"><summary>Show source code in pypeln/sync/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>490
+491
+492
+493
+494
+495
+496
+497
+498
+499
+500
+501
+502
+503
+504
+505
+506
+507
+508
+509
+510
+511
+512</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">to_iterable</span><span class="p">(</span>
     <span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">typing</span><span class="o">.</span><span class="n">Iterable</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>

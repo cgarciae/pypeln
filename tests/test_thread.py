@@ -100,12 +100,18 @@ def test_timeout():
     nums = list(range(10))
 
     def f(x):
-        time.sleep(1000)
+        if x == 2:
+            while True:
+                time.sleep(0.1)
 
         return x
 
     nums_pl = pl.thread.map(f, nums, timeout=0.5)
     nums_pl = list(nums_pl)
+
+    time.sleep(1)
+
+    print(nums_pl)
 
     assert len(nums_pl) == 9
 

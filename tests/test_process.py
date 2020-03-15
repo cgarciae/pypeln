@@ -101,7 +101,8 @@ def test_timeout():
 
     def f(x):
         if x == 2:
-            time.sleep(1000)
+            while True:
+                time.sleep(0.1)
 
         return x
 

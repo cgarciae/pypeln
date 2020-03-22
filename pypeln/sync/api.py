@@ -26,8 +26,13 @@ class FromIterable(Stage):
         self.iterable = iterable
 
     def process(self):
-        for i, x in enumerate(self.iterable):
-            yield pypeln_utils.Element(index=(i,), value=x)
+
+        if isinstance(self.iterable, pypeln_utils.BaseStage):
+            yield from self.iterable
+
+        else:
+            for i, x in enumerate(self.iterable):
+                yield pypeln_utils.Element(index=(i,), value=x)
 
 
 def from_iterable(

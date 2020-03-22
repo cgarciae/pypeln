@@ -24,11 +24,18 @@ class FromIterable(Stage):
 
     def process(self, worker_namespace):
 
-        for i, x in enumerate(self.iterable):
-            if self.pipeline_namespace.error:
-                return
+        if isinstance(self.iterable, pypeln_utils.BaseStage):
+            for x in self.iterable:
+                if self.pipeline_namespace.error:
+                    return
 
-            self.output_queues.put(pypeln_utils.Element(index=(i,), value=x))
+                self.output_queues.put(x)
+        else:
+            for i, x in enumerate(self.iterable):
+                if self.pipeline_namespace.error:
+                    return
+
+                self.output_queues.put(pypeln_utils.Element(index=(i,), value=x))
 
 
 def from_iterable(

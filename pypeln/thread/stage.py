@@ -13,7 +13,7 @@ from pypeln import utils as pypeln_utils
 from . import utils
 
 
-class Stage:
+class Stage(pypeln_utils.BaseStage):
     def __init__(
         self,
         f,
@@ -272,6 +272,3 @@ class Stage:
             self.pipeline_namespace.error = True
         except BaseException as e:
             print(e)
-
-    def __or__(self, f):
-        return f(self)

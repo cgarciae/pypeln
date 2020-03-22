@@ -25,7 +25,7 @@ class FromIterable(Stage):
     def process(self, worker_namespace):
 
         if isinstance(self.iterable, pypeln_utils.BaseStage):
-            for x in self.iterable:
+            for x in self.iterable.to_iterable(maxsize=0, return_index=True):
                 if self.pipeline_namespace.error:
                     return
 
@@ -35,7 +35,10 @@ class FromIterable(Stage):
                 if self.pipeline_namespace.error:
                     return
 
-                self.output_queues.put(pypeln_utils.Element(index=(i,), value=x))
+                if isinstance(x, pypeln_utils.Element):
+                    self.output_queues.put(x)
+                else:
+                    self.output_queues.put(pypeln_utils.Element(index=(i,), value=x))
 
 
 def from_iterable(

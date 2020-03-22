@@ -498,6 +498,64 @@ def concat(stages: typing.List[Stage], maxsize: int = 0) -> Stage:
 
 
 #############################################################
+# sorted
+#############################################################
+class Sorted(Stage):
+    def process(self, worker_namespace, **kwargs) -> None:
+
+        elems = []
+
+        for elem in self.input_queue:
+            if self.pipeline_namespace.error:
+                return
+
+            if len(elems) == 0:
+                elems.append(elem)
+            else:
+                for i in reversed(range(len(elems))):
+                    if elem.index >= elems[i].index:
+                        elems.insert(i + 1, elem)
+                        break
+
+                    if i == 0:
+                        elems.insert(0, elem)
+
+        for _ in range(len(elems)):
+            self.output_queues.put(elems.pop(0))
+
+
+def sorted(stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0) -> Stage:
+    """
+    Creates a stage that sorts its elements based on their order on the source iterable(s) of the pipeline. 
+    
+    !!! warning
+        This stage will not yield util it accumulates all of the elements from the previous stage, use this only if all elements fit in memory.
+
+    Arguments:
+        stage: A stage object.
+        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+
+    Returns:
+        If the `stage` parameters is given then this function returns an iterable, else it returns a `Partial`.
+    """
+
+    if pypeln_utils.is_undefined(stage):
+        return pypeln_utils.Partial(lambda stage: sorted(stage, maxsize=maxsize))
+
+    stage = to_stage(stage)
+
+    return Sorted(
+        f=None,
+        workers=1,
+        maxsize=maxsize,
+        timeout=0,
+        on_start=None,
+        on_done=None,
+        dependencies=[stage],
+    )
+
+
+#############################################################
 # run
 #############################################################
 
@@ -565,34 +623,3 @@ def to_iterable(
         iterable = stage
 
     return iterable
-
-
-#############################################################
-# sorted
-#############################################################
-
-
-def sorted(stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0) -> typing.Iterable:
-    """
-    Creates an iterable from a stage.
-
-    Arguments:
-        stage: A stage object.
-        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
-
-    Returns:
-        If the `stage` parameters is given then this function returns an iterable, else it returns a `Partial`.
-    """
-
-    if pypeln_utils.is_undefined(stage):
-        return pypeln_utils.Partial(lambda stage: sorted(stage, maxsize=maxsize))
-
-    if isinstance(stage, Stage):
-        iterable = stage.to_iterable(maxsize=maxsize, return_index=True)
-    else:
-        iterable = stage
-
-    iterable = python_sorted(iterable, key=lambda x: x.index)
-
-    for x in iterable:
-        yield x.value

@@ -10,6 +10,8 @@ from pypeln import utils as pypeln_utils
 from . import utils
 from .stage import Stage
 
+python_sorted = sorted
+
 #############################################################
 # from_iterable
 #############################################################
@@ -23,11 +25,11 @@ class FromIterable(Stage):
 
     def process(self, worker_namespace):
 
-        for x in self.iterable:
+        for i, x in enumerate(self.iterable):
             if self.pipeline_namespace.error:
                 return
 
-            self.output_queues.put(x)
+            self.output_queues.put(pypeln_utils.Element(index=(i,), value=x))
 
 
 def from_iterable(
@@ -53,7 +55,7 @@ def from_iterable(
     if pypeln_utils.is_undefined(iterable):
         return pypeln_utils.Partial(
             lambda iterable: from_iterable(
-                iterable, maxsize=None, worker_constructor=worker_constructor
+                iterable, maxsize=None, worker_constructor=worker_constructor,
             )
         )
 
@@ -93,9 +95,13 @@ def to_stage(obj):
 
 
 class Map(Stage):
-    def apply(self, x, **kwargs):
-        y = self.f(x, **kwargs)
-        self.output_queues.put(y)
+    def apply(self, elem, **kwargs):
+
+        if "element_index" in self.f_args:
+            kwargs["element_index"] = elem.index
+
+        y = self.f(elem.value, **kwargs)
+        self.output_queues.put(elem.set(y))
 
 
 def map(
@@ -173,9 +179,13 @@ def map(
 
 
 class FlatMap(Stage):
-    def apply(self, x, **kwargs):
-        for y in self.f(x, **kwargs):
-            self.output_queues.put(y)
+    def apply(self, elem, **kwargs):
+        if "element_index" in self.f_args:
+            kwargs["element_index"] = elem.index
+
+        for i, y in enumerate(self.f(elem.value, **kwargs)):
+            elem_y = pypeln_utils.Element(index=elem.index + (i,), value=y)
+            self.output_queues.put(elem_y)
 
 
 def flat_map(
@@ -269,9 +279,13 @@ def flat_map(
 
 
 class Filter(Stage):
-    def apply(self, x, **kwargs):
-        if self.f(x, **kwargs):
-            self.output_queues.put(x)
+    def apply(self, elem, **kwargs):
+
+        if "element_index" in self.f_args:
+            kwargs["element_index"] = elem.index
+
+        if self.f(elem.value, **kwargs):
+            self.output_queues.put(elem)
 
 
 def filter(
@@ -349,8 +363,11 @@ def filter(
 
 
 class Each(Stage):
-    def apply(self, x, **kwargs):
-        self.f(x, **kwargs)
+    def apply(self, elem, **kwargs):
+        if "element_index" in self.f_args:
+            kwargs["element_index"] = elem.index
+
+        self.f(elem.value, **kwargs)
 
 
 def each(
@@ -442,8 +459,8 @@ def each(
 
 
 class Concat(Stage):
-    def apply(self, x):
-        self.output_queues.put(x)
+    def apply(self, elem):
+        self.output_queues.put(elem)
 
 
 def concat(stages: typing.List[Stage], maxsize: int = 0) -> Stage:
@@ -526,7 +543,7 @@ def run(stages: typing.List[Stage], maxsize: int = 0) -> None:
 
 
 def to_iterable(
-    stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0
+    stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0, return_index: bool = False
 ) -> typing.Iterable:
     """
     Creates an iterable from a stage.
@@ -543,8 +560,39 @@ def to_iterable(
         return pypeln_utils.Partial(lambda stage: to_iterable(stage, maxsize=maxsize))
 
     if isinstance(stage, Stage):
-        iterable = stage.to_iterable(maxsize=maxsize)
+        iterable = stage.to_iterable(maxsize=maxsize, return_index=return_index)
     else:
         iterable = stage
 
     return iterable
+
+
+#############################################################
+# sorted
+#############################################################
+
+
+def sorted(stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0) -> typing.Iterable:
+    """
+    Creates an iterable from a stage.
+
+    Arguments:
+        stage: A stage object.
+        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+
+    Returns:
+        If the `stage` parameters is given then this function returns an iterable, else it returns a `Partial`.
+    """
+
+    if pypeln_utils.is_undefined(stage):
+        return pypeln_utils.Partial(lambda stage: sorted(stage, maxsize=maxsize))
+
+    if isinstance(stage, Stage):
+        iterable = stage.to_iterable(maxsize=maxsize, return_index=True)
+    else:
+        iterable = stage
+
+    iterable = python_sorted(iterable, key=lambda x: x.index)
+
+    for x in iterable:
+        yield x.value

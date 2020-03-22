@@ -117,8 +117,8 @@ def test_worker_info():
     nums = range(100)
     n_workers = 4
 
-    def on_start(worker_info):
-        return dict(index=worker_info.index)
+    def on_start(worker_index):
+        return dict(index=worker_index)
 
     def _lambda(x, index):
         return index
@@ -190,6 +190,20 @@ def test_map_square_workers(nums):
     nums_pl = list(nums_pl)
 
     assert sorted(nums_pl) == sorted(nums_py)
+
+
+@hp.given(nums=st.lists(st.integers()))
+@hp.settings(max_examples=MAX_EXAMPLES)
+def test_map_square_workers_sorted(nums):
+
+    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = list(nums_py)
+
+    nums_pl = pl.sync.map(lambda x: x ** 2, nums, workers=2)
+    nums_pl = pl.sync.sorted(nums_pl)
+    nums_pl = list(nums_pl)
+
+    assert nums_pl == nums_py
 
 
 ############

@@ -1,9 +1,19 @@
 import functools
 import traceback
 from collections import namedtuple
+import inspect
 
 
 TIMEOUT = 0.0001
+
+class BaseStage:
+    def __or__(self, f):
+        return f(self)
+
+
+class Element(namedtuple("Element", ["index", "value"])):
+    def set(self, value):
+        return Element(self.index, value)
 
 
 class Partial(object):
@@ -102,6 +112,10 @@ def print_error(f):
             raise e
 
     return _lambda
+
+
+def function_args(f):
+    return inspect.getfullargspec(f).args
 
 
 # try:

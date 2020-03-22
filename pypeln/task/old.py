@@ -875,4 +875,3 @@ if __name__ == "__main__":
     stage = filter(lambda x: x > 9, stage)
 
     each(print, stage)
-

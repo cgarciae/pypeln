@@ -38,6 +38,13 @@ class Stage:
         self.dependencies = dependencies
         self.output_queues = utils.MultiQueue()
         self.worker_constructor = worker_constructor
+        self.f_args = pypeln_utils.function_args(self.f) if self.f else set()
+        self.on_start_args = (
+            pypeln_utils.function_args(self.on_start) if self.on_start else set()
+        )
+        self.on_done_args = (
+            pypeln_utils.function_args(self.on_done) if self.on_done else set()
+        )
         ######################################
         # build fields
         ######################################
@@ -57,30 +64,45 @@ class Stage:
 
         try:
             if self.on_start is not None:
-                on_start_kwargs = {}
-
-                if "worker_info" in inspect.getfullargspec(self.on_start).args:
-                    on_start_kwargs["worker_info"] = utils.WorkerInfo(index=index)
-
-                kwargs = self.on_start(**on_start_kwargs)
+                on_start_kwargs = dict(worker_index=index)
+                kwargs = self.on_start(
+                    **{
+                        key: value
+                        for key, value in on_start_kwargs.items()
+                        if key in self.on_start_args
+                    }
+                )
             else:
                 kwargs = {}
 
             if kwargs is None:
                 kwargs = {}
 
-            self.process(worker_namespace, **kwargs)
+            kwargs.setdefault("worker_index", index)
+
+            self.process(
+                worker_namespace,
+                **{key: value for key, value in kwargs.items() if key in self.f_args},
+            )
 
             if self.on_done is not None:
                 with self.stage_lock:
                     self.stage_namespace.active_workers -= 1
 
-                if "stage_status" in inspect.getfullargspec(self.on_done).args:
-                    kwargs["stage_status"] = utils.StageStatus(
+                kwargs.setdefault(
+                    "stage_status",
+                    utils.StageStatus(
                         namespace=self.stage_namespace, lock=self.stage_lock
-                    )
+                    ),
+                )
 
-                self.on_done(**kwargs)
+                self.on_done(
+                    **{
+                        key: value
+                        for key, value in kwargs.items()
+                        if key in self.on_done_args
+                    }
+                )
 
             self.output_queues.done()
 
@@ -92,7 +114,7 @@ class Stage:
             worker_namespace.done = True
 
     def __iter__(self):
-        return self.to_iterable(maxsize=0)
+        return self.to_iterable(maxsize=0, return_index=False)
 
     def build(
         self,
@@ -137,7 +159,7 @@ class Stage:
                 pipeline_error_queue,
             )
 
-    def to_iterable(self, maxsize):
+    def to_iterable(self, maxsize, return_index):
 
         self._iter_done = False
 
@@ -180,8 +202,11 @@ class Stage:
         supervisor.start()
 
         try:
-            for x in output_queue:
-                yield x
+            for elem in output_queue:
+                if return_index:
+                    yield elem
+                else:
+                    yield elem.value
 
             if pipeline_namespace.error:
                 error_class, _, trace = pipeline_error_queue.get()

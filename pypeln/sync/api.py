@@ -12,6 +12,8 @@ from pypeln import utils as pypeln_utils
 from . import utils
 from .stage import Stage
 
+python_sorted = sorted
+
 #############################################################
 # from_iterable
 #############################################################
@@ -24,7 +26,8 @@ class FromIterable(Stage):
         self.iterable = iterable
 
     def process(self):
-        yield from self.iterable
+        for i, x in enumerate(self.iterable):
+            yield pypeln_utils.Element(index=(i,), value=x)
 
 
 def from_iterable(
@@ -84,9 +87,13 @@ def to_stage(obj):
 
 
 class Map(Stage):
-    def apply(self, x, **kwargs):
-        y = self.f(x, **kwargs)
-        yield y
+    def apply(self, elem, **kwargs):
+
+        if "element_index" in self.f_args:
+            kwargs["element_index"] = elem.index
+
+        y = self.f(elem.value, **kwargs)
+        yield elem.set(y)
 
 
 def map(
@@ -158,8 +165,12 @@ def map(
 
 
 class FlatMap(Stage):
-    def apply(self, x, **kwargs):
-        yield from self.f(x, **kwargs)
+    def apply(self, elem, **kwargs):
+        if "element_index" in self.f_args:
+            kwargs["element_index"] = elem.index
+
+        for i, y in enumerate(self.f(elem.value, **kwargs)):
+            yield pypeln_utils.Element(index=elem.index + (i,), value=y)
 
 
 def flat_map(
@@ -248,9 +259,12 @@ def flat_map(
 
 
 class Filter(Stage):
-    def apply(self, x, **kwargs):
-        if self.f(x, **kwargs):
-            yield x
+    def apply(self, elem, **kwargs):
+        if "element_index" in self.f_args:
+            kwargs["element_index"] = elem.index
+
+        if self.f(elem.value, **kwargs):
+            yield elem
 
 
 def filter(
@@ -322,8 +336,11 @@ def filter(
 
 
 class Each(Stage):
-    def apply(self, x, **kwargs):
-        self.f(x, **kwargs)
+    def apply(self, elem, **kwargs):
+        if "element_index" in self.f_args:
+            kwargs["element_index"] = elem.index
+
+        self.f(elem.value, **kwargs)
 
 
 def each(
@@ -488,7 +505,7 @@ def run(stages: typing.List[Stage], maxsize: int = 0) -> None:
 
 
 def to_iterable(
-    stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0
+    stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0, return_index=False,
 ) -> typing.Iterable:
     """
     Creates an iterable from a stage.
@@ -502,11 +519,44 @@ def to_iterable(
     """
 
     if pypeln_utils.is_undefined(stage):
-        return pypeln_utils.Partial(lambda stage: to_iterable(stage, maxsize=maxsize))
+        return pypeln_utils.Partial(
+            lambda stage: to_iterable(stage, maxsize=maxsize, return_index=return_index)
+        )
 
     if isinstance(stage, Stage):
-        iterable = stage.to_iterable(maxsize=maxsize)
+        iterable = stage.to_iterable(maxsize=maxsize, return_index=return_index)
     else:
         iterable = stage
 
     return iterable
+
+
+#############################################################
+# sorted
+#############################################################
+
+
+def sorted(stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0) -> typing.Iterable:
+    """
+    Creates an iterable from a stage.
+
+    Arguments:
+        stage: A stage object.
+        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+
+    Returns:
+        If the `stage` parameters is given then this function returns an iterable, else it returns a `Partial`.
+    """
+
+    if pypeln_utils.is_undefined(stage):
+        return pypeln_utils.Partial(lambda stage: sorted(stage, maxsize=maxsize))
+
+    if isinstance(stage, Stage):
+        iterable = stage.to_iterable(maxsize=maxsize, return_index=True)
+    else:
+        iterable = stage
+
+    iterable = python_sorted(iterable, key=lambda x: x.index)
+
+    for x in iterable:
+        yield x.value

@@ -120,7 +120,7 @@ def test_worker_info():
     n_workers = 4
 
     def on_start(worker_info):
-        return dict(index=worker_info)
+        return dict(index=worker_info.index)
 
     def _lambda(x, index):
         return index

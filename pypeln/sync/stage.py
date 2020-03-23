@@ -52,8 +52,10 @@ class Stage(pypeln_utils.BaseStage):
                 yield from self.apply(x, **kwargs)
 
     def run(self):
+        worker_info = pypeln_utils.WorkerInfo(index=0)
+
         if self.on_start is not None:
-            on_start_kwargs = dict(worker_index=0)
+            on_start_kwargs = dict(worker_info=worker_info)
             kwargs = self.on_start(
                 **{
                     key: value
@@ -67,7 +69,7 @@ class Stage(pypeln_utils.BaseStage):
         if kwargs is None:
             kwargs = {}
 
-        kwargs.setdefault("worker_index", 0)
+        kwargs.setdefault("worker_info", worker_info)
 
         yield from self.process(
             **{key: value for key, value in kwargs.items() if key in self.f_args}

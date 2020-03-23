@@ -9,7 +9,6 @@ from pypeln import utils as pypeln_utils
 from . import utils
 from .stage import Stage
 
-python_sorted = sorted
 
 #############################################################
 # from_iterable

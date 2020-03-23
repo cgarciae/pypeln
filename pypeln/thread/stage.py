@@ -61,10 +61,11 @@ class Stage(pypeln_utils.BaseStage):
             worker_namespace.task_start_time = None
 
     def run(self, index, worker_namespace):
+        worker_info = pypeln_utils.WorkerInfo(index=index)
 
         try:
             if self.on_start is not None:
-                on_start_kwargs = dict(worker_index=index)
+                on_start_kwargs = dict(worker_info=worker_info)
                 kwargs = self.on_start(
                     **{
                         key: value
@@ -78,7 +79,7 @@ class Stage(pypeln_utils.BaseStage):
             if kwargs is None:
                 kwargs = {}
 
-            kwargs.setdefault("worker_index", index)
+            kwargs.setdefault("worker_info", worker_info)
 
             self.process(
                 worker_namespace,
@@ -106,7 +107,7 @@ class Stage(pypeln_utils.BaseStage):
 
             self.output_queues.done()
 
-        except utils.StopThreadException:
+        except pypeln_utils.StopThreadException:
             pass
         except BaseException as e:
             self.signal_error(e)
@@ -128,7 +129,7 @@ class Stage(pypeln_utils.BaseStage):
             self.pipeline_namespace is not None
             and self.pipeline_namespace != pipeline_namespace
         ):
-            raise utils.StageReuseError(
+            raise pypeln_utils.StageReuseError(
                 f"Traying to reuse stage {self} in two different pipelines. This behavior is not supported."
             )
 
@@ -250,7 +251,8 @@ class Stage(pypeln_utils.BaseStage):
                         ):
                             worker["worker_namespace"].task_start_time = None
                             stopit.async_raise(
-                                worker["process"].ident, utils.StopThreadException
+                                worker["process"].ident,
+                                pypeln_utils.StopThreadException,
                             )
                             worker["process"] = worker["stage"].worker_constructor(
                                 target=worker["stage"].run,

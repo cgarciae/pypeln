@@ -117,8 +117,8 @@ def test_worker_info():
     nums = range(100)
     n_workers = 4
 
-    def on_start(worker_index):
-        return dict(index=worker_index)
+    def on_start(worker_info):
+        return dict(index=worker_info.index)
 
     def _lambda(x, index):
         return index

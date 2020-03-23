@@ -154,11 +154,3 @@ class StageStatus(object):
         return "StageStatus(done = {done}, active_workers = {active_workers})".format(
             done=self.done, active_workers=self.active_workers,
         )
-
-
-WorkerInfo = namedtuple("WorkerInfo", ["index"])
-
-
-class StageReuseError(Exception):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)

@@ -5,6 +5,11 @@ import inspect
 
 
 TIMEOUT = 0.0001
+MAXSIZE = 100
+
+
+WorkerInfo = namedtuple("WorkerInfo", ["index"])
+
 
 class BaseStage:
     def __or__(self, f):
@@ -14,6 +19,16 @@ class BaseStage:
 class Element(namedtuple("Element", ["index", "value"])):
     def set(self, value):
         return Element(self.index, value)
+
+
+class StopThreadException(BaseException):
+    def __str__(self):
+        return "StopThreadException"
+
+
+class StageReuseError(Exception):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Partial(object):

@@ -117,11 +117,11 @@ def test_worker_info():
     nums = range(100)
     n_workers = 4
 
-    def on_start(worker_index):
-        return dict(worker_index=worker_index)
+    def on_start(worker_info):
+        return dict(worker_info=worker_info)
 
     nums_pl = pl.process.map(
-        lambda x, worker_index: worker_index,
+        lambda x, worker_info: worker_info.index,
         nums,
         on_start=on_start,
         workers=n_workers,

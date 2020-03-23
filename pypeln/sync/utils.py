@@ -27,9 +27,6 @@ class StageStatus(object):
         )
 
 
-WorkerInfo = namedtuple("WorkerInfo", ["index"])
-
-
 class NoOpContext:
     def __enter__(self):
         pass

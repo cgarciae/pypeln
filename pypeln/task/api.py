@@ -26,22 +26,30 @@ class FromIterable(Stage):
         self.iterable = iterable
 
     async def process(self):
+        i = 0
         async for x in self.to_async_iterable():
             if self.pipeline_namespace.error:
                 return
 
-            await self.output_queues.put(x)
+            if isinstance(x, pypeln_utils.Element):
+                await self.output_queues.put(x)
+            else:
+                await self.output_queues.put(pypeln_utils.Element(index=(i,), value=x))
+                i += 1
 
     async def to_async_iterable(self):
-        if hasattr(self.iterable, "__aiter__"):
-            async for x in self.iterable:
-                yield x
-        elif not hasattr(self.iterable, "__iter__"):
+        if not hasattr(self.iterable, "__iter__") or hasattr(
+            self.iterable, "__aiter__"
+        ):
             raise ValueError(
                 f"Object {self.iterable} most be either iterable or async iterable."
             )
 
-        if False and type(self.iterable) in (list, dict, tuple, set):
+        if hasattr(self.iterable, "__aiter__"):
+            async for x in self.iterable:
+                yield x
+
+        elif type(self.iterable) in (list, dict, tuple, set):
             for i, x in enumerate(self.iterable):
                 yield x
 
@@ -63,21 +71,27 @@ class FromIterable(Stage):
             await task
 
     def consume_iterable(self, queue):
+        iterable = (
+            self.iterable.to_iterable(maxsize=pypeln_utils.MAXSIZE, return_index=True)
+            if isinstance(self.iterable, pypeln_utils.BaseStage)
+            else self.iterable
+        )
+
         try:
-            for x in self.iterable:
+            for x in iterable:
                 while True:
                     if not queue.full():
                         self.loop.call_soon_threadsafe(queue.put_nowait, x)
                         break
                     else:
-                        time.sleep(utils.TIMEOUT)
+                        time.sleep(pypeln_utils.TIMEOUT)
 
             while True:
                 if not queue.full():
                     self.loop.call_soon_threadsafe(queue.done_nowait)
                     break
                 else:
-                    time.sleep(utils.TIMEOUT)
+                    time.sleep(pypeln_utils.TIMEOUT)
 
         except BaseException as e:
             try:
@@ -154,13 +168,16 @@ def to_stage(obj):
 
 
 class Map(Stage):
-    async def apply(self, x, **kwargs):
-        y = self.f(x, **kwargs)
+    async def apply(self, elem, **kwargs):
+        if "element_index" in self.f_args:
+            kwargs["element_index"] = elem.index
+
+        y = self.f(elem.value, **kwargs)
 
         if hasattr(y, "__await__"):
             y = await y
 
-        await self.output_queues.put(y)
+        await self.output_queues.put(elem.set(y))
 
 
 def map(
@@ -238,19 +255,31 @@ def map(
 
 
 class FlatMap(Stage):
-    async def apply(self, x, **kwargs):
-        iterable = self.f(x, **kwargs)
+    async def apply(self, elem, **kwargs):
+        if "element_index" in self.f_args:
+            kwargs["element_index"] = elem.index
+
+        iterable = self.f(elem.value, **kwargs)
 
         if hasattr(iterable, "__aiter__"):
-            async for x in iterable:
-                await self.output_queues.put(x)
+            i = 0
+            async for y in iterable:
+                await self.output_queues.put(
+                    pypeln_utils.Element(index=elem.index + (i,), value=y)
+                )
+                i += 1
         else:
-            for y in iterable:
+            if hasattr(iterable, "__await__"):
+                iterable = await iterable
+
+            for i, y in enumerate(iterable):
 
                 if hasattr(y, "__await__"):
                     y = await y
 
-                await self.output_queues.put(y)
+                await self.output_queues.put(
+                    pypeln_utils.Element(index=elem.index + (i,), value=y)
+                )
 
 
 def flat_map(
@@ -344,14 +373,17 @@ def flat_map(
 
 
 class Filter(Stage):
-    async def apply(self, x, **kwargs):
-        y = self.f(x, **kwargs)
+    async def apply(self, elem, **kwargs):
+        if "element_index" in self.f_args:
+            kwargs["element_index"] = elem.index
+
+        y = self.f(elem.value, **kwargs)
 
         if hasattr(y, "__await__"):
             y = await y
 
         if y:
-            await self.output_queues.put(x)
+            await self.output_queues.put(elem)
 
 
 def filter(
@@ -429,8 +461,11 @@ def filter(
 
 
 class Each(Stage):
-    async def apply(self, x, **kwargs):
-        y = self.f(x, **kwargs)
+    async def apply(self, elem, **kwargs):
+        if "element_index" in self.f_args:
+            kwargs["element_index"] = elem.index
+
+        y = self.f(elem.value, **kwargs)
 
         if hasattr(y, "__await__"):
             y = await y
@@ -560,6 +595,64 @@ def concat(stages: typing.List[Stage], maxsize: int = 0) -> Stage:
         on_start=None,
         on_done=None,
         dependencies=stages,
+    )
+
+
+#############################################################
+# sorted
+#############################################################
+class Sorted(Stage):
+    async def process(self, **kwargs) -> None:
+
+        elems = []
+
+        async for elem in self.input_queue:
+            if self.pipeline_namespace.error:
+                return
+
+            if len(elems) == 0:
+                elems.append(elem)
+            else:
+                for i in reversed(range(len(elems))):
+                    if elem.index >= elems[i].index:
+                        elems.insert(i + 1, elem)
+                        break
+
+                    if i == 0:
+                        elems.insert(0, elem)
+
+        for _ in range(len(elems)):
+            await self.output_queues.put(elems.pop(0))
+
+
+def sorted(stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0) -> Stage:
+    """
+    Creates a stage that sorts its elements based on their order on the source iterable(s) of the pipeline. 
+    
+    !!! warning
+        This stage will not yield util it accumulates all of the elements from the previous stage, use this only if all elements fit in memory.
+
+    Arguments:
+        stage: A stage object.
+        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+
+    Returns:
+        If the `stage` parameters is given then this function returns an iterable, else it returns a `Partial`.
+    """
+
+    if pypeln_utils.is_undefined(stage):
+        return pypeln_utils.Partial(lambda stage: sorted(stage, maxsize=maxsize))
+
+    stage = to_stage(stage)
+
+    return Sorted(
+        f=None,
+        workers=1,
+        maxsize=maxsize,
+        timeout=0,
+        on_start=None,
+        on_done=None,
+        dependencies=[stage],
     )
 
 

@@ -702,7 +702,7 @@ def run(stages: typing.List[Stage], maxsize: int = 0) -> None:
 
 
 def to_iterable(
-    stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0
+    stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0, return_index: bool = False
 ) -> typing.Iterable:
     """
     Creates an iterable from a stage.
@@ -716,10 +716,12 @@ def to_iterable(
     """
 
     if pypeln_utils.is_undefined(stage):
-        return pypeln_utils.Partial(lambda stage: to_iterable(stage, maxsize=maxsize))
+        return pypeln_utils.Partial(
+            lambda stage: to_iterable(stage, maxsize=maxsize, return_index=return_index)
+        )
 
     if isinstance(stage, Stage):
-        iterable = stage.to_iterable(maxsize=maxsize)
+        iterable = stage.to_iterable(maxsize=maxsize, return_index=return_index)
     else:
         iterable = stage
 

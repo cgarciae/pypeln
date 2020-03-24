@@ -347,6 +347,8 @@ class Each(Stage):
 
         self.f(elem.value, **kwargs)
 
+        return ()
+
 
 def each(
     f: typing.Callable,

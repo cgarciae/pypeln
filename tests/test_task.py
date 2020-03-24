@@ -9,7 +9,7 @@ from hypothesis import strategies as st
 import pypeln as pl
 from utils_io import run_async
 
-MAX_EXAMPLES = 15
+MAX_EXAMPLES = 10
 
 ############
 # trivial
@@ -222,6 +222,39 @@ def test_map_square_workers_sorted(nums):
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums_py
+
+
+############
+# each
+############
+
+
+@hp.given(nums=st.lists(st.integers()))
+@hp.settings(max_examples=MAX_EXAMPLES)
+def test_each(nums):
+
+    nums_pl = pl.task.each(lambda x: x, nums)
+    pl.task.run(nums_pl)
+
+
+@hp.given(nums=st.lists(st.integers()))
+@hp.settings(max_examples=MAX_EXAMPLES)
+def test_each_list(nums):
+
+    nums_pl = pl.task.each(lambda x: x, nums)
+    nums_pl = list(nums_pl)
+
+    assert nums_pl == []
+
+
+@hp.given(nums=st.lists(st.integers()))
+@hp.settings(max_examples=MAX_EXAMPLES)
+@run_async
+async def test_each_async(nums):
+
+    res = await pl.task.each(lambda x: x, nums)
+
+    assert res == []
 
 
 ############

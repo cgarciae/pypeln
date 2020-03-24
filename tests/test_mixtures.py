@@ -6,7 +6,8 @@ import time
 import random
 import pypeln as pl
 
-MAX_EXAMPLES = 15
+MAX_EXAMPLES = 10
+SLEEP = 0.001
 
 #########################################################
 # process
@@ -15,7 +16,7 @@ MAX_EXAMPLES = 15
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_process_thread(nums):
     def f(x):
-        time.sleep(random.random() * 0.01)
+        time.sleep(random.random() * SLEEP)
         return x
 
     nums_pl = pl.process.map(f, nums, workers=2)
@@ -30,7 +31,7 @@ def test_process_thread(nums):
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_process_sync(nums):
     def f(x):
-        time.sleep(random.random() * 0.01)
+        time.sleep(random.random() * SLEEP)
         return x
 
     nums_pl = pl.process.map(f, nums, workers=2)
@@ -45,7 +46,7 @@ def test_process_sync(nums):
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_process_task(nums):
     def f(x):
-        time.sleep(random.random() * 0.01)
+        time.sleep(random.random() * SLEEP)
         return x
 
     nums_pl = pl.process.map(f, nums, workers=2)
@@ -65,7 +66,7 @@ def test_process_task(nums):
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_thread_process(nums):
     def f(x):
-        time.sleep(random.random() * 0.01)
+        time.sleep(random.random() * SLEEP)
         return x
 
     nums_pl = pl.thread.map(f, nums, workers=2)
@@ -80,7 +81,7 @@ def test_thread_process(nums):
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_thread_sync(nums):
     def f(x):
-        time.sleep(random.random() * 0.01)
+        time.sleep(random.random() * SLEEP)
         return x
 
     nums_pl = pl.thread.map(f, nums, workers=2)
@@ -95,7 +96,7 @@ def test_thread_sync(nums):
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_thread_task(nums):
     def f(x):
-        time.sleep(random.random() * 0.01)
+        time.sleep(random.random() * SLEEP)
         return x
 
     nums_pl = pl.thread.map(f, nums, workers=2)
@@ -113,7 +114,7 @@ def test_thread_task(nums):
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_sync_process(nums):
     def f(x):
-        time.sleep(random.random() * 0.01)
+        time.sleep(random.random() * SLEEP)
         return x
 
     nums_pl = pl.sync.map(f, nums, workers=2)
@@ -128,7 +129,7 @@ def test_sync_process(nums):
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_sync_thread(nums):
     def f(x):
-        time.sleep(random.random() * 0.01)
+        time.sleep(random.random() * SLEEP)
         return x
 
     nums_pl = pl.sync.map(f, nums, workers=2)
@@ -143,7 +144,7 @@ def test_sync_thread(nums):
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_sync_task(nums):
     def f(x):
-        time.sleep(random.random() * 0.01)
+        time.sleep(random.random() * SLEEP)
         return x
 
     nums_pl = pl.sync.map(f, nums, workers=2)
@@ -161,7 +162,7 @@ def test_sync_task(nums):
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_task_process(nums):
     def f(x):
-        time.sleep(random.random() * 0.01)
+        time.sleep(random.random() * SLEEP)
         return x
 
     nums_pl = pl.task.map(f, nums, workers=2)
@@ -176,7 +177,7 @@ def test_task_process(nums):
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_task_thread(nums):
     def f(x):
-        time.sleep(random.random() * 0.01)
+        time.sleep(random.random() * SLEEP)
         return x
 
     nums_pl = pl.task.map(f, nums, workers=2)
@@ -191,7 +192,7 @@ def test_task_thread(nums):
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_task_sync(nums):
     def f(x):
-        time.sleep(random.random() * 0.01)
+        time.sleep(random.random() * SLEEP)
         return x
 
     nums_pl = pl.task.map(f, nums, workers=2)

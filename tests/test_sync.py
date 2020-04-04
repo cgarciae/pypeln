@@ -200,7 +200,7 @@ def test_map_square_workers_sorted(nums):
     nums_py = list(nums_py)
 
     nums_pl = pl.sync.map(lambda x: x ** 2, nums, workers=2)
-    nums_pl = pl.sync.sorted(nums_pl)
+    nums_pl = pl.sync.ordered(nums_pl)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums_py

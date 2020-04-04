@@ -21,7 +21,7 @@ def test_process_thread(nums):
 
     nums_pl = pl.process.map(f, nums, workers=2)
     nums_pl = pl.thread.map(f, nums_pl, workers=2)
-    nums_pl = pl.thread.sorted(nums_pl)
+    nums_pl = pl.thread.ordered(nums_pl)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums
@@ -36,7 +36,7 @@ def test_process_sync(nums):
 
     nums_pl = pl.process.map(f, nums, workers=2)
     nums_pl = pl.sync.map(f, nums_pl, workers=2)
-    nums_pl = pl.sync.sorted(nums_pl)
+    nums_pl = pl.sync.ordered(nums_pl)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums
@@ -51,7 +51,7 @@ def test_process_task(nums):
 
     nums_pl = pl.process.map(f, nums, workers=2)
     nums_pl = pl.task.map(f, nums_pl, workers=2)
-    nums_pl = pl.task.sorted(nums_pl)
+    nums_pl = pl.task.ordered(nums_pl)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums
@@ -71,7 +71,7 @@ def test_thread_process(nums):
 
     nums_pl = pl.thread.map(f, nums, workers=2)
     nums_pl = pl.process.map(f, nums_pl, workers=2)
-    nums_pl = pl.process.sorted(nums_pl)
+    nums_pl = pl.process.ordered(nums_pl)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums
@@ -86,7 +86,7 @@ def test_thread_sync(nums):
 
     nums_pl = pl.thread.map(f, nums, workers=2)
     nums_pl = pl.sync.map(f, nums_pl, workers=2)
-    nums_pl = pl.sync.sorted(nums_pl)
+    nums_pl = pl.sync.ordered(nums_pl)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums
@@ -101,7 +101,7 @@ def test_thread_task(nums):
 
     nums_pl = pl.thread.map(f, nums, workers=2)
     nums_pl = pl.task.map(f, nums_pl, workers=2)
-    nums_pl = pl.task.sorted(nums_pl)
+    nums_pl = pl.task.ordered(nums_pl)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums
@@ -119,7 +119,7 @@ def test_sync_process(nums):
 
     nums_pl = pl.sync.map(f, nums, workers=2)
     nums_pl = pl.process.map(f, nums_pl, workers=2)
-    nums_pl = pl.process.sorted(nums_pl)
+    nums_pl = pl.process.ordered(nums_pl)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums
@@ -134,7 +134,7 @@ def test_sync_thread(nums):
 
     nums_pl = pl.sync.map(f, nums, workers=2)
     nums_pl = pl.thread.map(f, nums_pl, workers=2)
-    nums_pl = pl.thread.sorted(nums_pl)
+    nums_pl = pl.thread.ordered(nums_pl)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums
@@ -149,7 +149,7 @@ def test_sync_task(nums):
 
     nums_pl = pl.sync.map(f, nums, workers=2)
     nums_pl = pl.task.map(f, nums_pl, workers=2)
-    nums_pl = pl.task.sorted(nums_pl)
+    nums_pl = pl.task.ordered(nums_pl)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums
@@ -167,7 +167,7 @@ def test_task_process(nums):
 
     nums_pl = pl.task.map(f, nums, workers=2)
     nums_pl = pl.process.map(f, nums_pl, workers=2)
-    nums_pl = pl.process.sorted(nums_pl)
+    nums_pl = pl.process.ordered(nums_pl)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums
@@ -182,7 +182,7 @@ def test_task_thread(nums):
 
     nums_pl = pl.task.map(f, nums, workers=2)
     nums_pl = pl.thread.map(f, nums_pl, workers=2)
-    nums_pl = pl.thread.sorted(nums_pl)
+    nums_pl = pl.thread.ordered(nums_pl)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums
@@ -197,7 +197,7 @@ def test_task_sync(nums):
 
     nums_pl = pl.task.map(f, nums, workers=2)
     nums_pl = pl.sync.map(f, nums_pl, workers=2)
-    nums_pl = pl.sync.sorted(nums_pl)
+    nums_pl = pl.sync.ordered(nums_pl)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums

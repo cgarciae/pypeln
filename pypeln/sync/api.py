@@ -467,7 +467,7 @@ def concat(stages: typing.List[Stage], maxsize: int = 0) -> Stage:
 
 
 #############################################################
-# sorted
+# ordered
 #############################################################
 
 
@@ -493,9 +493,34 @@ class Sorted(Stage):
             yield elems.pop(0)
 
 
-def sorted(stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0) -> Stage:
+def ordered(stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0) -> Stage:
     """
-    Creates an iterable from a stage.
+    Creates a stage that sorts its elements based on their order of creation on the source iterable(s) of the pipeline.
+
+    ```python
+    import pypeln as pl
+    import random
+    import time
+
+    def slow_squared(x):
+        time.sleep(random.random())
+        
+        return x ** 2
+
+    stage = range(5)
+    stage = pl.thread.map(slow_squared, stage, workers = 2)
+    stage = pl.sync.ordered(stage)
+
+    print(list(stage)) # [0, 1, 4, 9, 16]
+    ```
+
+    Since `sync.map` preserves order, instead we used `thread.map` so this example made sense. 
+
+    !!! note
+        `ordered` will work even if the previous stages are from different `pypeln` modules, but it may not work if you introduce an itermediate external iterable stage.
+    
+    !!! warning
+        This stage will not yield util it accumulates all of the elements from the previous stage, use this only if all elements fit in memory.
 
     Arguments:
         stage: A stage object.
@@ -506,7 +531,7 @@ def sorted(stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0) -> Stage:
     """
 
     if pypeln_utils.is_undefined(stage):
-        return pypeln_utils.Partial(lambda stage: sorted(stage, maxsize=maxsize))
+        return pypeln_utils.Partial(lambda stage: ordered(stage, maxsize=maxsize))
 
     stage = to_stage(stage)
 

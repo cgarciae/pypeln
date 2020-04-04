@@ -218,7 +218,7 @@ def test_map_square_workers_sorted(nums):
     nums_py = list(nums_py)
 
     nums_pl = pl.task.map(lambda x: x ** 2, nums, workers=2)
-    nums_pl = pl.task.sorted(nums_pl)
+    nums_pl = pl.task.ordered(nums_pl)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums_py
@@ -384,7 +384,7 @@ def test_concat_multiple(nums):
     nums_pl1 = pl.task.concat([nums_pl, nums_pl])
     nums_pl2 = pl.task.concat([nums_pl1, nums_pl])
 
-    # assert sorted(nums_py1) == sorted(list(nums_pl1))
+    # assert ordered(nums_py1) == ordered(list(nums_pl1))
     assert sorted(nums_py2) == sorted(list(nums_pl2))
 
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.3.0] - 2020-03-14
+### Adds
+* `ordered` funtion in all modules, this orders output elements based on the order of creation on the source iterable.
+* 
+
 ## [0.2.7] - 2020-03-14
 ### Adds
 * `timeout` parameter to most funtions in all modules, this stops code execution after a given amount of time if the task has not been completed.

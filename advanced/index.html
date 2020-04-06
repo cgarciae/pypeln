@@ -298,6 +298,19 @@
     Resource Management
   </a>
   
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dependency-injection" class="md-nav__link">
+    Dependency Injection
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -489,6 +502,19 @@
   <a href="#resource-management" class="md-nav__link">
     Resource Management
   </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dependency-injection" class="md-nav__link">
+    Dependency Injection
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -711,7 +737,7 @@ This example uses <code>pl.process</code> but it works the same for all the othe
 </ul>
 <h2 id="resource-management">Resource Management<a class="headerlink" href="#resource-management" title="Permanent link">&para;</a></h2>
 <p>There are many occasions where you need to create some resource objects (e.g. http or database sessions) that (for efficiency) are expected to last the whole span of each worker's life. To support and effectily manage the lifecycle of such objects most of <code>pypeln</code>s functions accept the <code>on_start</code> and <code>on_done</code> callbacks.</p>
-<p>When a worker is created its <code>on_start</code> function get called. This function can return a dictionary containing these resource objects which will be passed as keyword arguments to the workers main function and the <code>on_end</code> function. For exmaple:</p>
+<p>When a worker is created its <code>on_start</code> function get called. This function can return a dictionary containing these resource objects which can be consumed as arguments (by name) on the <code>f</code> and <code>on_end</code> functions. For exmaple:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">import</span> <span class="nn">pypeln</span> <span class="k">as</span> <span class="nn">pl</span>
 
 <span class="k">def</span> <span class="nf">on_start</span><span class="p">():</span>
@@ -732,11 +758,15 @@ This example uses <code>pl.process</code> but it works the same for all the othe
 <span class="n">stage</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="n">on_start</span><span class="p">,</span> <span class="n">on_end</span><span class="o">=</span><span class="n">on_end</span><span class="p">)</span>
 </code></pre></div>
 
-<p>Additionally:</p>
+<h3 id="dependency-injection">Dependency Injection<a class="headerlink" href="#dependency-injection" title="Permanent link">&para;</a></h3>
+<p><strong>Special Arguments</strong></p>
 <ul>
-<li>If <code>f</code> defines a <code>worker_info</code> argument an object with information about the worker will be passed.</li>
-<li>If <code>on_end</code> defines a <code>stage_status</code> an object with information about the stage will be passed. </li>
+<li><code>worker_info</code>: <code>f</code>, <code>on_start</code> and <code>on_done</code> can define a <code>worker_info</code> argument; an object with information about the worker will be passed.</li>
+<li><code>stage_status</code>: <code>on_end</code> can define a <code>stage_status</code> argument; an object with information about the stage will be passed.</li>
+<li><code>element_index</code>: <code>f</code> can define a <code>element_index</code> argument; a tuple representing the index of the element will be passed, this index represents the order of creation of the element on the original/source iterable and is the underlying mechanism by which the <code>ordered</code> operation is implemented. Usually it will be a tuple of a single element, but operations like <code>flat_map</code> add an additional index dimension in order to properly keep track of the order. </li>
 </ul>
+<p><strong>User Defined</strong></p>
+<p>Any element in the dictionary returned by <code>on_start</code> can be consumed as an argument by <code>f</code> and <code>on_done</code>.</p>
 <h2 id="asyncio-integration">Asyncio Integration<a class="headerlink" href="#asyncio-integration" title="Permanent link">&para;</a></h2>
 <p>While you can consume <code>task</code> stages synchronously as you've seen, there are 2 ways to consume them using python <code>async</code> syntax:</p>
 <h4 id="await">await<a class="headerlink" href="#await" title="Permanent link">&para;</a></h4>

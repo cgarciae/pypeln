@@ -340,6 +340,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pypeln.thread.api.ordered" class="md-nav__link">
+    ordered()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pypeln.thread.api.run" class="md-nav__link">
     run()
   </a>
@@ -456,6 +463,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pypeln.thread.api.ordered" class="md-nav__link">
+    ordered()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pypeln.thread.api.run" class="md-nav__link">
     run()
   </a>
@@ -492,38 +506,38 @@
 <p>The <code>thread</code> module lets you create pipelines using objects from python's <a href="https://docs.python.org/3/library/threading.html">threading</a> module according to Pypeln's general <a href="https://cgarciae.github.io/pypeln/advanced/#architecture">architecture</a>. Use this module when you are in need to perform some synchronous IO operations and DONT need to perform heavy CPU operations.</p>
 <h2 id="pypeln.thread.api.concat"><code class="codehilite"><span class="n">concat</span><span class="p">(</span><span class="n">stages</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.thread.api.concat" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>462
-463
-464
-465
-466
-467
-468
-469
-470
-471
-472
-473
-474
-475
-476
-477
-478
-479
-480
-481
-482
-483
-484
-485
-486
+<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>486
 487
 488
 489
 490
 491
 492
-493</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">concat</span><span class="p">(</span><span class="n">stages</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Stage</span><span class="p">],</span> <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Stage</span><span class="p">:</span>
+493
+494
+495
+496
+497
+498
+499
+500
+501
+502
+503
+504
+505
+506
+507
+508
+509
+510
+511
+512
+513
+514
+515
+516
+517</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">concat</span><span class="p">(</span><span class="n">stages</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Stage</span><span class="p">],</span> <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Stage</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Concatenates / merges many stages into a single one by appending elements from each stage as they come, order is not preserved.</span>
 
@@ -611,32 +625,7 @@
 </div>
 <h2 id="pypeln.thread.api.each"><code class="codehilite"><span class="n">each</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.thread.api.each" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>366
-367
-368
-369
-370
-371
-372
-373
-374
-375
-376
-377
-378
-379
-380
-381
-382
-383
-384
-385
-386
-387
-388
-389
-390
-391
+<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>391
 392
 393
 394
@@ -694,7 +683,31 @@
 446
 447
 448
-449</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">each</span><span class="p">(</span>
+449
+450
+451
+452
+453
+454
+455
+456
+457
+458
+459
+460
+461
+462
+463
+464
+465
+466
+467
+468
+469
+470
+471
+472
+473</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">each</span><span class="p">(</span>
     <span class="n">f</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">,</span>
     <span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span>
     <span class="n">workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
@@ -732,13 +745,12 @@
 <span class="sd">        Because of concurrency order is not guaranteed.</span>
 
 <span class="sd">    Arguments:</span>
-<span class="sd">        f: A function with signature `f(x, **kwargs) -&gt; None`, where `kwargs` is the return of `on_start` if present.</span>
-<span class="sd">        stage: A stage or iterable.</span>
+<span class="sd">        f: A function with signature `f(x) -&gt; None`. `f` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).</span>
 <span class="sd">        workers: The number of workers the stage should contain.</span>
 <span class="sd">        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.</span>
 <span class="sd">        timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. </span>
-<span class="sd">        on_start: A function with signature `on_start(worker_info?) -&gt; kwargs`, where `kwargs` can be a `dict` of keyword arguments that will be passed to `f` and `on_done`. If you define a `worker_info` argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.</span>
-<span class="sd">        on_done: A function with signature `on_done(stage_status?, **kwargs)`, where `kwargs` is the return of `on_start` if present. If you define a `stage_status` argument an object with information about the stage will be passed. This function is executed once per worker when the worker finishes.</span>
+<span class="sd">        on_start: A function with signature `on_start(worker_info?) -&gt; kwargs?`, where `kwargs` can be a `dict` of keyword arguments that can be consumed by `f` and `on_done`. `on_start` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).</span>
+<span class="sd">        on_done: A function with signature `on_done(stage_status?)`. This function is executed once per worker when the worker finishes. `on_done` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).</span>
 <span class="sd">        run: Whether or not to execute the stage immediately.</span>
 
 <span class="sd">    !!! warning</span>
@@ -818,14 +830,8 @@
 <tr>
 <td><code>f</code></td>
 <td><code>Callable</code></td>
-<td>A function with signature <code>f(x, **kwargs) -&gt; None</code>, where <code>kwargs</code> is the return of <code>on_start</code> if present.</td>
+<td>A function with signature <code>f(x) -&gt; None</code>. <code>f</code> can accept additional arguments by name as described in <a href="https://cgarciae.github.io/pypeln/advanced/#dependency-injection">Advanced Usage</a>.</td>
 <td><em>required</em></td>
-</tr>
-<tr>
-<td><code>stage</code></td>
-<td><code>Stage</code></td>
-<td>A stage or iterable.</td>
-<td><code>Undefined</code></td>
 </tr>
 <tr>
 <td><code>workers</code></td>
@@ -848,13 +854,13 @@
 <tr>
 <td><code>on_start</code></td>
 <td><code>Callable</code></td>
-<td>A function with signature <code>on_start(worker_info?) -&gt; kwargs</code>, where <code>kwargs</code> can be a <code>dict</code> of keyword arguments that will be passed to <code>f</code> and <code>on_done</code>. If you define a <code>worker_info</code> argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.</td>
+<td>A function with signature <code>on_start(worker_info?) -&gt; kwargs?</code>, where <code>kwargs</code> can be a <code>dict</code> of keyword arguments that can be consumed by <code>f</code> and <code>on_done</code>. <code>on_start</code> can accept additional arguments by name as described in <a href="https://cgarciae.github.io/pypeln/advanced/#dependency-injection">Advanced Usage</a>.</td>
 <td><code>None</code></td>
 </tr>
 <tr>
 <td><code>on_done</code></td>
 <td><code>Callable</code></td>
-<td>A function with signature <code>on_done(stage_status?, **kwargs)</code>, where <code>kwargs</code> is the return of <code>on_start</code> if present. If you define a <code>stage_status</code> argument an object with information about the stage will be passed. This function is executed once per worker when the worker finishes.</td>
+<td>A function with signature <code>on_done(stage_status?)</code>. This function is executed once per worker when the worker finishes. <code>on_done</code> can accept additional arguments by name as described in <a href="https://cgarciae.github.io/pypeln/advanced/#dependency-injection">Advanced Usage</a>.</td>
 <td><code>None</code></td>
 </tr>
 <tr>
@@ -887,29 +893,7 @@
 </div>
 <h2 id="pypeln.thread.api.filter"><code class="codehilite"><span class="nb">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.thread.api.filter" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>284
-285
-286
-287
-288
-289
-290
-291
-292
-293
-294
-295
-296
-297
-298
-299
-300
-301
-302
-303
-304
-305
-306
+<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>306
 307
 308
 309
@@ -956,7 +940,29 @@
 350
 351
 352
-353</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">filter</span><span class="p">(</span>
+353
+354
+355
+356
+357
+358
+359
+360
+361
+362
+363
+364
+365
+366
+367
+368
+369
+370
+371
+372
+373
+374
+375</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">filter</span><span class="p">(</span>
     <span class="n">f</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">,</span>
     <span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span>
     <span class="n">workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
@@ -987,13 +993,13 @@
 <span class="sd">        Because of concurrency order is not guaranteed.</span>
 
 <span class="sd">    Arguments:</span>
-<span class="sd">        f: A function with signature `f(x, **kwargs) -&gt; bool`, where `kwargs` is the return of `on_start` if present.</span>
+<span class="sd">        f: A function with signature `f(x) -&gt; bool`. `f` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).</span>
 <span class="sd">        stage: A stage or iterable.</span>
 <span class="sd">        workers: The number of workers the stage should contain.</span>
 <span class="sd">        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.</span>
 <span class="sd">        timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. </span>
-<span class="sd">        on_start: A function with signature `on_start(worker_info?) -&gt; kwargs`, where `kwargs` can be a `dict` of keyword arguments that will be passed to `f` and `on_done`. If you define a `worker_info` argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.</span>
-<span class="sd">        on_done: A function with signature `on_done(stage_status?, **kwargs)`, where `kwargs` is the return of `on_start` if present. If you define a `stage_status` argument an object with information about the stage will be passed. This function is executed once per worker when the worker finishes.</span>
+<span class="sd">        on_start: A function with signature `on_start(worker_info?) -&gt; kwargs?`, where `kwargs` can be a `dict` of keyword arguments that can be consumed by `f` and `on_done`. `on_start` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).</span>
+<span class="sd">        on_done: A function with signature `on_done(stage_status?)`. This function is executed once per worker when the worker finishes. `on_done` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).</span>
 
 <span class="sd">    !!! warning</span>
 <span class="sd">        To implement `timeout` we use `stopit.async_raise` which has some limitations for stoping threads.</span>
@@ -1063,7 +1069,7 @@
 <tr>
 <td><code>f</code></td>
 <td><code>Callable</code></td>
-<td>A function with signature <code>f(x, **kwargs) -&gt; bool</code>, where <code>kwargs</code> is the return of <code>on_start</code> if present.</td>
+<td>A function with signature <code>f(x) -&gt; bool</code>. <code>f</code> can accept additional arguments by name as described in <a href="https://cgarciae.github.io/pypeln/advanced/#dependency-injection">Advanced Usage</a>.</td>
 <td><em>required</em></td>
 </tr>
 <tr>
@@ -1093,13 +1099,13 @@
 <tr>
 <td><code>on_start</code></td>
 <td><code>Callable</code></td>
-<td>A function with signature <code>on_start(worker_info?) -&gt; kwargs</code>, where <code>kwargs</code> can be a <code>dict</code> of keyword arguments that will be passed to <code>f</code> and <code>on_done</code>. If you define a <code>worker_info</code> argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.</td>
+<td>A function with signature <code>on_start(worker_info?) -&gt; kwargs?</code>, where <code>kwargs</code> can be a <code>dict</code> of keyword arguments that can be consumed by <code>f</code> and <code>on_done</code>. <code>on_start</code> can accept additional arguments by name as described in <a href="https://cgarciae.github.io/pypeln/advanced/#dependency-injection">Advanced Usage</a>.</td>
 <td><code>None</code></td>
 </tr>
 <tr>
 <td><code>on_done</code></td>
 <td><code>Callable</code></td>
-<td>A function with signature <code>on_done(stage_status?, **kwargs)</code>, where <code>kwargs</code> is the return of <code>on_start</code> if present. If you define a <code>stage_status</code> argument an object with information about the stage will be passed. This function is executed once per worker when the worker finishes.</td>
+<td>A function with signature <code>on_done(stage_status?)</code>. This function is executed once per worker when the worker finishes. <code>on_done</code> can accept additional arguments by name as described in <a href="https://cgarciae.github.io/pypeln/advanced/#dependency-injection">Advanced Usage</a>.</td>
 <td><code>None</code></td>
 </tr>
 </tbody>
@@ -1126,25 +1132,7 @@
 </div>
 <h2 id="pypeln.thread.api.flat_map"><code class="codehilite"><span class="n">flat_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.thread.api.flat_map" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>185
-186
-187
-188
-189
-190
-191
-192
-193
-194
-195
-196
-197
-198
-199
-200
-201
-202
-203
+<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>203
 204
 205
 206
@@ -1211,7 +1199,25 @@
 267
 268
 269
-270</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">flat_map</span><span class="p">(</span>
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+284
+285
+286
+287
+288</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">flat_map</span><span class="p">(</span>
     <span class="n">f</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">,</span>
     <span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span>
     <span class="n">workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
@@ -1258,13 +1264,13 @@
 <span class="sd">    Using `flat_map` with a generator function is very useful as e.g. you are able to filter out unwanted elements when there are exceptions, missing data, etc.</span>
 
 <span class="sd">    Arguments:</span>
-<span class="sd">        f: A function with signature `f(x, **kwargs) -&gt; Iterable`, where `kwargs` is the return of `on_start` if present.</span>
+<span class="sd">        f: A function with signature `f(x) -&gt; iterable`. `f` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).</span>
 <span class="sd">        stage: A stage or iterable.</span>
 <span class="sd">        workers: The number of workers the stage should contain.</span>
 <span class="sd">        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.</span>
 <span class="sd">        timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. </span>
-<span class="sd">        on_start: A function with signature `on_start(worker_info?) -&gt; kwargs`, where `kwargs` can be a `dict` of keyword arguments that will be passed to `f` and `on_done`. If you define a `worker_info` argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.</span>
-<span class="sd">        on_done: A function with signature `on_done(stage_status?, **kwargs)`, where `kwargs` is the return of `on_start` if present. If you define a `stage_status` argument an object with information about the stage will be passed. This function is executed once per worker when the worker finishes.</span>
+<span class="sd">        on_start: A function with signature `on_start(worker_info?) -&gt; kwargs?`, where `kwargs` can be a `dict` of keyword arguments that can be consumed by `f` and `on_done`. `on_start` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).</span>
+<span class="sd">        on_done: A function with signature `on_done(stage_status?)`. This function is executed once per worker when the worker finishes. `on_done` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).</span>
 
 <span class="sd">    !!! warning</span>
 <span class="sd">        To implement `timeout` we use `stopit.async_raise` which has some limitations for stoping threads.</span>
@@ -1347,7 +1353,7 @@
 <tr>
 <td><code>f</code></td>
 <td><code>Callable</code></td>
-<td>A function with signature <code>f(x, **kwargs) -&gt; Iterable</code>, where <code>kwargs</code> is the return of <code>on_start</code> if present.</td>
+<td>A function with signature <code>f(x) -&gt; iterable</code>. <code>f</code> can accept additional arguments by name as described in <a href="https://cgarciae.github.io/pypeln/advanced/#dependency-injection">Advanced Usage</a>.</td>
 <td><em>required</em></td>
 </tr>
 <tr>
@@ -1377,13 +1383,13 @@
 <tr>
 <td><code>on_start</code></td>
 <td><code>Callable</code></td>
-<td>A function with signature <code>on_start(worker_info?) -&gt; kwargs</code>, where <code>kwargs</code> can be a <code>dict</code> of keyword arguments that will be passed to <code>f</code> and <code>on_done</code>. If you define a <code>worker_info</code> argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.</td>
+<td>A function with signature <code>on_start(worker_info?) -&gt; kwargs?</code>, where <code>kwargs</code> can be a <code>dict</code> of keyword arguments that can be consumed by <code>f</code> and <code>on_done</code>. <code>on_start</code> can accept additional arguments by name as described in <a href="https://cgarciae.github.io/pypeln/advanced/#dependency-injection">Advanced Usage</a>.</td>
 <td><code>None</code></td>
 </tr>
 <tr>
 <td><code>on_done</code></td>
 <td><code>Callable</code></td>
-<td>A function with signature <code>on_done(stage_status?, **kwargs)</code>, where <code>kwargs</code> is the return of <code>on_start</code> if present. If you define a <code>stage_status</code> argument an object with information about the stage will be passed. This function is executed once per worker when the worker finishes.</td>
+<td>A function with signature <code>on_done(stage_status?)</code>. This function is executed once per worker when the worker finishes. <code>on_done</code> can accept additional arguments by name as described in <a href="https://cgarciae.github.io/pypeln/advanced/#dependency-injection">Advanced Usage</a>.</td>
 <td><code>None</code></td>
 </tr>
 </tbody>
@@ -1410,18 +1416,7 @@
 </div>
 <h2 id="pypeln.thread.api.from_iterable"><code class="codehilite"><span class="n">from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">worker_constructor</span><span class="o">=&lt;</span><span class="k">class</span> <span class="err">&#39;</span><span class="nc">threading</span><span class="o">.</span><span class="n">Thread</span><span class="s1">&#39;&gt;)</span></code><a class="headerlink" href="#pypeln.thread.api.from_iterable" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>32
-33
-34
-35
-36
-37
-38
-39
-40
-41
-42
-43
+<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>43
 44
 45
 46
@@ -1449,7 +1444,17 @@
 68
 69
 70
-71</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">from_iterable</span><span class="p">(</span>
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">from_iterable</span><span class="p">(</span>
     <span class="n">iterable</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Iterable</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span>
     <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">worker_constructor</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Type</span> <span class="o">=</span> <span class="n">Thread</span><span class="p">,</span>
@@ -1459,7 +1464,6 @@
 
 <span class="sd">    * `threading.Thread`: (default) is efficient for iterables that already have the data in memory like lists or numpy arrays because threads can share memory so no serialization is needed. </span>
 <span class="sd">    * `multiprocessing.Process`: is efficient for iterables who&#39;s data is not in memory like arbitrary generators and benefit from escaping the GIL. This is inefficient for iterables which have data in memory because they have to be serialized when sent to the background process.</span>
-
 
 
 <span class="sd">    Arguments:</span>
@@ -1547,21 +1551,7 @@
 </div>
 <h2 id="pypeln.thread.api.map"><code class="codehilite"><span class="nb">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">on_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.thread.api.map" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>102
-103
-104
-105
-106
-107
-108
-109
-110
-111
-112
-113
-114
-115
-116
+<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>116
 117
 118
 119
@@ -1616,7 +1606,21 @@
 168
 169
 170
-171</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">map</span><span class="p">(</span>
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">map</span><span class="p">(</span>
     <span class="n">f</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">,</span>
     <span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span>
     <span class="n">workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
@@ -1647,13 +1651,13 @@
 <span class="sd">        Because of concurrency order is not guaranteed. </span>
 
 <span class="sd">    Arguments:</span>
-<span class="sd">        f: A function with signature `f(x, **kwargs) -&gt; y`, where `kwargs` is the return of `on_start` if present.</span>
+<span class="sd">        f: A function with the signature `f(x) -&gt; y`. `f` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).</span>
 <span class="sd">        stage: A stage or iterable.</span>
 <span class="sd">        workers: The number of workers the stage should contain.</span>
 <span class="sd">        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.</span>
 <span class="sd">        timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. </span>
-<span class="sd">        on_start: A function with signature `on_start(worker_info?) -&gt; kwargs`, where `kwargs` can be a `dict` of keyword arguments that will be passed to `f` and `on_done`. If you define a `worker_info` argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.</span>
-<span class="sd">        on_done: A function with signature `on_done(stage_status?, **kwargs)`, where `kwargs` is the return of `on_start` if present. If you define a `stage_status` argument an object with information about the stage will be passed. This function is executed once per worker when the worker finishes.</span>
+<span class="sd">        on_start: A function with signature `on_start(worker_info?) -&gt; kwargs?`, where `kwargs` can be a `dict` of keyword arguments that can be consumed by `f` and `on_done`. `on_start` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).</span>
+<span class="sd">        on_done: A function with signature `on_done(stage_status?)`. This function is executed once per worker when the worker finishes. `on_done` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).</span>
 
 <span class="sd">    !!! warning</span>
 <span class="sd">        To implement `timeout` we use `stopit.async_raise` which has some limitations for stoping threads.</span>
@@ -1723,7 +1727,7 @@
 <tr>
 <td><code>f</code></td>
 <td><code>Callable</code></td>
-<td>A function with signature <code>f(x, **kwargs) -&gt; y</code>, where <code>kwargs</code> is the return of <code>on_start</code> if present.</td>
+<td>A function with the signature <code>f(x) -&gt; y</code>. <code>f</code> can accept additional arguments by name as described in <a href="https://cgarciae.github.io/pypeln/advanced/#dependency-injection">Advanced Usage</a>.</td>
 <td><em>required</em></td>
 </tr>
 <tr>
@@ -1753,13 +1757,13 @@
 <tr>
 <td><code>on_start</code></td>
 <td><code>Callable</code></td>
-<td>A function with signature <code>on_start(worker_info?) -&gt; kwargs</code>, where <code>kwargs</code> can be a <code>dict</code> of keyword arguments that will be passed to <code>f</code> and <code>on_done</code>. If you define a <code>worker_info</code> argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.</td>
+<td>A function with signature <code>on_start(worker_info?) -&gt; kwargs?</code>, where <code>kwargs</code> can be a <code>dict</code> of keyword arguments that can be consumed by <code>f</code> and <code>on_done</code>. <code>on_start</code> can accept additional arguments by name as described in <a href="https://cgarciae.github.io/pypeln/advanced/#dependency-injection">Advanced Usage</a>.</td>
 <td><code>None</code></td>
 </tr>
 <tr>
 <td><code>on_done</code></td>
 <td><code>Callable</code></td>
-<td>A function with signature <code>on_done(stage_status?, **kwargs)</code>, where <code>kwargs</code> is the return of <code>on_start</code> if present. If you define a <code>stage_status</code> argument an object with information about the stage will be passed. This function is executed once per worker when the worker finishes.</td>
+<td>A function with signature <code>on_done(stage_status?)</code>. This function is executed once per worker when the worker finishes. <code>on_done</code> can accept additional arguments by name as described in <a href="https://cgarciae.github.io/pypeln/advanced/#dependency-injection">Advanced Usage</a>.</td>
 <td><code>None</code></td>
 </tr>
 </tbody>
@@ -1784,41 +1788,210 @@
 </tbody>
 </table>
 </div>
+<h2 id="pypeln.thread.api.ordered"><code class="codehilite"><span class="n">ordered</span><span class="p">(</span><span class="n">stage</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.thread.api.ordered" title="Permanent link">&para;</a></h2>
+<div class="autodoc">
+<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>549
+550
+551
+552
+553
+554
+555
+556
+557
+558
+559
+560
+561
+562
+563
+564
+565
+566
+567
+568
+569
+570
+571
+572
+573
+574
+575
+576
+577
+578
+579
+580
+581
+582
+583
+584
+585
+586
+587
+588
+589
+590
+591
+592
+593
+594
+595
+596
+597</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">ordered</span><span class="p">(</span><span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Stage</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a stage that sorts its elements based on their order of creation on the source iterable(s) of the pipeline.</span>
+
+<span class="sd">    ```python</span>
+<span class="sd">    import pypeln as pl</span>
+<span class="sd">    import random</span>
+<span class="sd">    import time</span>
+
+<span class="sd">    def slow_squared(x):</span>
+<span class="sd">        time.sleep(random.random())</span>
+
+<span class="sd">        return x ** 2</span>
+
+<span class="sd">    stage = range(5)</span>
+<span class="sd">    stage = pl.thread.map(slow_squared, stage, workers = 2)</span>
+<span class="sd">    stage = pl.thread.ordered(stage)</span>
+
+<span class="sd">    print(list(stage)) # [0, 1, 4, 9, 16]</span>
+<span class="sd">    ```</span>
+
+<span class="sd">    !!! note</span>
+<span class="sd">        `ordered` will work even if the previous stages are from different `pypeln` modules, but it may not work if you introduce an itermediate external iterable stage.</span>
+
+<span class="sd">    !!! warning</span>
+<span class="sd">        This stage will not yield util it accumulates all of the elements from the previous stage, use this only if all elements fit in memory.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        stage: A stage object.</span>
+<span class="sd">        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        If the `stage` parameters is given then this function returns an iterable, else it returns a `Partial`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">is_undefined</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">ordered</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">))</span>
+
+    <span class="n">stage</span> <span class="o">=</span> <span class="n">to_stage</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">Ordered</span><span class="p">(</span>
+        <span class="n">f</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span>
+        <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">on_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">on_done</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">dependencies</span><span class="o">=</span><span class="p">[</span><span class="n">stage</span><span class="p">],</span>
+    <span class="p">)</span>
+</code></pre></div>
+</td></tr></table>
+
+</details>
+<p>Creates a stage that sorts its elements based on their order of creation on the source iterable(s) of the pipeline.</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">import</span> <span class="nn">pypeln</span> <span class="k">as</span> <span class="nn">pl</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="k">def</span> <span class="nf">slow_squared</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span>
+
+    <span class="k">return</span> <span class="n">x</span> <span class="o">**</span> <span class="mi">2</span>
+
+<span class="n">stage</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">stage</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">slow_squared</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">stage</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">ordered</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">stage</span><span class="p">))</span> <span class="c1"># [0, 1, 4, 9, 16]</span>
+</code></pre></div>
+
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code>ordered</code> will work even if the previous stages are from different <code>pypeln</code> modules, but it may not work if you introduce an itermediate external iterable stage.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This stage will not yield util it accumulates all of the elements from the previous stage, use this only if all elements fit in memory.</p>
+</div>
+<p><strong>Parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>stage</code></td>
+<td><code>Stage</code></td>
+<td>A stage object.</td>
+<td><code>Undefined</code></td>
+</tr>
+<tr>
+<td><code>maxsize</code></td>
+<td><code>int</code></td>
+<td>The maximum number of objects the stage can hold simultaneously, if set to <code>0</code> (default) then the stage can grow unbounded.</td>
+<td><code>0</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns</strong></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Stage</code></td>
+<td>If the <code>stage</code> parameters is given then this function returns an iterable, else it returns a <code>Partial</code>.</td>
+</tr>
+</tbody>
+</table>
+</div>
 <h2 id="pypeln.thread.api.run"><code class="codehilite"><span class="n">run</span><span class="p">(</span><span class="n">stages</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.thread.api.run" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>501
-502
-503
-504
-505
-506
-507
-508
-509
-510
-511
-512
-513
-514
-515
-516
-517
-518
-519
-520
-521
-522
-523
-524
-525
-526
-527
-528
-529
-530
-531
-532
-533</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">stages</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Stage</span><span class="p">],</span> <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>605
+606
+607
+608
+609
+610
+611
+612
+613
+614
+615
+616
+617
+618
+619
+620
+621
+622
+623
+624
+625
+626
+627
+628
+629
+630
+631
+632
+633
+634
+635
+636
+637</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">stages</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Stage</span><span class="p">],</span> <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Iterates over one or more stages until their iterators run out of elements.</span>
 
@@ -1891,32 +2064,32 @@
 </tbody>
 </table>
 </div>
-<h2 id="pypeln.thread.api.to_iterable"><code class="codehilite"><span class="n">to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.thread.api.to_iterable" title="Permanent link">&para;</a></h2>
+<h2 id="pypeln.thread.api.to_iterable"><code class="codehilite"><span class="n">to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="o">=</span><span class="n">Undefined</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">return_index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code><a class="headerlink" href="#pypeln.thread.api.to_iterable" title="Permanent link">&para;</a></h2>
 <div class="autodoc">
-<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>541
-542
-543
-544
-545
-546
-547
-548
-549
-550
-551
-552
-553
-554
-555
-556
-557
-558
-559
-560
-561
-562
-563</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">to_iterable</span><span class="p">(</span>
-    <span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+<details class="note"><summary>Show source code in pypeln/thread/api.py</summary><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span>645
+646
+647
+648
+649
+650
+651
+652
+653
+654
+655
+656
+657
+658
+659
+660
+661
+662
+663
+664
+665
+666
+667</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">to_iterable</span><span class="p">(</span>
+    <span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span> <span class="o">=</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">return_index</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">typing</span><span class="o">.</span><span class="n">Iterable</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Creates an iterable from a stage.</span>
@@ -1933,7 +2106,7 @@
         <span class="k">return</span> <span class="n">pypeln_utils</span><span class="o">.</span><span class="n">Partial</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stage</span><span class="p">:</span> <span class="n">to_iterable</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">))</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">Stage</span><span class="p">):</span>
-        <span class="n">iterable</span> <span class="o">=</span> <span class="n">stage</span><span class="o">.</span><span class="n">to_iterable</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">)</span>
+        <span class="n">iterable</span> <span class="o">=</span> <span class="n">stage</span><span class="o">.</span><span class="n">to_iterable</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">return_index</span><span class="o">=</span><span class="n">return_index</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">iterable</span> <span class="o">=</span> <span class="n">stage</span>
 

@@ -6,7 +6,7 @@ import time
 
 import pypeln as pl
 
-MAX_EXAMPLES = 15
+MAX_EXAMPLES = 10
 
 ############
 # trivial
@@ -118,10 +118,13 @@ def test_worker_info():
     n_workers = 4
 
     def on_start(worker_info):
-        return dict(index=worker_info.index)
+        return dict(worker_info=worker_info)
 
     nums_pl = pl.process.map(
-        lambda x, index: index, nums, on_start=on_start, workers=n_workers,
+        lambda x, worker_info: worker_info.index,
+        nums,
+        on_start=on_start,
+        workers=n_workers,
     )
     nums_pl = set(nums_pl)
 
@@ -191,6 +194,43 @@ def test_map_square_workers(nums):
     assert sorted(nums_pl) == sorted(nums_py)
 
 
+@hp.given(nums=st.lists(st.integers()))
+@hp.settings(max_examples=MAX_EXAMPLES)
+def test_map_square_workers_sorted(nums):
+
+    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = list(nums_py)
+
+    nums_pl = pl.process.map(lambda x: x ** 2, nums, workers=2)
+    nums_pl = pl.process.ordered(nums_pl)
+    nums_pl = list(nums_pl)
+
+    assert nums_pl == nums_py
+
+
+############
+# each
+############
+
+
+@hp.given(nums=st.lists(st.integers()))
+@hp.settings(max_examples=MAX_EXAMPLES)
+def test_each(nums):
+
+    nums_pl = pl.process.each(lambda x: x, nums)
+    pl.process.run(nums_pl)
+
+
+@hp.given(nums=st.lists(st.integers()))
+@hp.settings(max_examples=MAX_EXAMPLES)
+def test_each_list(nums):
+
+    nums_pl = pl.process.each(lambda x: x, nums)
+    nums_pl = list(nums_pl)
+
+    assert nums_pl == []
+
+
 ############
 # flat_map
 ############
@@ -253,7 +293,7 @@ def test_flat_map_square_filter_workers(nums):
     nums_py = list(nums_py)
 
     nums_pl = pl.process.map(lambda x: x ** 2, nums)
-    nums_pl = pl.process.flat_map(_generator, nums_pl, workers=3)
+    nums_pl = pl.process.flat_map(_generator, nums_pl, workers=2)
     nums_pl = pl.process.filter(lambda x: x > 1, nums_pl)
     nums_pl = list(nums_pl)
 

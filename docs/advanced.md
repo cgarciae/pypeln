@@ -88,7 +88,7 @@ General guidelines:
 
 There are many occasions where you need to create some resource objects (e.g. http or database sessions) that (for efficiency) are expected to last the whole span of each worker's life. To support and effectily manage the lifecycle of such objects most of `pypeln`s functions accept the `on_start` and `on_done` callbacks.
 
-When a worker is created its `on_start` function get called. This function can return a dictionary containing these resource objects which will be passed as keyword arguments to the workers main function and the `on_end` function. For exmaple:
+When a worker is created its `on_start` function get called. This function can return a dictionary containing these resource objects which can be consumed as arguments (by name) on the `f` and `on_end` functions. For exmaple:
 
 ```python
 import pypeln as pl
@@ -111,10 +111,17 @@ def on_end(http_session, db_session):
 stage = pl.process.map(f, stage, workers=3, on_start=on_start, on_end=on_end)
 ```
 
-Additionally:
+### Dependency Injection
 
-* If `f` defines a `worker_info` argument an object with information about the worker will be passed.
-* If `on_end` defines a `stage_status` an object with information about the stage will be passed. 
+**Special Arguments**
+
+* `worker_info`: `f`, `on_start` and `on_done` can define a `worker_info` argument; an object with information about the worker will be passed.
+* `stage_status`: `on_end` can define a `stage_status` argument; an object with information about the stage will be passed.
+* `element_index`: `f` can define a `element_index` argument; a tuple representing the index of the element will be passed, this index represents the order of creation of the element on the original/source iterable and is the underlying mechanism by which the `ordered` operation is implemented. Usually it will be a tuple of a single element, but operations like `flat_map` add an additional index dimension in order to properly keep track of the order. 
+
+**User Defined**
+
+Any element in the dictionary returned by `on_start` can be consumed as an argument by `f` and `on_done`.
 
 ## Asyncio Integration
 

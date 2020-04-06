@@ -102,11 +102,3 @@ class StageStatus:
 
     def __str__(self):
         return f"StageStatus(done = {done}, active_workers = {active_workers})"
-
-
-WorkerInfo = namedtuple("WorkerInfo", ["index"])
-
-
-class StageReuseError(Exception):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)

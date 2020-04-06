@@ -12,11 +12,10 @@ from pypeln import utils as pypeln_utils
 from . import utils
 
 
-class Stage:
+class Stage(pypeln_utils.BaseStage):
     def __init__(
         self, f, workers, maxsize, on_start, on_done, dependencies, timeout,
     ):
-
         self.f = f
         self.workers = workers
         self.maxsize = maxsize
@@ -25,6 +24,13 @@ class Stage:
         self.timeout = timeout
         self.dependencies = dependencies
         self.output_queues = utils.MultiQueue()
+        self.f_args = pypeln_utils.function_args(self.f) if self.f else set()
+        self.on_start_args = (
+            pypeln_utils.function_args(self.on_start) if self.on_start else set()
+        )
+        self.on_done_args = (
+            pypeln_utils.function_args(self.on_done) if self.on_done else set()
+        )
         ######################################
         # build fields
         ######################################
@@ -47,14 +53,18 @@ class Stage:
                 await tasks.put(task)
 
     async def run(self):
+        worker_info = pypeln_utils.WorkerInfo(index=0)
+
         try:
             if self.on_start is not None:
-                on_start_kwargs = {}
-
-                if "worker_info" in inspect.getfullargspec(self.on_start).args:
-                    on_start_kwargs["worker_info"] = utils.WorkerInfo(index=0)
-
-                kwargs = self.on_start(**on_start_kwargs)
+                on_start_kwargs = dict(worker_info=worker_info)
+                kwargs = self.on_start(
+                    **{
+                        key: value
+                        for key, value in on_start_kwargs.items()
+                        if key in self.on_start_args
+                    }
+                )
             else:
                 kwargs = {}
 
@@ -64,14 +74,25 @@ class Stage:
             if hasattr(kwargs, "__await__"):
                 kwargs = await kwargs
 
-            await self.process(**kwargs)
+            kwargs.setdefault("worker_info", worker_info)
+
+            await self.process(
+                **{key: value for key, value in kwargs.items() if key in self.f_args}
+            )
 
             if self.on_done is not None:
 
-                if "stage_status" in inspect.getfullargspec(self.on_done).args:
-                    kwargs["stage_status"] = utils.StageStatus()
+                kwargs.setdefault(
+                    "stage_status", utils.StageStatus(),
+                )
 
-                done_resp = self.on_done(**kwargs)
+                done_resp = self.on_done(
+                    **{
+                        key: value
+                        for key, value in kwargs.items()
+                        if key in self.on_done_args
+                    }
+                )
 
                 if hasattr(done_resp, "__await__"):
                     await done_resp
@@ -91,12 +112,12 @@ class Stage:
                 print(e)
 
     def __iter__(self):
-        return self.to_iterable(maxsize=0)
+        return self.to_iterable(maxsize=0, return_index=False)
 
     def __aiter__(self):
-        return self.to_async_iterable(maxsize=0).__aiter__()
+        return self.to_async_iterable(maxsize=0, return_index=False).__aiter__()
 
-    async def to_async_iterable(self, maxsize):
+    async def to_async_iterable(self, maxsize, return_index):
 
         pipeline_namespace = utils.get_namespace()
         pipeline_namespace.error = False
@@ -111,8 +132,11 @@ class Stage:
 
         self.loop.create_task(f_coro())
 
-        async for x in output_queue:
-            yield x
+        async for elem in output_queue:
+            if return_index:
+                yield elem
+            else:
+                yield elem.value
 
         if pipeline_namespace.error:
             error_class, _, trace = pipeline_error_queue.get()
@@ -125,7 +149,7 @@ class Stage:
             raise error
 
     async def await_(self):
-        return [x async for x in self.to_async_iterable(maxsize=0)]
+        return [x async for x in self.to_async_iterable(maxsize=0, return_index=False)]
 
     def __await__(self):
         return self.await_().__await__()
@@ -143,7 +167,7 @@ class Stage:
             self.pipeline_namespace is not None
             and self.pipeline_namespace != pipeline_namespace
         ):
-            raise utils.StageReuseError(
+            raise pypeln_utils.StageReuseError(
                 f"Traying to reuse stage {self} in two different pipelines. This behavior is not supported."
             )
 
@@ -175,7 +199,7 @@ class Stage:
                 loop,
             )
 
-    def to_iterable(self, maxsize):
+    def to_iterable(self, maxsize, return_index):
 
         pipeline_namespace = utils.get_namespace()
         pipeline_namespace.error = False
@@ -190,8 +214,11 @@ class Stage:
 
         utils.run_on_loop(f_coro)
 
-        for x in output_queue:
-            yield x
+        for elem in output_queue:
+            if return_index:
+                yield elem
+            else:
+                yield elem.value
 
         if pipeline_namespace.error:
             error_class, _, trace = pipeline_error_queue.get()
@@ -226,6 +253,3 @@ class Stage:
             await asyncio.gather(*[stage.run() for stage in pipeline_stages])
 
         return f_coro, output_queue
-
-    def __or__(self, f):
-        return f(self)

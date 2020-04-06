@@ -9,6 +9,7 @@ def get_namespace(**kwargs):
     return pypeln_utils.Namespace(**kwargs)
 
 
+
 class IterableQueue(object):
     def __init__(self, maxsize, total_done, pipeline_namespace, **kwargs):
 
@@ -92,16 +93,3 @@ class StageStatus:
 
     def __str__(self):
         return f"StageStatus(done = {done}, active_workers = {active_workers})"
-
-
-WorkerInfo = namedtuple("WorkerInfo", ["index"])
-
-
-class StageReuseError(Exception):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-
-class StopThreadException(BaseException):
-    def __str__(self):
-        return "StopThreadException"

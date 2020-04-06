@@ -9,6 +9,7 @@ from pypeln import utils as pypeln_utils
 from . import utils
 from .stage import Stage
 
+
 #############################################################
 # from_iterable
 #############################################################
@@ -22,11 +23,21 @@ class FromIterable(Stage):
 
     def process(self, worker_namespace):
 
-        for x in self.iterable:
-            if self.pipeline_namespace.error:
-                return
+        if isinstance(self.iterable, pypeln_utils.BaseStage):
+            for x in self.iterable.to_iterable(maxsize=0, return_index=True):
+                if self.pipeline_namespace.error:
+                    return
 
-            self.output_queues.put(x)
+                self.output_queues.put(x)
+        else:
+            for i, x in enumerate(self.iterable):
+                if self.pipeline_namespace.error:
+                    return
+
+                if isinstance(x, pypeln_utils.Element):
+                    self.output_queues.put(x)
+                else:
+                    self.output_queues.put(pypeln_utils.Element(index=(i,), value=x))
 
 
 def from_iterable(
@@ -39,7 +50,6 @@ def from_iterable(
     
     * `threading.Thread`: (default) is efficient for iterables that already have the data in memory like lists or numpy arrays because threads can share memory so no serialization is needed. 
     * `multiprocessing.Process`: is efficient for iterables who's data is not in memory like arbitrary generators and benefit from escaping the GIL. This is inefficient for iterables which have data in memory because they have to be serialized when sent to the background process.
-
     
 
     Arguments:
@@ -94,9 +104,13 @@ def to_stage(obj):
 
 
 class Map(Stage):
-    def apply(self, x, **kwargs):
-        y = self.f(x, **kwargs)
-        self.output_queues.put(y)
+    def apply(self, elem, **kwargs):
+
+        if "element_index" in self.f_args:
+            kwargs["element_index"] = elem.index
+
+        y = self.f(elem.value, **kwargs)
+        self.output_queues.put(elem.set(y))
 
 
 def map(
@@ -130,13 +144,13 @@ def map(
         Because of concurrency order is not guaranteed. 
 
     Arguments:
-        f: A function with signature `f(x, **kwargs) -> y`, where `kwargs` is the return of `on_start` if present.
+        f: A function with the signature `f(x) -> y`. `f` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
         stage: A stage or iterable.
         workers: The number of workers the stage should contain.
         maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
         timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. 
-        on_start: A function with signature `on_start(worker_info?) -> kwargs`, where `kwargs` can be a `dict` of keyword arguments that will be passed to `f` and `on_done`. If you define a `worker_info` argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.
-        on_done: A function with signature `on_done(stage_status?, **kwargs)`, where `kwargs` is the return of `on_start` if present. If you define a `stage_status` argument an object with information about the stage will be passed. This function is executed once per worker when the worker finishes.
+        on_start: A function with signature `on_start(worker_info?) -> kwargs?`, where `kwargs` can be a `dict` of keyword arguments that can be consumed by `f` and `on_done`. `on_start` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
+        on_done: A function with signature `on_done(stage_status?)`. This function is executed once per worker when the worker finishes. `on_done` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
 
     !!! warning
         To implement `timeout` we use `stopit.async_raise` which has some limitations for stoping threads.
@@ -177,9 +191,13 @@ def map(
 
 
 class FlatMap(Stage):
-    def apply(self, x, **kwargs):
-        for y in self.f(x, **kwargs):
-            self.output_queues.put(y)
+    def apply(self, elem, **kwargs):
+        if "element_index" in self.f_args:
+            kwargs["element_index"] = elem.index
+
+        for i, y in enumerate(self.f(elem.value, **kwargs)):
+            elem_y = pypeln_utils.Element(index=elem.index + (i,), value=y)
+            self.output_queues.put(elem_y)
 
 
 def flat_map(
@@ -229,13 +247,13 @@ def flat_map(
     Using `flat_map` with a generator function is very useful as e.g. you are able to filter out unwanted elements when there are exceptions, missing data, etc.
 
     Arguments:
-        f: A function with signature `f(x, **kwargs) -> Iterable`, where `kwargs` is the return of `on_start` if present.
+        f: A function with signature `f(x) -> iterable`. `f` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
         stage: A stage or iterable.
         workers: The number of workers the stage should contain.
         maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
         timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. 
-        on_start: A function with signature `on_start(worker_info?) -> kwargs`, where `kwargs` can be a `dict` of keyword arguments that will be passed to `f` and `on_done`. If you define a `worker_info` argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.
-        on_done: A function with signature `on_done(stage_status?, **kwargs)`, where `kwargs` is the return of `on_start` if present. If you define a `stage_status` argument an object with information about the stage will be passed. This function is executed once per worker when the worker finishes.
+        on_start: A function with signature `on_start(worker_info?) -> kwargs?`, where `kwargs` can be a `dict` of keyword arguments that can be consumed by `f` and `on_done`. `on_start` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
+        on_done: A function with signature `on_done(stage_status?)`. This function is executed once per worker when the worker finishes. `on_done` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
 
     !!! warning
         To implement `timeout` we use `stopit.async_raise` which has some limitations for stoping threads.
@@ -276,9 +294,13 @@ def flat_map(
 
 
 class Filter(Stage):
-    def apply(self, x, **kwargs):
-        if self.f(x, **kwargs):
-            self.output_queues.put(x)
+    def apply(self, elem, **kwargs):
+
+        if "element_index" in self.f_args:
+            kwargs["element_index"] = elem.index
+
+        if self.f(elem.value, **kwargs):
+            self.output_queues.put(elem)
 
 
 def filter(
@@ -312,13 +334,13 @@ def filter(
         Because of concurrency order is not guaranteed.
 
     Arguments:
-        f: A function with signature `f(x, **kwargs) -> bool`, where `kwargs` is the return of `on_start` if present.
+        f: A function with signature `f(x) -> bool`. `f` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
         stage: A stage or iterable.
         workers: The number of workers the stage should contain.
         maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
         timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. 
-        on_start: A function with signature `on_start(worker_info?) -> kwargs`, where `kwargs` can be a `dict` of keyword arguments that will be passed to `f` and `on_done`. If you define a `worker_info` argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.
-        on_done: A function with signature `on_done(stage_status?, **kwargs)`, where `kwargs` is the return of `on_start` if present. If you define a `stage_status` argument an object with information about the stage will be passed. This function is executed once per worker when the worker finishes.
+        on_start: A function with signature `on_start(worker_info?) -> kwargs?`, where `kwargs` can be a `dict` of keyword arguments that can be consumed by `f` and `on_done`. `on_start` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
+        on_done: A function with signature `on_done(stage_status?)`. This function is executed once per worker when the worker finishes. `on_done` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
 
     !!! warning
         To implement `timeout` we use `stopit.async_raise` which has some limitations for stoping threads.
@@ -359,8 +381,11 @@ def filter(
 
 
 class Each(Stage):
-    def apply(self, x, **kwargs):
-        self.f(x, **kwargs)
+    def apply(self, elem, **kwargs):
+        if "element_index" in self.f_args:
+            kwargs["element_index"] = elem.index
+
+        self.f(elem.value, **kwargs)
 
 
 def each(
@@ -401,13 +426,12 @@ def each(
         Because of concurrency order is not guaranteed.
 
     Arguments:
-        f: A function with signature `f(x, **kwargs) -> None`, where `kwargs` is the return of `on_start` if present.
-        stage: A stage or iterable.
+        f: A function with signature `f(x) -> None`. `f` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
         workers: The number of workers the stage should contain.
         maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
         timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. 
-        on_start: A function with signature `on_start(worker_info?) -> kwargs`, where `kwargs` can be a `dict` of keyword arguments that will be passed to `f` and `on_done`. If you define a `worker_info` argument an object with information about the worker will be passed. This function is executed once per worker at the beggining.
-        on_done: A function with signature `on_done(stage_status?, **kwargs)`, where `kwargs` is the return of `on_start` if present. If you define a `stage_status` argument an object with information about the stage will be passed. This function is executed once per worker when the worker finishes.
+        on_start: A function with signature `on_start(worker_info?) -> kwargs?`, where `kwargs` can be a `dict` of keyword arguments that can be consumed by `f` and `on_done`. `on_start` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
+        on_done: A function with signature `on_done(stage_status?)`. This function is executed once per worker when the worker finishes. `on_done` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
         run: Whether or not to execute the stage immediately.
 
     !!! warning
@@ -494,6 +518,86 @@ def concat(stages: typing.List[Stage], maxsize: int = 0) -> Stage:
 
 
 #############################################################
+# ordered
+#############################################################
+
+
+class Ordered(Stage):
+    def process(self, worker_namespace, **kwargs) -> None:
+
+        elems = []
+
+        for elem in self.input_queue:
+            if self.pipeline_namespace.error:
+                return
+
+            if len(elems) == 0:
+                elems.append(elem)
+            else:
+                for i in reversed(range(len(elems))):
+                    if elem.index >= elems[i].index:
+                        elems.insert(i + 1, elem)
+                        break
+
+                    if i == 0:
+                        elems.insert(0, elem)
+
+        for _ in range(len(elems)):
+            self.output_queues.put(elems.pop(0))
+
+
+def ordered(stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0) -> Stage:
+    """
+    Creates a stage that sorts its elements based on their order of creation on the source iterable(s) of the pipeline.
+
+    ```python
+    import pypeln as pl
+    import random
+    import time
+
+    def slow_squared(x):
+        time.sleep(random.random())
+        
+        return x ** 2
+
+    stage = range(5)
+    stage = pl.thread.map(slow_squared, stage, workers = 2)
+    stage = pl.thread.ordered(stage)
+
+    print(list(stage)) # [0, 1, 4, 9, 16]
+    ```
+
+    !!! note
+        `ordered` will work even if the previous stages are from different `pypeln` modules, but it may not work if you introduce an itermediate external iterable stage.
+    
+    !!! warning
+        This stage will not yield util it accumulates all of the elements from the previous stage, use this only if all elements fit in memory.
+
+    Arguments:
+        stage: A stage object.
+        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+
+    Returns:
+        If the `stage` parameters is given then this function returns an iterable, else it returns a `Partial`.
+    """
+
+    if pypeln_utils.is_undefined(stage):
+        return pypeln_utils.Partial(lambda stage: ordered(stage, maxsize=maxsize))
+
+    stage = to_stage(stage)
+
+    return Ordered(
+        f=None,
+        workers=1,
+        maxsize=maxsize,
+        timeout=0,
+        on_start=None,
+        on_done=None,
+        dependencies=[stage],
+    )
+
+
+#############################################################
 # run
 #############################################################
 
@@ -539,7 +643,7 @@ def run(stages: typing.List[Stage], maxsize: int = 0) -> None:
 
 
 def to_iterable(
-    stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0
+    stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0, return_index: bool = False
 ) -> typing.Iterable:
     """
     Creates an iterable from a stage.
@@ -556,7 +660,7 @@ def to_iterable(
         return pypeln_utils.Partial(lambda stage: to_iterable(stage, maxsize=maxsize))
 
     if isinstance(stage, Stage):
-        iterable = stage.to_iterable(maxsize=maxsize)
+        iterable = stage.to_iterable(maxsize=maxsize, return_index=return_index)
     else:
         iterable = stage
 

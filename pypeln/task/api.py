@@ -38,8 +38,8 @@ class FromIterable(Stage):
                 i += 1
 
     async def to_async_iterable(self):
-        if not hasattr(self.iterable, "__iter__") or hasattr(
-            self.iterable, "__aiter__"
+        if not (
+            hasattr(self.iterable, "__iter__") or hasattr(self.iterable, "__aiter__")
         ):
             raise ValueError(
                 f"Object {self.iterable} most be either iterable or async iterable."

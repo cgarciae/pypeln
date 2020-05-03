@@ -100,14 +100,16 @@ class Stage(pypeln_utils.BaseStage):
             await self.output_queues.done()
 
         except BaseException as e:
-            for stage in self.pipeline_stages:
-                await stage.input_queue.done()
+            self.pipeline_namespace.error = True
+            await self.output_queues.done()
+            # for stage in self.pipeline_stages:
+            #     await stage.input_queue.done()
 
             try:
                 self.pipeline_error_queue.put_nowait(
                     (type(e), e, "".join(traceback.format_exception(*sys.exc_info())))
                 )
-                self.pipeline_namespace.error = True
+
             except BaseException as e:
                 print(e)
 
@@ -137,6 +139,7 @@ class Stage(pypeln_utils.BaseStage):
                 yield elem
             else:
                 yield elem.value
+
 
         if pipeline_namespace.error:
             error_class, _, trace = pipeline_error_queue.get()

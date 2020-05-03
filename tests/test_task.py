@@ -415,6 +415,51 @@ def test_error_handling():
     assert isinstance(error, MyError)
 
 
+def test_error_handling2():
+
+    error = None
+
+    async def raise_error(x):
+        raise MyError()
+
+    stage = pl.task.map(raise_error, range(10))
+
+    try:
+        list(stage)
+
+    except MyError as e:
+        error = e
+
+    assert isinstance(error, MyError)
+
+
+async def async_range(n):
+
+    for x in range(n):
+        yield x
+
+def test_error_handling_flat_map():
+
+    error = None
+
+    async def raise_error(x):
+        raise MyError()
+        yield 1
+
+    stage = ( x async for x in async_range(10) )
+    stage = pl.task.flat_map(raise_error, stage)
+
+    try:
+        list(stage)
+
+    except MyError as e:
+        error = e
+
+    print("error", error)
+
+    assert isinstance(error, MyError)
+
+
 ###################
 # from_to_iterable
 ###################

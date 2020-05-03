@@ -30,7 +30,7 @@ def get_namespace():
 
 class TaskPool(object):
     def __init__(self, workers):
-        self.semaphore = asyncio.Semaphore(workers)
+        self.semaphore = asyncio.Semaphore(workers) if workers else None
         self.tasks = set()
         self.closed = False
 
@@ -39,15 +39,20 @@ class TaskPool(object):
         if self.closed:
             raise RuntimeError("Trying put items into a closed TaskPool")
 
-        await self.semaphore.acquire()
+        if self.semaphore:
+            await self.semaphore.acquire()
 
         task = asyncio.create_task(coro)
         self.tasks.add(task)
         task.add_done_callback(self.on_task_done)
+        task.set_exception
 
     def on_task_done(self, task):
+        task
         self.tasks.remove(task)
-        self.semaphore.release()
+
+        if self.semaphore:
+            self.semaphore.release()
 
     async def join(self):
         await asyncio.gather(*self.tasks)

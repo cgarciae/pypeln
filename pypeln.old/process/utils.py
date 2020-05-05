@@ -1,19 +1,29 @@
 from collections import namedtuple
-from queue import Empty, Full, Queue
-from threading import Lock
+from multiprocessing import get_context
+import multiprocessing as mp
+from multiprocessing.queues import Full, Empty
 
 from pypeln import utils as pypeln_utils
 
+# CONTEXT = get_context("fork")
+CONTEXT = mp
+_MANAGER = None
+
 
 def get_namespace(**kwargs):
-    return pypeln_utils.Namespace(**kwargs)
+    global _MANAGER
+
+    if _MANAGER is None:
+        _MANAGER = CONTEXT.Manager()
+
+    return _MANAGER.Namespace(**kwargs)
 
 
 class IterableQueue(object):
     def __init__(self, maxsize, total_done, pipeline_namespace, **kwargs):
 
-        self.queue = Queue(maxsize=maxsize, **kwargs)
-        self.lock = Lock()
+        self.queue = CONTEXT.Queue(maxsize=maxsize, **kwargs)
+        self.lock = CONTEXT.Lock()
         self.queue_namespace = get_namespace()
         self.queue_namespace.remaining = total_done
 

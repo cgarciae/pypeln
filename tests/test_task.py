@@ -438,6 +438,7 @@ async def async_range(n):
     for x in range(n):
         yield x
 
+
 def test_error_handling_flat_map():
 
     error = None
@@ -446,7 +447,7 @@ def test_error_handling_flat_map():
         raise MyError()
         yield 1
 
-    stage = ( x async for x in async_range(10) )
+    stage = (x async for x in async_range(10))
     stage = pl.task.flat_map(raise_error, stage)
 
     try:

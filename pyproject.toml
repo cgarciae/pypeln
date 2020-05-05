@@ -12,6 +12,7 @@ homepage = "https://cgarciae.github.io/pypeln"
 [tool.poetry.dependencies]
 python = "^3.7"
 stopit = "^1.1.2"
+typing_extensions = "^3.7.4"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.3.5"

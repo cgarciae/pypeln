@@ -23,10 +23,6 @@ class IterableQueue(tp.Generic[T], tp.Iterable[T], abc.ABC):
     def raise_exception(self, exception: BaseException):
         ...
 
-    @abc.abstractmethod
-    def set_reamaining(self, exception: BaseException):
-        ...
-
 
 class AsyncIterableQueue(
     IterableQueue[T], tp.AsyncIterable[T], tp.Awaitable[tp.List[T]]

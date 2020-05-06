@@ -1,10 +1,12 @@
 import multiprocessing as mp
-from multiprocessing.queues import Full, Empty
+from multiprocessing.queues import Full, Empty, Queue
 
 from pypeln import interfaces
 from pypeln import utils as pypeln_utils
 
 import typing as tp
+import traceback
+import sys
 
 # CONTEXT = get_context("fork")
 CONTEXT = mp
@@ -13,44 +15,50 @@ MANAGER = CONTEXT.Manager()
 T = tp.TypeVar("T")
 
 
-class IterableQueue(interfaces.IterableQueue[T]):
-    def __init__(self, maxsize=0):
+class IterableQueue(CONTEXT.Queue[T], interfaces.IterableQueue[T]):
+    def __init__(self, maxsize: int = 0, total_sources: int = 1):
 
-        self.queue = CONTEXT.Queue(maxsize=maxsize)
+        super().__init__(maxsize=maxsize)
+
         self.lock = CONTEXT.Lock()
-        self.queue_namespace = MANAGER.Namespace(remaining=1, exception_trace=None)
+        self.queue_namespace = MANAGER.Namespace(
+            remaining=total_sources, exception_trace=None
+        )
 
     def __iter__(self):
 
         while not self.is_done():
-            x = self.get()
 
-            if self.queue_namespace.error:
-                return
+            try:
+                x = self.get(timeout=pypeln_utils.TIMEOUT)
+            except Empty:
+                continue
 
-            if not pypeln_utils.is_continue(x):
-                yield x
+            if self.queue_namespace.exception_trace is not None:
 
-    def get(self):
+                exception, trace = self.queue_namespace.exception_trace
 
-        try:
-            x = self.queue.get(timeout=pypeln_utils.TIMEOUT)
-        except (Empty, Full):
-            return pypeln_utils.CONTINUE
+                try:
+                    exception = exception(f"\n\n{trace}")
+                except:
+                    exception = Exception(f"\n\nOriginal: {exception}\n\n{trace}")
 
-        if not pypeln_utils.is_done(x):
-            return x
-        else:
-            with self.lock:
-                self.queue_namespace.remaining -= 1
+                raise exception
 
-            return pypeln_utils.CONTINUE
+            if not isinstance(x, pypeln_utils.Done):
+                with self.lock:
+                    self.queue_namespace.remaining -= 1
+
+                continue
+
+            yield x
 
     def is_done(self):
-        return self.queue_namespace.remaining == 0 and self.queue.empty()
-
-    def put(self, x):
-        self.queue.put(x)
+        return self.queue_namespace.remaining == 0 and self.empty()
 
     def done(self):
-        self.queue.put(pypeln_utils.DONE)
+        self.put(pypeln_utils.DONE)
+
+    def raise_exception(self, exception: BaseException):
+        trace = "".join(traceback.format_exception(*sys.exc_info()))
+        self.queue_namespace.exception_trace = (exception, trace)

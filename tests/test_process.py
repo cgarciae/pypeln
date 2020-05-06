@@ -3,10 +3,73 @@ from hypothesis import strategies as st
 import cytoolz as cz
 import functools as ft
 import time
+from unittest import TestCase
+import threading
 
 import pypeln as pl
 
 MAX_EXAMPLES = 10
+
+# ----------------------------------------------------------------
+# queue
+# ----------------------------------------------------------------
+
+
+class TestQueue(TestCase):
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_done(self, nums):
+
+        queue = pl.process.IterableQueue()
+
+        def worker():
+            for i in nums:
+                queue.put(i)
+
+            queue.done()
+
+        [_] = pl.process.start_workers(worker)
+
+        nums_pl = list(queue)
+
+        assert nums_pl == nums
+
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_stop(self, nums):
+
+        queue = pl.process.IterableQueue()
+
+        def worker():
+            for i in nums:
+                queue.put(i)
+
+            queue.stop()
+
+        [_] = pl.process.start_workers(worker)
+
+        nums_pl = list(queue)
+
+        assert nums_pl == nums
+
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_kill(self, nums):
+
+        queue = pl.process.IterableQueue()
+
+        def worker():
+            for i in nums:
+                queue.put(i)
+
+            queue.kill()
+
+        [_] = pl.process.start_workers(worker)
+
+        nums_pl = list(queue)
+
+        assert len(nums_pl) <= len(nums)
+
 
 ############
 # trivial

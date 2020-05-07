@@ -1,15 +1,30 @@
+from collections import namedtuple
+import multiprocessing
 import sys
+import threading
 import time
 import traceback
-from collections import namedtuple
-import threading
+import typing as tp
+from dataclasses import dataclass
 
 from pypeln import utils as pypeln_utils
 
 from . import utils
+from .queue import IterableQueue
 
 
+@dataclass
 class Stage(pypeln_utils.BaseStage):
+    lock: multiprocessing.synchronize.Lock
+    namespace: utils.Namespace
+    output_queues: tp.Set[IterableQueue]
+
+    def worker_done(self):
+        with self.lock:
+            self.namespace.active_workers -= 1
+
+
+class Stage2(pypeln_utils.BaseStage):
     def __init__(
         self,
         f,
@@ -49,64 +64,6 @@ class Stage(pypeln_utils.BaseStage):
         self.stage_lock = None
         self.pipeline_namespace = None
         self.pipeline_error_queue = None
-
-    def process(self, worker_namespace, **kwargs) -> None:
-        for elem in self.input_queue:
-            worker_namespace.task_start_time = time.time()
-            self.apply(elem, **kwargs)
-            worker_namespace.task_start_time = None
-
-    def run(self, index, worker_namespace):
-        worker_info = pypeln_utils.WorkerInfo(index=index)
-
-        try:
-            if self.on_start is not None:
-                on_start_kwargs = dict(worker_info=worker_info)
-                kwargs = self.on_start(
-                    **{
-                        key: value
-                        for key, value in on_start_kwargs.items()
-                        if key in self.on_start_args
-                    }
-                )
-            else:
-                kwargs = {}
-
-            if kwargs is None:
-                kwargs = {}
-
-            kwargs.setdefault("worker_info", worker_info)
-
-            self.process(
-                worker_namespace,
-                **{key: value for key, value in kwargs.items() if key in self.f_args},
-            )
-
-            if self.on_done is not None:
-                with self.stage_lock:
-                    self.stage_namespace.active_workers -= 1
-
-                kwargs.setdefault(
-                    "stage_status",
-                    utils.StageStatus(
-                        namespace=self.stage_namespace, lock=self.stage_lock
-                    ),
-                )
-
-                self.on_done(
-                    **{
-                        key: value
-                        for key, value in kwargs.items()
-                        if key in self.on_done_args
-                    }
-                )
-
-            self.output_queues.done()
-
-        except BaseException as e:
-            self.signal_error(e)
-        finally:
-            worker_namespace.done = True
 
     def __iter__(self):
         return self.to_iterable(maxsize=0, return_index=False)

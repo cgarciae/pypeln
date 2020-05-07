@@ -2,13 +2,18 @@ import functools
 import traceback
 from collections import namedtuple
 import inspect
+import typing as tp
 
+try:
+    from typing import Protocol
+except ImportError:
+    from typing_extensions import Protocol
 
 TIMEOUT = 0.0001
 MAXSIZE = 100
 
 
-WorkerInfo = namedtuple("WorkerInfo", ["index"])
+T = tp.TypeVar("T")
 
 
 class BaseStage:
@@ -16,8 +21,11 @@ class BaseStage:
         return f(self)
 
 
-class Element(namedtuple("Element", ["index", "value"])):
-    def set(self, value):
+class Element(tp.NamedTuple, tp.Generic[T]):
+    index: int
+    value: T
+
+    def set(self, value: T):
         return Element(self.index, value)
 
 
@@ -90,5 +98,5 @@ def is_undefined(x):
     return isinstance(x, Undefined)
 
 
-def function_args(f):
+def function_args(f) -> tp.List[str]:
     return inspect.getfullargspec(f).args

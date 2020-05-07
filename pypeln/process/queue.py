@@ -1,16 +1,14 @@
-import multiprocessing as mp
-from multiprocessing.queues import Full, Empty, Queue
+import multiprocessing
+from multiprocessing.queues import Empty, Queue
+import sys
+import traceback
+import typing as tp
 
 from pypeln import interfaces
 from pypeln import utils as pypeln_utils
 
-import typing as tp
-import traceback
-import sys
+from . import utils
 
-# CONTEXT = get_context("fork")
-CONTEXT = mp
-MANAGER = CONTEXT.Manager()
 
 T = tp.TypeVar("T")
 
@@ -18,14 +16,14 @@ T = tp.TypeVar("T")
 class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
     def __init__(self, maxsize: int = 0, total_sources: int = 1):
 
-        super().__init__(maxsize=maxsize, ctx=mp.get_context())
+        super().__init__(maxsize=maxsize, ctx=multiprocessing.get_context())
 
-        self.lock = CONTEXT.Lock()
-        self.queue_namespace = MANAGER.Namespace(
+        self.lock = multiprocessing.Lock()
+        self.queue_namespace = utils.Namespace(
             remaining=total_sources, exception_trace=None, force_stop=False
         )
 
-    def __iter__(self):
+    def __iter__(self) -> tp.Iterator[T]:
 
         while not self.is_done():
 
@@ -68,9 +66,9 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
     def kill(self):
         self.queue_namespace.force_stop = True
 
-    def start(self):
-        ...
-
     def raise_exception(self, exception: BaseException):
-        trace = "".join(traceback.format_exception(*sys.exc_info()))
+        _exception_class, _exception, _traceback = sys.exc_info()
+        trace = "".join(
+            traceback.format_exception(_exception_class, _exception, _traceback)
+        )
         self.queue_namespace.exception_trace = (exception, trace)

@@ -3,6 +3,9 @@ import threading
 import time
 from unittest import TestCase
 import typing as tp
+from dataclasses import dataclass, field
+import multiprocessing
+import multiprocessing.synchronize
 
 import cytoolz as cz
 import hypothesis as hp
@@ -154,16 +157,132 @@ class TestOutputQueues(TestCase):
 # ----------------------------------------------------------------
 # worker
 # ----------------------------------------------------------------
+@dataclass
+class DummyStage:
+    lock: multiprocessing.synchronize.Lock
+    namespace: tp.Any
+
+    def worker_done(self):
+        pass
+
+
+class DummyNamespace:
+    pass
+
+
+def no_op():
+    ...
+
+
+@dataclass
+class CustomWorker(pl.process.Worker[int]):
+    f: tp.Callable = no_op
+
+    def process_fn(self, **kwargs):
+        self.f(self, **kwargs)
 
 
 class TestWorker(TestCase):
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
     def test_basic(self, nums):
-        class CustomWorker(pl.process.Worker[T]):
-            def process_fn(self, **kwargs):
-                for x in nums:
-                    self.output_queues.put(x)
+        input_queue = pl.process.IterableQueue()
+        output_queue = pl.process.IterableQueue()
+        output_queues = pl.process.OutputQueues([output_queue])
 
-        worker = pl.process.CustomWorker()
+        def f(self: CustomWorker):
+            for x in nums:
+                self.output_queues.put(x)
+
+        worker = CustomWorker(
+            index=0,
+            input_queue=input_queue,
+            output_queues=output_queues,
+            stage=DummyStage(lock=multiprocessing.Lock(), namespace=DummyNamespace()),
+            main_queue=output_queue,
+            f=f,
+        )
+
+        worker.start()
+
+        nums_pl = list(output_queue)
+
+        assert nums_pl == nums
+
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_raises(self, nums):
+        input_queue = pl.process.IterableQueue()
+        output_queue = pl.process.IterableQueue()
+        output_queues = pl.process.OutputQueues([output_queue])
+
+        def f(self: CustomWorker):
+            raise MyException()
+
+        worker = CustomWorker(
+            index=0,
+            input_queue=input_queue,
+            output_queues=output_queues,
+            stage=DummyStage(lock=multiprocessing.Lock(), namespace=DummyNamespace()),
+            main_queue=output_queue,
+            f=f,
+        )
+
+        worker.start()
+
+        with pytest.raises(MyException):
+            nums_pl = list(output_queue)
+
+    def test_timeout(self):
+        input_queue = pl.process.IterableQueue()
+        output_queue = pl.process.IterableQueue()
+        output_queues = pl.process.OutputQueues([output_queue])
+
+        def f(self: CustomWorker):
+            with self.measure_task_time():
+                time.sleep(0.01)
+
+        worker = CustomWorker(
+            index=0,
+            input_queue=input_queue,
+            output_queues=output_queues,
+            stage=DummyStage(lock=multiprocessing.Lock(), namespace=DummyNamespace()),
+            main_queue=output_queue,
+            f=f,
+            timeout=0.001,
+        )
+        worker.start()
+
+        assert not worker.did_timeout()
+        time.sleep(0.005)
+        assert worker.did_timeout()
+
+    def test_stop(self):
+        input_queue = pl.process.IterableQueue()
+        output_queue = pl.process.IterableQueue()
+        output_queues = pl.process.OutputQueues([output_queue])
+
+        def f(self: CustomWorker):
+            time.sleep(1)
+            self.output_queues.put(1)
+
+        worker = CustomWorker(
+            index=0,
+            input_queue=input_queue,
+            output_queues=output_queues,
+            stage=DummyStage(lock=multiprocessing.Lock(), namespace=DummyNamespace()),
+            main_queue=output_queue,
+            f=f,
+            timeout=0.001,
+        )
+        worker.start()
+        worker.stop()
+
+        time.sleep(0.01)
+
+        # assert list(output_queue) == []
+        assert not worker.process.is_alive()
+        assert not worker.did_timeout()
 
 
 # ----------------------------------------------------------------

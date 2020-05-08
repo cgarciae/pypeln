@@ -3,20 +3,21 @@ from dataclasses import dataclass, field
 import multiprocessing
 import time
 import typing as tp
+from typing import Protocol
 
 from pypeln import utils as pypeln_utils
 
 from . import utils
-from .queue import IterableQueue
+from .queue import IterableQueue, OutputQueues
 from . import stage
 
 Kwargs = tp.Dict[str, tp.Any]
 T = tp.TypeVar("T")
 
 
-class StageProtocol(pypeln_utils.Protocol):
+class StageProtocol(Protocol):
     lock: multiprocessing.synchronize.Lock
-    namespace: utils.Namespace
+    namespace: tp.Any
 
     def worker_done(self):
         ...
@@ -28,13 +29,12 @@ class WorkerInfo(tp.NamedTuple):
 
 @dataclass
 class Worker(tp.Generic[T]):
-    f: tp.Callable
     index: int
     input_queue: IterableQueue[T]
-    output_queues: tp.Set[IterableQueue]
+    output_queues: OutputQueues
     stage: StageProtocol
     main_queue: IterableQueue
-    timeout: int = 0
+    timeout: float = 0
     namespace: utils.Namespace = field(
         default_factory=lambda: utils.Namespace(done=False, task_start_time=None)
     )
@@ -98,13 +98,11 @@ class Worker(tp.Generic[T]):
                     }
                 )
 
-            for queue in self.stage.output_queues:
-                queue.done()
-
         except BaseException as e:
             self.main_queue.raise_exception(e)
         finally:
             self.namespace.done = True
+            self.output_queues.done()
 
     def start(self):
         [self.process] = start_workers(self)
@@ -124,17 +122,32 @@ class Worker(tp.Generic[T]):
             and (time.time() - self.namespace.task_start_time > self.timeout)
         )
 
+    @dataclass
+    class MeasureTaskTime:
+        worker: "Worker"
+
+        def __enter__(self):
+            self.worker.namespace.task_start_time = time.time()
+            1
+
+        def __exit__(self, *args):
+            self.worker.namespace.task_start_time = None
+
+    def measure_task_time(self):
+        return self.MeasureTaskTime(self)
+
 
 class WorkerApply(Worker[T], tp.Generic[T]):
+    f: tp.Callable
+
     @abc.abstractmethod
     def apply(self, elem: T, **kwargs):
         ...
 
     def process_fn(self, **kwargs):
         for elem in self.input_queue:
-            self.namespace.task_start_time = time.time()
-            self.apply(elem, **kwargs)
-            self.namespace.task_start_time = None
+            with self.measure_task_time():
+                self.apply(elem, **kwargs)
 
 
 class StageStatus:

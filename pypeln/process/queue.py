@@ -86,7 +86,7 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
         self.exception_queue.put(PipelineException(exception_type, trace))
 
 
-class OutputQueues(tp.Set[IterableQueue[T]], tp.Generic[T]):
+class OutputQueues(tp.Set[IterableQueue[T]]):
     def put(self, x: T):
         for queue in self:
             queue.put(x)

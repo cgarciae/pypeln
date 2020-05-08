@@ -1,7 +1,9 @@
 from collections import namedtuple
+from dataclasses import dataclass
 from multiprocessing import get_context
 import multiprocessing
-from multiprocessing.queues import Full, Empty
+from multiprocessing.queues import Empty, Full
+import typing as tp
 
 from pypeln import utils as pypeln_utils
 
@@ -9,12 +11,7 @@ from pypeln import utils as pypeln_utils
 MANAGER = multiprocessing.Manager()
 
 
-class Namespace:
-    def __init__(self, *args, **kwargs):
-        self.namespace = MANAGER.Namespace(*args, **kwargs)
 
-    def __getattr__(self, name):
-        return getattr(self.namespace, name)
 
-    def __setattr__(self, name, value):
-        setattr(self.namespace, name, value)
+def Namespace(**kwargs) -> tp.Any:
+    return MANAGER.Namespace(**kwargs)

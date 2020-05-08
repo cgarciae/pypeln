@@ -1,18 +1,27 @@
-import hypothesis as hp
-from hypothesis import strategies as st
-import cytoolz as cz
 import functools as ft
+import threading
 import time
 from unittest import TestCase
-import threading
+import typing as tp
 
+import cytoolz as cz
+import hypothesis as hp
+from hypothesis import strategies as st
+
+from pypeln import utils as pypeln_utils
 import pypeln as pl
+import unittest
+import pytest
 
 MAX_EXAMPLES = 10
-
+T = tp.TypeVar("T")
 # ----------------------------------------------------------------
 # queue
 # ----------------------------------------------------------------
+
+
+class MyException(Exception):
+    pass
 
 
 class TestQueue(TestCase):
@@ -70,10 +79,96 @@ class TestQueue(TestCase):
 
         assert len(nums_pl) <= len(nums)
 
+    def test_raise(self, nums=[1, 2, 3]):
 
-############
+        queue = pl.process.IterableQueue()
+
+        def worker():
+            try:
+                raise MyException()
+            except BaseException as e:
+                queue.raise_exception(e)
+
+        [_] = pl.process.start_workers(worker)
+
+        with pytest.raises(MyException):
+            nums_pl = list(queue)
+
+
+# ----------------------------------------------------------------
+# output queues
+# ----------------------------------------------------------------
+
+
+class TestOutputQueues(TestCase):
+    def test_basic(self):
+        queues: pl.process.OutputQueues[int] = pl.process.OutputQueues()
+        queue = pl.process.IterableQueue()
+
+        queues.add(queue)
+
+        queues.put(3)
+
+        x = queue.get()
+
+        assert isinstance(queues, set)
+        assert x == 3
+
+    def test_done(self):
+        queues: pl.process.OutputQueues[int] = pl.process.OutputQueues()
+        queue = pl.process.IterableQueue()
+
+        queues.add(queue)
+
+        queues.done()
+
+        x = queue.get()
+
+        assert isinstance(x, pypeln_utils.Done)
+
+    def test_stop(self):
+        queues: pl.process.OutputQueues[int] = pl.process.OutputQueues()
+        queue = pl.process.IterableQueue()
+
+        queues.add(queue)
+
+        assert queue.namespace.remaining == 1
+
+        queues.stop()
+
+        assert queue.namespace.remaining == 0
+
+    def test_kill(self):
+        queues: pl.process.OutputQueues[int] = pl.process.OutputQueues()
+        queue = pl.process.IterableQueue()
+
+        queues.add(queue)
+
+        assert queue.namespace.force_stop == False
+
+        queues.kill()
+
+        assert queue.namespace.remaining == True
+
+
+# ----------------------------------------------------------------
+# worker
+# ----------------------------------------------------------------
+
+
+class TestWorker(TestCase):
+    def test_basic(self, nums):
+        class CustomWorker(pl.process.Worker[T]):
+            def process_fn(self, **kwargs):
+                for x in nums:
+                    self.output_queues.put(x)
+
+        worker = pl.process.CustomWorker()
+
+
+# ----------------------------------------------------------------
 # trivial
-############
+# ----------------------------------------------------------------
 
 
 @hp.given(nums=st.lists(st.integers()))
@@ -99,9 +194,9 @@ def test_from_to_iterable_pipe(nums):
     assert nums_pl == nums_py
 
 
-############
+# ----------------------------------------------------------------
 # map
-############
+# ----------------------------------------------------------------
 
 
 @hp.given(nums=st.lists(st.integers()))
@@ -271,9 +366,9 @@ def test_map_square_workers_sorted(nums):
     assert nums_pl == nums_py
 
 
-############
+# ----------------------------------------------------------------
 # each
-############
+# ----------------------------------------------------------------
 
 
 @hp.given(nums=st.lists(st.integers()))
@@ -294,9 +389,9 @@ def test_each_list(nums):
     assert nums_pl == []
 
 
-############
+# ----------------------------------------------------------------
 # flat_map
-############
+# ----------------------------------------------------------------
 
 
 @hp.given(nums=st.lists(st.integers()))
@@ -337,9 +432,9 @@ def test_flat_map_square_workers(nums):
     assert sorted(nums_pl) == sorted(nums_py)
 
 
-############
+# ----------------------------------------------------------------
 # filter
-############
+# ----------------------------------------------------------------
 
 
 @hp.given(nums=st.lists(st.integers()))
@@ -387,9 +482,9 @@ def test_flat_map_square_filter_workers_pipe(nums):
     assert sorted(nums_pl) == sorted(nums_py)
 
 
-############
+# ----------------------------------------------------------------
 # concat
-############
+# ----------------------------------------------------------------
 
 
 @hp.given(nums=st.lists(st.integers()))
@@ -425,9 +520,9 @@ def test_concat_multiple(nums):
     assert sorted(nums_py2) == sorted(list(nums_pl2))
 
 
-###################
+# ----------------------------------------------------------------#######
 # error handling
-###################
+# ----------------------------------------------------------------#######
 
 
 class MyError(Exception):
@@ -452,9 +547,9 @@ def test_error_handling():
     assert isinstance(error, MyError)
 
 
-###################
+# ----------------------------------------------------------------#######
 # from_to_iterable
-###################
+# ----------------------------------------------------------------#######
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_from_to_iterable(nums):

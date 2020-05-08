@@ -17,7 +17,6 @@ T = tp.TypeVar("T")
 class StageProtocol(pypeln_utils.Protocol):
     lock: multiprocessing.synchronize.Lock
     namespace: utils.Namespace
-    output_queues: tp.Set[IterableQueue]
 
     def worker_done(self):
         ...
@@ -27,12 +26,12 @@ class WorkerInfo(tp.NamedTuple):
     index: int
 
 
-
 @dataclass
 class Worker(tp.Generic[T]):
     f: tp.Callable
-    input_queue: IterableQueue[T]
     index: int
+    input_queue: IterableQueue[T]
+    output_queues: tp.Set[IterableQueue]
     stage: StageProtocol
     main_queue: IterableQueue
     timeout: int = 0

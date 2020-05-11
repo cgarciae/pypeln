@@ -209,9 +209,7 @@ class TestWorker(TestCase):
 
         assert nums_pl == nums
 
-    @hp.given(nums=st.lists(st.integers()))
-    @hp.settings(max_examples=MAX_EXAMPLES)
-    def test_raises(self, nums):
+    def test_raises(self):
         input_queue = pl.process.IterableQueue()
         output_queue = pl.process.IterableQueue()
         output_queues = pl.process.OutputQueues([output_queue])
@@ -257,14 +255,13 @@ class TestWorker(TestCase):
         time.sleep(0.005)
         assert worker.did_timeout()
 
-    def test_stop(self):
+    def test_del(self):
         input_queue = pl.process.IterableQueue()
         output_queue = pl.process.IterableQueue()
         output_queues = pl.process.OutputQueues([output_queue])
 
         def f(self: CustomWorker):
-            time.sleep(1)
-            self.output_queues.put(1)
+            time.sleep(10)
 
         worker = CustomWorker(
             index=0,
@@ -273,16 +270,76 @@ class TestWorker(TestCase):
             stage=DummyStage(lock=multiprocessing.Lock(), namespace=DummyNamespace()),
             main_queue=output_queue,
             f=f,
-            timeout=0.001,
         )
         worker.start()
-        worker.stop()
+        process = worker.process
 
+        del worker
         time.sleep(0.01)
 
-        # assert list(output_queue) == []
-        assert not worker.process.is_alive()
-        assert not worker.did_timeout()
+        assert not process.is_alive()
+
+    def test_del2(self):
+        def start_worker():
+            input_queue = pl.process.IterableQueue()
+            output_queue = pl.process.IterableQueue()
+            output_queues = pl.process.OutputQueues([output_queue])
+
+            def f(self: CustomWorker):
+                time.sleep(10)
+
+            worker = CustomWorker(
+                index=0,
+                input_queue=input_queue,
+                output_queues=output_queues,
+                stage=DummyStage(
+                    lock=multiprocessing.Lock(), namespace=DummyNamespace()
+                ),
+                main_queue=output_queue,
+                f=f,
+            )
+            worker.start()
+
+            time.sleep(0.01)
+
+            assert worker.process.is_alive()
+
+            return worker.process
+
+        process = start_worker()
+
+        assert not process.is_alive()
+
+    def test_del3(self):
+        def start_worker():
+            input_queue = pl.process.IterableQueue()
+            output_queue = pl.process.IterableQueue()
+            output_queues = pl.process.OutputQueues([output_queue])
+
+            def f(self: CustomWorker):
+                time.sleep(10)
+
+            worker = CustomWorker(
+                index=0,
+                input_queue=input_queue,
+                output_queues=output_queues,
+                stage=DummyStage(
+                    lock=multiprocessing.Lock(), namespace=DummyNamespace()
+                ),
+                main_queue=output_queue,
+                f=f,
+            )
+            worker.start()
+
+            time.sleep(0.01)
+
+            assert worker.process.is_alive()
+
+            return worker, worker.process
+
+        worker, process = start_worker()
+
+        assert process.is_alive()
 
 
 # ----------------------------------------------------------------

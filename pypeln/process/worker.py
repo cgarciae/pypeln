@@ -122,6 +122,9 @@ class Worker(tp.Generic[T]):
             and (time.time() - self.namespace.task_start_time > self.timeout)
         )
 
+    def __del__(self):
+        self.process.terminate()
+
     @dataclass
     class MeasureTaskTime:
         worker: "Worker"

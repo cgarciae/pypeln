@@ -6,19 +6,135 @@ import time
 import traceback
 import typing as tp
 from dataclasses import dataclass
-from multiprocessing import synchronize
+from multiprocessing import synchronize, Lock
 
 from pypeln import utils as pypeln_utils
 
 from . import utils
-from .queue import IterableQueue
+from .queue import IterableQueue, OutputQueues
+from .worker import Worker
+from .supervisor import Supervisor
+
+A = tp.TypeVar("A")
+B = tp.TypeVar("B")
+
+
+class WorkerParams(tp.NamedTuple):
+    f: tp.Callable
+    input_queue: IterableQueue
+    timeout: float
+    on_start: tp.Optional[tp.Callable]
+    on_done: tp.Optional[tp.Callable]
+
+    def get_worker(
+        self, index: int, stage: "Stage", main_queue: IterableQueue
+    ) -> Worker:
+        return Worker(
+            f=self.f,
+            index=index,
+            input_queue=self.input_queue,
+            output_queues=stage.output_queues,
+            stage=stage,
+            timeout=self.timeout,
+            on_start=self.on_start,
+            on_done=self.on_done,
+            main_queue=main_queue,
+        )
 
 
 @dataclass
-class Stage(pypeln_utils.BaseStage):
+class Stage(pypeln_utils.BaseStage, tp.Generic[A, B]):
     lock: synchronize.Lock
     namespace: utils.Namespace
-    output_queues: tp.Set[IterableQueue]
+    output_queues: OutputQueues[B]
+    workers: int
+    worker_params: WorkerParams
+    dependencies: tp.List["Stage"]
+    built: bool = False
+    started: bool = False
+
+    @classmethod
+    def create(
+        cls,
+        f: tp.Callable,
+        workers: int,
+        maxsize: int,
+        on_start: tp.Callable,
+        on_done: tp.Callable,
+        dependencies: tp.List["Stage"],
+        timeout: float,
+    ):
+
+        input_queue: IterableQueue[A] = IterableQueue(
+            maxsize=maxsize, total_sources=len(dependencies)
+        )
+        output_queues: OutputQueues[B] = OutputQueues()
+
+        for dependency in dependencies:
+            dependency.output_queues.add(input_queue)
+
+        return cls(
+            lock=Lock(),
+            namespace=utils.Namespace(),
+            output_queues=output_queues,
+            workers=workers,
+            worker_params=WorkerParams(
+                f=f,
+                input_queue=input_queue,
+                timeout=timeout,
+                on_start=on_start,
+                on_done=on_done,
+            ),
+            dependencies=dependencies,
+        )
+
+    def build(self) -> tp.Iterable["Stage"]:
+
+        if self.started:
+            raise pypeln_utils.StageReuseError()
+
+        if self.built:
+            return
+
+        self.built = True
+
+        yield self
+
+        for dependency in self.dependencies:
+            yield from dependency.build()
+
+    def start(self, main_queue: IterableQueue) -> tp.Iterable[Worker]:
+
+        self.started = True
+
+        for i in range(self.workers):
+            worker = self.worker_params.get_worker(
+                index=i, stage=self, main_queue=main_queue,
+            )
+            worker.start()
+
+            yield worker
+
+    def to_iterable(self, maxsize: int, return_index: bool) -> tp.Iterable[B]:
+
+        # build stages first to verify reuse
+        stages = list(self.build())
+
+        main_queue: IterableQueue[pypeln_utils.Element[B]] = IterableQueue(
+            maxsize=maxsize, total_sources=self.workers
+        )
+
+        self.output_queues.add(main_queue)
+
+        workers = list(pypeln_utils.concat(stage.start(main_queue) for stage in stages))
+        supervisor = Supervisor(workers=workers, main_queue=main_queue)
+
+        with supervisor:
+            for elem in main_queue:
+                if return_index:
+                    yield elem
+                else:
+                    yield elem.value
 
     def worker_done(self):
         with self.lock:

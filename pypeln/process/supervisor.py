@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 import multiprocessing
 import typing as tp
-from . import worker as worker_module
+from .worker import Worker
 import time
 from pypeln import utils as pypeln_utils
+import threading
 
 
 class RaisesException(pypeln_utils.Protocol):
@@ -13,7 +14,7 @@ class RaisesException(pypeln_utils.Protocol):
 
 @dataclass
 class Supervisor:
-    workers: tp.Set[worker_module.Worker]
+    workers: tp.List[Worker]
     main_queue: RaisesException
     done: bool = False
 
@@ -36,3 +37,15 @@ class Supervisor:
 
         except BaseException as e:
             self.main_queue.raise_exception(e)
+
+    def __enter__(self):
+        self.start()
+
+    def __exit__(self, *args):
+        self.done = True
+
+    def start(self):
+
+        t = threading.Thread(target=self)
+        t.daemon = True
+        t.start()

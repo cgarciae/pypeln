@@ -29,6 +29,7 @@ class WorkerInfo(tp.NamedTuple):
 
 @dataclass
 class Worker(tp.Generic[T]):
+    f: tp.Callable
     index: int
     input_queue: IterableQueue[T]
     output_queues: OutputQueues
@@ -141,8 +142,6 @@ class Worker(tp.Generic[T]):
 
 
 class WorkerApply(Worker[T], tp.Generic[T]):
-    f: tp.Callable
-
     @abc.abstractmethod
     def apply(self, elem: T, **kwargs):
         ...

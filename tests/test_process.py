@@ -1,20 +1,21 @@
-import functools as ft
-import threading
-import time
-from unittest import TestCase
-import typing as tp
 from dataclasses import dataclass, field
+import functools as ft
 import multiprocessing
 import multiprocessing.synchronize
+import threading
+import time
+import typing as tp
+from unittest import TestCase
+import unittest
+from unittest import mock
 
 import cytoolz as cz
 import hypothesis as hp
 from hypothesis import strategies as st
+import pytest
 
 from pypeln import utils as pypeln_utils
 import pypeln as pl
-import unittest
-import pytest
 
 MAX_EXAMPLES = 10
 T = tp.TypeVar("T")
@@ -106,7 +107,7 @@ class TestQueue(TestCase):
 class TestOutputQueues(TestCase):
     def test_basic(self):
         queues: pl.process.OutputQueues[int] = pl.process.OutputQueues()
-        queue = pl.process.IterableQueue()
+        queue: pl.process.IterableQueue[int] = pl.process.IterableQueue()
 
         queues.add(queue)
 
@@ -176,8 +177,6 @@ def no_op():
 
 @dataclass
 class CustomWorker(pl.process.Worker[int]):
-    f: tp.Callable = no_op
-
     def process_fn(self, **kwargs):
         self.f(self, **kwargs)
 
@@ -238,7 +237,7 @@ class TestWorker(TestCase):
 
         def f(self: CustomWorker):
             with self.measure_task_time():
-                time.sleep(0.01)
+                time.sleep(0.2)
 
         worker = CustomWorker(
             index=0,
@@ -252,7 +251,7 @@ class TestWorker(TestCase):
         worker.start()
 
         assert not worker.did_timeout()
-        time.sleep(0.005)
+        time.sleep(0.02)
         assert worker.did_timeout()
 
     def test_del(self):
@@ -340,6 +339,103 @@ class TestWorker(TestCase):
         worker, process = start_worker()
 
         assert process.is_alive()
+
+
+class TestSupervisor(TestCase):
+    def test_basic(self):
+        def did_timeout():
+            while True:
+                yield False
+
+        queue = pl.process.IterableQueue()
+
+        worker: pl.process.Worker = mock.Mock(timeout=1)
+
+        worker.did_timeout.side_effect = did_timeout()
+
+        supervisor = pl.process.Supervisor(workers=[worker], main_queue=queue)
+        supervisor.start()
+
+        time.sleep(0.1)
+
+        supervisor.done = True
+
+        worker.did_timeout.assert_called()
+        worker.stop.assert_not_called()
+        worker.start.assert_not_called()
+
+    def test_timeout(self):
+        def did_timeout():
+            yield False
+            yield True
+
+            while True:
+                yield False
+
+        queue = pl.process.IterableQueue()
+
+        worker: pl.process.Worker = mock.Mock(timeout=1)
+
+        worker.did_timeout.side_effect = did_timeout()
+
+        supervisor = pl.process.Supervisor(workers=[worker], main_queue=queue)
+        supervisor.start()
+
+        time.sleep(0.1)
+
+        supervisor.done = True
+
+        worker.did_timeout.assert_called()
+        worker.stop.assert_called_once()
+        worker.start.assert_called_once()
+
+    def test_error(self):
+        def did_timeout():
+            yield False
+            yield True
+
+            yield ValueError()
+
+            while True:
+                yield False
+
+        queue: pl.process.IterableQueue = mock.Mock()
+
+        worker: pl.process.Worker = mock.Mock(timeout=1)
+
+        worker.did_timeout.side_effect = did_timeout()
+
+        supervisor = pl.process.Supervisor(workers=[worker], main_queue=queue)
+        supervisor.start()
+
+        time.sleep(0.2)
+
+        supervisor.done = True
+
+        worker.did_timeout.assert_called()
+        worker.stop.assert_called_once()
+        worker.start.assert_called_once()
+
+        queue.raise_exception.assert_called_once()
+
+    def test_no_timeout(self):
+
+        queue: pl.process.IterableQueue = mock.Mock()
+
+        worker: pl.process.Worker = mock.Mock(timeout=0)
+
+        supervisor = pl.process.Supervisor(workers=[worker], main_queue=queue)
+        supervisor.start()
+
+        time.sleep(0.2)
+
+        supervisor.done = True
+
+        worker.did_timeout.assert_not_called()
+        worker.stop.assert_not_called()
+        worker.start.assert_not_called()
+
+        queue.raise_exception.assert_not_called()
 
 
 # ----------------------------------------------------------------

@@ -4,6 +4,7 @@ import sys
 import traceback
 import typing as tp
 
+
 from pypeln import interfaces
 from pypeln import utils as pypeln_utils
 
@@ -34,12 +35,14 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
             maxsize=1, ctx=multiprocessing.get_context()
         )
 
+    def get(self, *arg, **kwargs) -> T:
+        return super().get(*arg, **kwargs)
+
     def __iter__(self) -> tp.Iterator[T]:
 
         while not self.is_done():
 
             if self.namespace.exception:
-
                 exception, trace = self.exception_queue.get()
 
                 try:
@@ -86,7 +89,7 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
         self.exception_queue.put(PipelineException(exception_type, trace))
 
 
-class OutputQueues(tp.Set[IterableQueue[T]]):
+class OutputQueues(tp.Set[IterableQueue[T]], tp.Generic[T]):
     def put(self, x: T):
         for queue in self:
             queue.put(x)

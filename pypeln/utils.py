@@ -4,10 +4,7 @@ from collections import namedtuple
 import inspect
 import typing as tp
 
-try:
-    from typing import Protocol
-except ImportError:
-    from typing_extensions import Protocol
+from typing import Protocol
 
 TIMEOUT = 0.0001
 MAXSIZE = 100
@@ -100,3 +97,9 @@ def is_undefined(x):
 
 def function_args(f) -> tp.List[str]:
     return inspect.getfullargspec(f).args
+
+
+def concat(iterables: tp.Iterable[tp.Iterable[T]]) -> tp.Iterable[T]:
+    for iterable in iterables:
+        for item in iterable:
+            yield item

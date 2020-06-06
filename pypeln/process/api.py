@@ -8,45 +8,90 @@ from threading import Thread
 from pypeln import utils as pypeln_utils
 
 from . import utils
-from .stage import Stage
-
+from .worker import Worker, WorkerApply, StageParams
+from .queue import IterableQueue
+from .stage import Stage, WorkerConstructor
+import typing as tp
 
 
 # ----------------------------------------------------------------
 # from_iterable
 # ----------------------------------------------------------------
+T = tp.TypeVar("T")
 
 
-class FromIterable(Stage):
-    def __init__(self, iterable, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class FromIterable(Worker[T]):
+    def __init__(
+        self,
+        iterable: tp.Union[tp.Iterable[T], pypeln_utils.BaseStage[T]],
+        index: int,
+        stage_params: StageParams,
+        main_queue: IterableQueue,
+        timeout: float = 0,
+    ):
+        super().__init__(
+            f=pypeln_utils.no_op,
+            index=index,
+            stage_params=stage_params,
+            main_queue=main_queue,
+        )
 
         self.iterable = iterable
 
-    def process(self, worker_namespace):
+    @classmethod
+    def get_worker_constructor(
+        cls, iterable: tp.Iterable, timeout: float = 0,
+    ) -> WorkerConstructor:
+        def from_iterable(
+            index: int, stage_params: StageParams, main_queue: IterableQueue
+        ) -> FromIterable:
+            return cls(
+                iterable=iterable,
+                index=index,
+                stage_params=stage_params,
+                main_queue=main_queue,
+                timeout=timeout,
+            )
+
+        return from_iterable
+
+    def process_fn(self, **kwargs):
 
         if isinstance(self.iterable, pypeln_utils.BaseStage):
+
             for x in self.iterable.to_iterable(maxsize=0, return_index=True):
-                if self.pipeline_namespace.error:
+                if self.main_queue.namespace.exception:
                     return
 
-                self.output_queues.put(x)
+                self.stage_params.output_queues.put(x)
         else:
             for i, x in enumerate(self.iterable):
-                if self.pipeline_namespace.error:
+                if self.main_queue.namespace.exception:
                     return
 
                 if isinstance(x, pypeln_utils.Element):
-                    self.output_queues.put(x)
+                    self.stage_params.output_queues.put(x)
                 else:
-                    self.output_queues.put(pypeln_utils.Element(index=(i,), value=x))
+                    self.stage_params.output_queues.put(
+                        pypeln_utils.Element(index=(i,), value=x)
+                    )
+
+
+@tp.overload
+def from_iterable(iterable: typing.Iterable[T], maxsize: int = 0,) -> Stage:
+    ...
+
+
+@tp.overload
+def from_iterable(
+    maxsize: int = 0, worker_constructor: typing.Type = Thread,
+) -> pypeln_utils.Partial[Stage[T]]:
+    ...
 
 
 def from_iterable(
-    iterable: typing.Iterable = pypeln_utils.UNDEFINED,
-    maxsize: int = None,
-    worker_constructor: typing.Type = Thread,
-) -> Stage:
+    iterable=pypeln_utils.UNDEFINED, maxsize: int = 0,
+):
     """
     Creates a stage from an iterable. This function gives you more control of how a stage is created through the `worker_constructor` parameter which can be either:
     
@@ -62,22 +107,15 @@ def from_iterable(
         If the `iterable` parameters is given then this function returns a new stage, else it returns a `Partial`.
     """
 
-    if pypeln_utils.is_undefined(iterable):
+    if isinstance(iterable, pypeln_utils.Undefined):
         return pypeln_utils.Partial(
-            lambda iterable: from_iterable(
-                iterable, maxsize=None, worker_constructor=worker_constructor,
-            )
+            lambda iterable: from_iterable(iterable, maxsize=maxsize,)
         )
 
-    return FromIterable(
-        iterable=iterable,
-        f=None,
-        worker_constructor=worker_constructor,
+    return Stage.create(
         workers=1,
-        maxsize=0,
-        timeout=0,
-        on_start=None,
-        on_done=None,
+        maxsize=maxsize,
+        worker_constructor=FromIterable.get_worker_constructor(iterable),
         dependencies=[],
     )
 
@@ -515,7 +553,7 @@ class Ordered(Stage):
         elems = []
 
         for elem in self.input_queue:
-            if self.pipeline_namespace.error:
+            if self.main_queue.namespace.exception:
                 return
 
             if len(elems) == 0:

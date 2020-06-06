@@ -1,10 +1,12 @@
 from dataclasses import dataclass
 import multiprocessing
-import typing as tp
-from .worker import Worker
-import time
-from pypeln import utils as pypeln_utils
 import threading
+import time
+import typing as tp
+
+from pypeln import utils as pypeln_utils
+
+from .worker import Worker
 
 
 class RaisesException(pypeln_utils.Protocol):

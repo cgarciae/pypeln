@@ -3,6 +3,7 @@ import traceback
 from collections import namedtuple
 import inspect
 import typing as tp
+from abc import ABC, abstractmethod
 
 from typing import Protocol
 
@@ -13,17 +14,21 @@ MAXSIZE = 100
 T = tp.TypeVar("T")
 
 
-class BaseStage:
-    def __or__(self, f):
-        return f(self)
-
-
 class Element(tp.NamedTuple, tp.Generic[T]):
-    index: int
+    index: tp.Tuple[int, ...]
     value: T
 
     def set(self, value: T):
         return Element(self.index, value)
+
+
+class BaseStage(tp.Generic[T], ABC):
+    @abstractmethod
+    def to_iterable(self, maxsize: int, return_index: bool) -> tp.Iterable[Element]:
+        pass
+
+    def __or__(self, f):
+        return f(self)
 
 
 class StopThreadException(BaseException):
@@ -36,17 +41,17 @@ class StageReuseError(Exception):
         super().__init__(*args, **kwargs)
 
 
-class Partial(object):
+class Partial(tp.Generic[T]):
     def __init__(self, f):
         self.f = f
 
-    def __or__(self, stage):
+    def __or__(self, stage) -> T:
         return self.f(stage)
 
-    def __ror__(self, stage):
+    def __ror__(self, stage) -> T:
         return self.f(stage)
 
-    def __call__(self, stage):
+    def __call__(self, stage) -> T:
         return self.f(stage)
 
 
@@ -103,3 +108,7 @@ def concat(iterables: tp.Iterable[tp.Iterable[T]]) -> tp.Iterable[T]:
     for iterable in iterables:
         for item in iterable:
             yield item
+
+
+def no_op():
+    pass

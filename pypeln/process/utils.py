@@ -11,7 +11,5 @@ from pypeln import utils as pypeln_utils
 MANAGER = multiprocessing.Manager()
 
 
-
-
 def Namespace(**kwargs) -> tp.Any:
     return MANAGER.Namespace(**kwargs)

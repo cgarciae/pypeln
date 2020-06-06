@@ -1,6 +1,7 @@
 import abc
 from dataclasses import dataclass, field
 import multiprocessing
+from multiprocessing import synchronize
 import time
 import typing as tp
 from typing import Protocol
@@ -9,18 +10,31 @@ from pypeln import utils as pypeln_utils
 
 from . import utils
 from .queue import IterableQueue, OutputQueues
-from . import stage
 
 Kwargs = tp.Dict[str, tp.Any]
 T = tp.TypeVar("T")
 
 
-class StageProtocol(Protocol):
-    lock: multiprocessing.synchronize.Lock
-    namespace: tp.Any
+class StageParams(tp.NamedTuple):
+    input_queue: IterableQueue
+    output_queues: OutputQueues
+    lock: synchronize.Lock
+    namespace: utils.Namespace
+
+    @classmethod
+    def create(
+        cls, input_queue: IterableQueue, output_queues: OutputQueues, total_workers: int
+    ) -> "StageParams":
+        return cls(
+            lock=multiprocessing.Lock(),
+            namespace=utils.Namespace(active_workers=total_workers),
+            input_queue=input_queue,
+            output_queues=output_queues,
+        )
 
     def worker_done(self):
-        ...
+        with self.lock:
+            self.namespace.active_workers -= 1
 
 
 class WorkerInfo(tp.NamedTuple):
@@ -31,9 +45,7 @@ class WorkerInfo(tp.NamedTuple):
 class Worker(tp.Generic[T]):
     f: tp.Callable
     index: int
-    input_queue: IterableQueue[T]
-    output_queues: OutputQueues
-    stage: StageProtocol
+    stage_params: StageParams
     main_queue: IterableQueue
     timeout: float = 0
     namespace: utils.Namespace = field(
@@ -82,13 +94,16 @@ class Worker(tp.Generic[T]):
                 **{key: value for key, value in kwargs.items() if key in f_args},
             )
 
-            self.stage.worker_done()
+            self.stage_params.worker_done()
 
             if self.on_done is not None:
 
                 kwargs.setdefault(
                     "stage_status",
-                    StageStatus(namespace=self.stage.namespace, lock=self.stage.lock),
+                    StageStatus(
+                        namespace=self.stage_params.namespace,
+                        lock=self.stage_params.lock,
+                    ),
                 )
 
                 self.on_done(
@@ -103,7 +118,7 @@ class Worker(tp.Generic[T]):
             self.main_queue.raise_exception(e)
         finally:
             self.namespace.done = True
-            self.output_queues.done()
+            self.stage_params.output_queues.done()
 
     def start(self):
         [self.process] = start_workers(self)
@@ -147,7 +162,7 @@ class WorkerApply(Worker[T], tp.Generic[T]):
         ...
 
     def process_fn(self, **kwargs):
-        for elem in self.input_queue:
+        for elem in self.stage_params.input_queue:
             with self.measure_task_time():
                 self.apply(elem, **kwargs)
 

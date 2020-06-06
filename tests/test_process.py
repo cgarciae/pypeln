@@ -158,21 +158,6 @@ class TestOutputQueues(TestCase):
 # ----------------------------------------------------------------
 # worker
 # ----------------------------------------------------------------
-@dataclass
-class DummyStage:
-    lock: multiprocessing.synchronize.Lock
-    namespace: tp.Any
-
-    def worker_done(self):
-        pass
-
-
-class DummyNamespace:
-    pass
-
-
-def no_op():
-    ...
 
 
 @dataclass
@@ -191,15 +176,14 @@ class TestWorker(TestCase):
 
         def f(self: CustomWorker):
             for x in nums:
-                self.output_queues.put(x)
+                self.stage_params.output_queues.put(x)
+
+        stage_params: pl.process.StageParams = mock.Mock(
+            input_queue=input_queue, output_queues=output_queues, total_workers=1,
+        )
 
         worker = CustomWorker(
-            index=0,
-            input_queue=input_queue,
-            output_queues=output_queues,
-            stage=DummyStage(lock=multiprocessing.Lock(), namespace=DummyNamespace()),
-            main_queue=output_queue,
-            f=f,
+            index=0, stage_params=stage_params, main_queue=output_queue, f=f,
         )
 
         worker.start()
@@ -216,13 +200,12 @@ class TestWorker(TestCase):
         def f(self: CustomWorker):
             raise MyException()
 
+        stage_params: pl.process.StageParams = mock.Mock(
+            input_queue=input_queue, output_queues=output_queues, total_workers=1,
+        )
+
         worker = CustomWorker(
-            index=0,
-            input_queue=input_queue,
-            output_queues=output_queues,
-            stage=DummyStage(lock=multiprocessing.Lock(), namespace=DummyNamespace()),
-            main_queue=output_queue,
-            f=f,
+            index=0, stage_params=stage_params, main_queue=output_queue, f=f,
         )
 
         worker.start()
@@ -239,11 +222,12 @@ class TestWorker(TestCase):
             with self.measure_task_time():
                 time.sleep(0.2)
 
+        stage_params: pl.process.StageParams = mock.Mock(
+            input_queue=input_queue, output_queues=output_queues, total_workers=1,
+        )
         worker = CustomWorker(
             index=0,
-            input_queue=input_queue,
-            output_queues=output_queues,
-            stage=DummyStage(lock=multiprocessing.Lock(), namespace=DummyNamespace()),
+            stage_params=stage_params,
             main_queue=output_queue,
             f=f,
             timeout=0.001,
@@ -262,14 +246,14 @@ class TestWorker(TestCase):
         def f(self: CustomWorker):
             time.sleep(10)
 
-        worker = CustomWorker(
-            index=0,
-            input_queue=input_queue,
-            output_queues=output_queues,
-            stage=DummyStage(lock=multiprocessing.Lock(), namespace=DummyNamespace()),
-            main_queue=output_queue,
-            f=f,
+        stage_params: pl.process.StageParams = mock.Mock(
+            input_queue=input_queue, output_queues=output_queues, total_workers=1,
         )
+
+        worker = CustomWorker(
+            index=0, stage_params=stage_params, main_queue=output_queue, f=f,
+        )
+
         worker.start()
         process = worker.process
 
@@ -287,15 +271,12 @@ class TestWorker(TestCase):
             def f(self: CustomWorker):
                 time.sleep(10)
 
+            stage_params: pl.process.StageParams = mock.Mock(
+                input_queue=input_queue, output_queues=output_queues, total_workers=1,
+            )
+
             worker = CustomWorker(
-                index=0,
-                input_queue=input_queue,
-                output_queues=output_queues,
-                stage=DummyStage(
-                    lock=multiprocessing.Lock(), namespace=DummyNamespace()
-                ),
-                main_queue=output_queue,
-                f=f,
+                index=0, stage_params=stage_params, main_queue=output_queue, f=f,
             )
             worker.start()
 
@@ -318,15 +299,16 @@ class TestWorker(TestCase):
             def f(self: CustomWorker):
                 time.sleep(10)
 
+            stage_params: pl.process.StageParams = mock.Mock(
+                input_queue=input_queue, output_queues=output_queues, total_workers=1,
+            )
+
+            stage_params: pl.process.StageParams = mock.Mock(
+                input_queue=input_queue, output_queues=output_queues, total_workers=1,
+            )
+
             worker = CustomWorker(
-                index=0,
-                input_queue=input_queue,
-                output_queues=output_queues,
-                stage=DummyStage(
-                    lock=multiprocessing.Lock(), namespace=DummyNamespace()
-                ),
-                main_queue=output_queue,
-                f=f,
+                index=0, stage_params=stage_params, main_queue=output_queue, f=f,
             )
             worker.start()
 
@@ -443,27 +425,27 @@ class TestSupervisor(TestCase):
 # ----------------------------------------------------------------
 
 
-@hp.given(nums=st.lists(st.integers()))
-@hp.settings(max_examples=MAX_EXAMPLES)
-def test_from_to_iterable(nums):
+class TestFromIterable(TestCase):
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_from_to_iterable(self, nums):
 
-    nums_py = nums
+        nums_py = nums
 
-    nums_pl = pl.process.from_iterable(nums)
-    nums_pl = list(nums_pl)
+        nums_pl = pl.process.from_iterable(nums)
+        nums_pl = list(nums_pl)
 
-    assert nums_pl == nums_py
+        assert nums_pl == nums_py
 
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_from_to_iterable_pipe(self, nums):
 
-@hp.given(nums=st.lists(st.integers()))
-@hp.settings(max_examples=MAX_EXAMPLES)
-def test_from_to_iterable_pipe(nums):
+        nums_py = nums
 
-    nums_py = nums
+        nums_pl = nums | pl.process.from_iterable() | list
 
-    nums_pl = nums | pl.process.from_iterable() | list
-
-    assert nums_pl == nums_py
+        assert nums_pl == nums_py
 
 
 # ----------------------------------------------------------------

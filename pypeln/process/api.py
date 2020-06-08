@@ -408,25 +408,52 @@ def flat_map(
 # ----------------------------------------------------------------
 
 
-class Filter(Stage):
-    def apply(self, elem, **kwargs):
+class Filter(ApplyWorkerConstructor[T]):
+    def apply(self, elem: pypeln_utils.Element, f_args: tp.List[str], **kwargs):
 
-        if "element_index" in self.f_args:
+        if "element_index" in f_args:
             kwargs["element_index"] = elem.index
 
         if self.f(elem.value, **kwargs):
-            self.output_queues.put(elem)
+            self.stage_params.output_queues.put(elem)
 
 
+@tp.overload
 def filter(
-    f: typing.Callable,
-    stage: Stage = pypeln_utils.UNDEFINED,
+    f: typing.Callable[..., B],
+    stage: Stage[A],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
     on_start: typing.Callable = None,
     on_done: typing.Callable = None,
-) -> Stage:
+) -> Stage[B]:
+    ...
+
+
+@tp.overload
+def filter(
+    f: typing.Callable[..., B],
+    workers: int = 1,
+    maxsize: int = 0,
+    timeout: float = 0,
+    on_start: typing.Callable = None,
+    on_done: typing.Callable = None,
+) -> pypeln_utils.Partial[Stage[B]]:
+    ...
+
+
+def filter(
+    f: typing.Callable,
+    stage: tp.Union[
+        Stage[A], tp.Iterable[A], pypeln_utils.Undefined
+    ] = pypeln_utils.UNDEFINED,
+    workers: int = 1,
+    maxsize: int = 0,
+    timeout: float = 0,
+    on_start: typing.Callable = None,
+    on_done: typing.Callable = None,
+) -> tp.Union[Stage[B], pypeln_utils.Partial[Stage[B]]]:
     """
     Creates a stage that filter the data given a predicate function `f`. It is intended to behave like python's built-in `filter` function but with the added concurrency.
 
@@ -476,13 +503,12 @@ def filter(
 
     stage = to_stage(stage)
 
-    return Filter(
-        f=f,
+    return Stage.create(
         workers=workers,
         maxsize=maxsize,
-        timeout=timeout,
-        on_start=on_start,
-        on_done=on_done,
+        worker_constructor=Filter.get_worker_constructor(
+            f=f, timeout=timeout, on_start=on_start, on_done=on_done
+        ),
         dependencies=[stage],
     )
 

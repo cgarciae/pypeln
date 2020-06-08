@@ -14,7 +14,7 @@ MAXSIZE = 100
 T = tp.TypeVar("T")
 
 
-class Element(tp.NamedTuple, tp.Generic[T]):
+class Element(tp.NamedTuple):
     index: tp.Tuple[int, ...]
     value: T
 
@@ -22,7 +22,7 @@ class Element(tp.NamedTuple, tp.Generic[T]):
         return Element(self.index, value)
 
 
-class BaseStage(tp.Generic[T], ABC):
+class BaseStage(tp.Generic[T], tp.Iterable[T], ABC):
     @abstractmethod
     def to_iterable(self, maxsize: int, return_index: bool) -> tp.Iterable[Element]:
         pass

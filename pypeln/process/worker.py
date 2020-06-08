@@ -1,16 +1,21 @@
 import abc
+from copy import copy
 from dataclasses import dataclass, field
 import multiprocessing
 from multiprocessing import synchronize
+import threading
 import time
 import typing as tp
 from typing import Protocol
+
+import stopit
 
 from pypeln import utils as pypeln_utils
 
 from . import utils
 from .queue import IterableQueue, OutputQueues
 
+WorkerConstructor = tp.Callable[[int, "StageParams", IterableQueue], "Worker"]
 Kwargs = tp.Dict[str, tp.Any]
 T = tp.TypeVar("T")
 
@@ -48,18 +53,20 @@ class Worker(tp.Generic[T]):
     stage_params: StageParams
     main_queue: IterableQueue
     timeout: float = 0
+    on_start: tp.Optional[tp.Callable[..., Kwargs]] = None
+    on_done: tp.Optional[tp.Callable[..., Kwargs]] = None
     namespace: utils.Namespace = field(
         default_factory=lambda: utils.Namespace(done=False, task_start_time=None)
     )
-    on_start: tp.Optional[tp.Callable[..., Kwargs]] = None
-    on_done: tp.Optional[tp.Callable[..., Kwargs]] = None
-    process: tp.Optional[multiprocessing.Process] = None
+    process: tp.Optional[tp.Union[multiprocessing.Process, threading.Thread]] = None
+    use_threads: bool = False
 
     @abc.abstractmethod
-    def process_fn(self, **kwargs):
+    def process_fn(self, f_args: tp.List[str], **kwargs):
         ...
 
     def __call__(self):
+
         worker_info = WorkerInfo(index=self.index)
 
         f_args: tp.List[str] = (
@@ -91,6 +98,7 @@ class Worker(tp.Generic[T]):
             kwargs.setdefault("worker_info", worker_info)
 
             self.process_fn(
+                f_args,
                 **{key: value for key, value in kwargs.items() if key in f_args},
             )
 
@@ -114,18 +122,36 @@ class Worker(tp.Generic[T]):
                     }
                 )
 
+        except pypeln_utils.StopThreadException:
+            pass
         except BaseException as e:
             self.main_queue.raise_exception(e)
+            time.sleep(0.01)
         finally:
             self.namespace.done = True
             self.stage_params.output_queues.done()
 
     def start(self):
-        [self.process] = start_workers(self)
+        # create a copy to avoid referece to self on thread
+        target_worker = copy(self)
+
+        [self.process] = start_workers(target_worker, use_threads=self.use_threads)
 
     def stop(self):
+        if self.process is None:
+            return
+
         self.namespace.task_start_time = None
-        self.process.terminate()
+
+        if not self.process.is_alive():
+            return
+
+        if isinstance(self.process, multiprocessing.Process):
+            self.process.terminate()
+        else:
+            stopit.async_raise(
+                self.process.ident, pypeln_utils.StopThreadException,
+            )
 
     def done(self):
         self.namespace.done = True
@@ -137,9 +163,6 @@ class Worker(tp.Generic[T]):
             and self.namespace.task_start_time is not None
             and (time.time() - self.namespace.task_start_time > self.timeout)
         )
-
-    def __del__(self):
-        self.process.terminate()
 
     @dataclass
     class MeasureTaskTime:
@@ -158,13 +181,13 @@ class Worker(tp.Generic[T]):
 
 class WorkerApply(Worker[T], tp.Generic[T]):
     @abc.abstractmethod
-    def apply(self, elem: T, **kwargs):
+    def apply(self, elem: T, f_args: tp.List[str], **kwargs):
         ...
 
-    def process_fn(self, **kwargs):
+    def process_fn(self, f_args: tp.List[str], **kwargs):
         for elem in self.stage_params.input_queue:
             with self.measure_task_time():
-                self.apply(elem, **kwargs)
+                self.apply(elem, f_args, **kwargs)
 
 
 class StageStatus:
@@ -201,19 +224,25 @@ class StageStatus:
 # ----------------------------------------------------------------
 # create_daemon_workers
 # ----------------------------------------------------------------
+
+
 def start_workers(
     target: tp.Callable,
     n_workers: int = 1,
     args: tp.Tuple[tp.Any, ...] = tuple(),
     kwargs: tp.Optional[tp.Dict[tp.Any, tp.Any]] = None,
-) -> tp.List[multiprocessing.Process]:
+    use_threads: bool = False,
+) -> tp.Union[tp.List[multiprocessing.Process], tp.List[threading.Thread]]:
     if kwargs is None:
         kwargs = {}
 
-    workers: tp.List[multiprocessing.Process] = []
+    workers = []
 
     for _ in range(n_workers):
-        t = multiprocessing.Process(target=target, args=args, kwargs=kwargs)
+        if use_threads:
+            t = threading.Thread(target=target, args=args, kwargs=kwargs)
+        else:
+            t = multiprocessing.Process(target=target, args=args, kwargs=kwargs)
         t.daemon = True
         t.start()
         workers.append(t)

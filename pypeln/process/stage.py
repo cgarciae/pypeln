@@ -12,15 +12,15 @@ from pypeln import utils as pypeln_utils
 
 from . import utils
 from .queue import IterableQueue, OutputQueues
-from .worker import Worker, StageParams
+from .worker import Worker, StageParams, WorkerConstructor
 from .supervisor import Supervisor
 
-WorkerConstructor = tp.Callable[[int, StageParams, IterableQueue], Worker]
+
 T = tp.TypeVar("T")
 
 
 @dataclass
-class Stage(pypeln_utils.BaseStage, tp.Generic[T], tp.Iterable[T]):
+class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
     stage_params: StageParams
     worker_constructor: WorkerConstructor
     workers: int

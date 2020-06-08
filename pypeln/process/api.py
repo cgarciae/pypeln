@@ -8,16 +8,44 @@ from threading import Thread
 from pypeln import utils as pypeln_utils
 
 from . import utils
-from .worker import Worker, WorkerApply, StageParams
+from .worker import Worker, WorkerApply, StageParams, Kwargs
 from .queue import IterableQueue
 from .stage import Stage, WorkerConstructor
 import typing as tp
+
+T = tp.TypeVar("T")
+A = tp.TypeVar("A")
+B = tp.TypeVar("B")
+
+
+class ApplyWorkerConstructor(WorkerApply[T]):
+    @classmethod
+    def get_worker_constructor(
+        cls,
+        f: tp.Callable,
+        timeout: float,
+        on_start: tp.Optional[tp.Callable[..., Kwargs]],
+        on_done: tp.Optional[tp.Callable[..., Kwargs]],
+    ) -> WorkerConstructor:
+        def worker_constructor(
+            index: int, stage_params: StageParams, main_queue: IterableQueue
+        ) -> WorkerApply[T]:
+            return cls(
+                f=f,
+                index=index,
+                stage_params=stage_params,
+                main_queue=main_queue,
+                timeout=timeout,
+                on_start=on_start,
+                on_done=on_done,
+            )
+
+        return worker_constructor
 
 
 # ----------------------------------------------------------------
 # from_iterable
 # ----------------------------------------------------------------
-T = tp.TypeVar("T")
 
 
 class FromIterable(Worker[T]):
@@ -34,6 +62,7 @@ class FromIterable(Worker[T]):
             index=index,
             stage_params=stage_params,
             main_queue=main_queue,
+            use_threads=True,
         )
 
         self.iterable = iterable
@@ -55,7 +84,7 @@ class FromIterable(Worker[T]):
 
         return from_iterable
 
-    def process_fn(self, **kwargs):
+    def process_fn(self, f_args: tp.List[str], **kwargs):
 
         if isinstance(self.iterable, pypeln_utils.BaseStage):
 
@@ -78,7 +107,7 @@ class FromIterable(Worker[T]):
 
 
 @tp.overload
-def from_iterable(iterable: typing.Iterable[T], maxsize: int = 0,) -> Stage:
+def from_iterable(iterable: typing.Iterable[T], maxsize: int = 0,) -> Stage[T]:
     ...
 
 
@@ -125,7 +154,7 @@ def from_iterable(
 # ----------------------------------------------------------------
 
 
-def to_stage(obj):
+def to_stage(obj: tp.Union[Stage[A], tp.Iterable[A]]):
 
     if isinstance(obj, Stage):
         return obj
@@ -142,25 +171,52 @@ def to_stage(obj):
 # ----------------------------------------------------------------
 
 
-class Map(Stage):
-    def apply(self, elem, **kwargs):
+class Map(ApplyWorkerConstructor[T]):
+    def apply(self, elem: pypeln_utils.Element, f_args: tp.List[str], **kwargs):
 
-        if "element_index" in self.f_args:
+        if "element_index" in f_args:
             kwargs["element_index"] = elem.index
 
         y = self.f(elem.value, **kwargs)
-        self.output_queues.put(elem.set(y))
+        self.stage_params.output_queues.put(elem.set(y))
 
 
+@tp.overload
 def map(
-    f: typing.Callable,
-    stage: Stage = pypeln_utils.UNDEFINED,
+    f: typing.Callable[..., B],
+    stage: tp.Union[Stage[A], tp.Iterable[A]],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
     on_start: typing.Callable = None,
     on_done: typing.Callable = None,
-) -> Stage:
+) -> Stage[B]:
+    ...
+
+
+@tp.overload
+def map(
+    f: typing.Callable[..., B],
+    workers: int = 1,
+    maxsize: int = 0,
+    timeout: float = 0,
+    on_start: typing.Callable = None,
+    on_done: typing.Callable = None,
+) -> pypeln_utils.Partial[Stage[B]]:
+    ...
+
+
+def map(
+    f: typing.Callable,
+    stage: tp.Union[
+        Stage[A], tp.Iterable[A], pypeln_utils.Undefined
+    ] = pypeln_utils.UNDEFINED,
+    workers: int = 1,
+    maxsize: int = 0,
+    timeout: float = 0,
+    on_start: typing.Callable = None,
+    on_done: typing.Callable = None,
+) -> tp.Union[Stage[B], pypeln_utils.Partial[Stage[B]]]:
     """
     Creates a stage that maps a function `f` over the data. Its intended to behave like python's built-in `map` function but with the added concurrency.
 
@@ -195,7 +251,7 @@ def map(
         If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.
     """
 
-    if pypeln_utils.is_undefined(stage):
+    if isinstance(stage, pypeln_utils.Undefined):
         return pypeln_utils.Partial(
             lambda stage: map(
                 f,
@@ -210,13 +266,12 @@ def map(
 
     stage = to_stage(stage)
 
-    return Map(
-        f=f,
+    return Stage.create(
         workers=workers,
         maxsize=maxsize,
-        timeout=timeout,
-        on_start=on_start,
-        on_done=on_done,
+        worker_constructor=Map.get_worker_constructor(
+            f=f, timeout=timeout, on_start=on_start, on_done=on_done
+        ),
         dependencies=[stage],
     )
 

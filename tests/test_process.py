@@ -5,6 +5,7 @@ import multiprocessing.synchronize
 import threading
 import time
 import typing as tp
+from typing import Iterable
 from unittest import TestCase
 import unittest
 from unittest import mock
@@ -41,11 +42,32 @@ class TestQueue(TestCase):
 
             queue.done()
 
-        [_] = pl.process.start_workers(worker)
+        processes = pl.process.start_workers(worker)
 
         nums_pl = list(queue)
 
+        assert len(processes) == 1
         assert nums_pl == nums
+
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_done_many(self, nums):
+        n_workers = 3
+
+        queue = pl.process.IterableQueue(total_sources=n_workers)
+
+        def worker():
+            for i in nums:
+                queue.put(i)
+
+            queue.done()
+
+        processes = pl.process.start_workers(worker, n_workers=n_workers)
+
+        nums_pl = list(queue)
+
+        assert len(processes) == n_workers
+        assert len(nums_pl) == (len(nums) * 3)
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
@@ -59,10 +81,11 @@ class TestQueue(TestCase):
 
             queue.stop()
 
-        [_] = pl.process.start_workers(worker)
+        processes = pl.process.start_workers(worker)
 
         nums_pl = list(queue)
 
+        assert len(processes) == 1
         assert nums_pl == nums
 
     @hp.given(nums=st.lists(st.integers()))
@@ -77,13 +100,16 @@ class TestQueue(TestCase):
 
             queue.kill()
 
-        [_] = pl.process.start_workers(worker)
+        processes = pl.process.start_workers(worker)
 
         nums_pl = list(queue)
 
+        assert len(processes) == 1
         assert len(nums_pl) <= len(nums)
 
-    def test_raise(self, nums=[1, 2, 3]):
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_raise(self, nums):
 
         queue = pl.process.IterableQueue()
 
@@ -93,10 +119,12 @@ class TestQueue(TestCase):
             except BaseException as e:
                 queue.raise_exception(e)
 
-        [_] = pl.process.start_workers(worker)
+        processes = pl.process.start_workers(worker)
 
         with pytest.raises(MyException):
             nums_pl = list(queue)
+
+        assert len(processes) == 1
 
 
 # ----------------------------------------------------------------
@@ -162,11 +190,11 @@ class TestOutputQueues(TestCase):
 
 @dataclass
 class CustomWorker(pl.process.Worker[int]):
-    def process_fn(self, **kwargs):
+    def process_fn(self, f_args: tp.List[str], **kwargs):
         self.f(self, **kwargs)
 
 
-class TestWorker(TestCase):
+class TestWorkerProcess(TestCase):
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
     def test_basic(self, nums):
@@ -213,6 +241,8 @@ class TestWorker(TestCase):
         with pytest.raises(MyException):
             nums_pl = list(output_queue)
 
+        worker
+
     def test_timeout(self):
         input_queue = pl.process.IterableQueue()
         output_queue = pl.process.IterableQueue()
@@ -238,13 +268,14 @@ class TestWorker(TestCase):
         time.sleep(0.02)
         assert worker.did_timeout()
 
-    def test_del(self):
+    def test_del1(self):
         input_queue = pl.process.IterableQueue()
         output_queue = pl.process.IterableQueue()
         output_queues = pl.process.OutputQueues([output_queue])
 
         def f(self: CustomWorker):
-            time.sleep(10)
+            for _ in range(1000):
+                time.sleep(0.01)
 
         stage_params: pl.process.StageParams = mock.Mock(
             input_queue=input_queue, output_queues=output_queues, total_workers=1,
@@ -257,36 +288,8 @@ class TestWorker(TestCase):
         worker.start()
         process = worker.process
 
-        del worker
+        worker.stop()
         time.sleep(0.01)
-
-        assert not process.is_alive()
-
-    def test_del2(self):
-        def start_worker():
-            input_queue = pl.process.IterableQueue()
-            output_queue = pl.process.IterableQueue()
-            output_queues = pl.process.OutputQueues([output_queue])
-
-            def f(self: CustomWorker):
-                time.sleep(10)
-
-            stage_params: pl.process.StageParams = mock.Mock(
-                input_queue=input_queue, output_queues=output_queues, total_workers=1,
-            )
-
-            worker = CustomWorker(
-                index=0, stage_params=stage_params, main_queue=output_queue, f=f,
-            )
-            worker.start()
-
-            time.sleep(0.01)
-
-            assert worker.process.is_alive()
-
-            return worker.process
-
-        process = start_worker()
 
         assert not process.is_alive()
 
@@ -297,7 +300,8 @@ class TestWorker(TestCase):
             output_queues = pl.process.OutputQueues([output_queue])
 
             def f(self: CustomWorker):
-                time.sleep(10)
+                for _ in range(1000):
+                    time.sleep(0.01)
 
             stage_params: pl.process.StageParams = mock.Mock(
                 input_queue=input_queue, output_queues=output_queues, total_workers=1,
@@ -315,6 +319,156 @@ class TestWorker(TestCase):
             time.sleep(0.01)
 
             assert worker.process.is_alive()
+
+            return worker, worker.process
+
+        worker, process = start_worker()
+
+        assert process.is_alive()
+
+
+class TestWorkerThread(TestCase):
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_basic(self, nums):
+        input_queue = pl.process.IterableQueue()
+        output_queue = pl.process.IterableQueue()
+        output_queues = pl.process.OutputQueues([output_queue])
+
+        def f(self: CustomWorker):
+            for x in nums:
+                self.stage_params.output_queues.put(x)
+
+        stage_params: pl.process.StageParams = mock.Mock(
+            input_queue=input_queue, output_queues=output_queues, total_workers=1,
+        )
+
+        worker = CustomWorker(
+            index=0,
+            stage_params=stage_params,
+            main_queue=output_queue,
+            f=f,
+            use_threads=True,
+        )
+
+        worker.start()
+
+        nums_pl = list(output_queue)
+
+        assert nums_pl == nums
+
+    def test_raises(self):
+        input_queue = pl.process.IterableQueue()
+        output_queue = pl.process.IterableQueue()
+        output_queues = pl.process.OutputQueues([output_queue])
+
+        def f(self: CustomWorker):
+            raise MyException()
+
+        stage_params: pl.process.StageParams = mock.Mock(
+            input_queue=input_queue, output_queues=output_queues, total_workers=1,
+        )
+
+        worker = CustomWorker(
+            index=0,
+            stage_params=stage_params,
+            main_queue=output_queue,
+            f=f,
+            use_threads=True,
+        )
+
+        worker.start()
+
+        with pytest.raises(MyException):
+            nums_pl = list(output_queue)
+
+    def test_timeout(self):
+        input_queue = pl.process.IterableQueue()
+        output_queue = pl.process.IterableQueue()
+        output_queues = pl.process.OutputQueues([output_queue])
+
+        def f(self: CustomWorker):
+            with self.measure_task_time():
+                time.sleep(0.2)
+
+        stage_params: pl.process.StageParams = mock.Mock(
+            input_queue=input_queue, output_queues=output_queues, total_workers=1,
+        )
+        worker = CustomWorker(
+            index=0,
+            stage_params=stage_params,
+            main_queue=output_queue,
+            f=f,
+            timeout=0.001,
+            use_threads=True,
+        )
+        worker.start()
+
+        assert not worker.did_timeout()
+        time.sleep(0.02)
+        assert worker.did_timeout()
+
+    def test_del1(self):
+        input_queue = pl.process.IterableQueue()
+        output_queue = pl.process.IterableQueue()
+        output_queues = pl.process.OutputQueues([output_queue])
+
+        def f(self: CustomWorker):
+            for _ in range(1000):
+                time.sleep(0.01)
+
+        stage_params: pl.process.StageParams = mock.Mock(
+            input_queue=input_queue, output_queues=output_queues, total_workers=1,
+        )
+
+        worker = CustomWorker(
+            index=0,
+            stage_params=stage_params,
+            main_queue=output_queue,
+            f=f,
+            use_threads=True,
+        )
+
+        worker.start()
+        process = worker.process
+
+        worker.stop()
+        time.sleep(0.1)
+
+        assert not process.is_alive()
+
+    def test_del3(self):
+        def start_worker():
+            input_queue = pl.process.IterableQueue()
+            output_queue = pl.process.IterableQueue()
+            output_queues = pl.process.OutputQueues([output_queue])
+
+            def f(self: CustomWorker):
+                for _ in range(1000):
+                    time.sleep(0.01)
+
+            stage_params: pl.process.StageParams = mock.Mock(
+                input_queue=input_queue, output_queues=output_queues, total_workers=1,
+            )
+
+            stage_params: pl.process.StageParams = mock.Mock(
+                input_queue=input_queue, output_queues=output_queues, total_workers=1,
+            )
+
+            worker = CustomWorker(
+                index=0,
+                stage_params=stage_params,
+                main_queue=output_queue,
+                f=f,
+                use_threads=True,
+            )
+            worker.start()
+
+            time.sleep(0.01)
+
+            assert worker.process.is_alive()
+
+            worker.stop()
 
             return worker, worker.process
 
@@ -419,16 +573,58 @@ class TestSupervisor(TestCase):
 
         queue.raise_exception.assert_not_called()
 
+    def test_context(self):
+
+        queue: pl.process.IterableQueue = mock.Mock()
+
+        worker: pl.process.Worker = mock.Mock(timeout=0)
+
+        supervisor = pl.process.Supervisor(workers=[worker], main_queue=queue)
+
+        with supervisor:
+            assert not supervisor.done
+            worker.stop.assert_not_called()
+            worker.did_timeout.assert_not_called()
+
+        assert supervisor.done
+
+        worker.stop.assert_called_once()
+
+    def test_context_gc(self):
+
+        queue: pl.process.IterableQueue = mock.Mock()
+
+        worker: pl.process.Worker = mock.Mock(timeout=0)
+        supervisor = pl.process.Supervisor(workers=[worker], main_queue=queue)
+
+        def generator():
+
+            with supervisor:
+                yield
+
+        iterator = iter(generator())
+        next(iterator)
+
+        assert not supervisor.done
+        worker.stop.assert_not_called()
+        worker.did_timeout.assert_not_called()
+
+        del iterator
+        time.sleep(0.02)
+
+        assert supervisor.done
+        worker.stop.assert_called_once()
+
 
 # ----------------------------------------------------------------
-# trivial
+# from iterable
 # ----------------------------------------------------------------
 
 
 class TestFromIterable(TestCase):
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    def test_from_to_iterable(self, nums):
+    def test_from_to_iterable(self, nums: tp.List[int]):
 
         nums_py = nums
 
@@ -453,162 +649,155 @@ class TestFromIterable(TestCase):
 # ----------------------------------------------------------------
 
 
-@hp.given(nums=st.lists(st.integers()))
-@hp.settings(max_examples=MAX_EXAMPLES)
-def test_map_id(nums):
+class TestMap(TestCase):
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_map_id(self, nums: tp.List[int]):
 
-    nums_py = nums
+        nums_py = nums
 
-    nums_pl = pl.process.map(lambda x: x, nums)
-    nums_pl = list(nums_pl)
+        nums_pl = pl.process.map(lambda x: x, nums)
+        nums_pl = list(nums_pl)
 
-    assert nums_pl == nums_py
+        assert nums_pl == nums_py
 
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_map_id_pipe(self, nums: tp.List[int]):
 
-@hp.given(nums=st.lists(st.integers()))
-@hp.settings(max_examples=MAX_EXAMPLES)
-def test_map_id_pipe(nums):
+        nums_pl = nums | pl.process.map(lambda x: x) | list
 
-    nums_pl = nums | pl.process.map(lambda x: x) | list
+        assert nums_pl == nums
 
-    assert nums_pl == nums
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_map_square(self, nums: tp.List[int]):
 
+        nums_py = map(lambda x: x ** 2, nums)
+        nums_py = list(nums_py)
 
-@hp.given(nums=st.lists(st.integers()))
-@hp.settings(max_examples=MAX_EXAMPLES)
-def test_map_square(nums):
+        nums_pl = pl.process.map(lambda x: x ** 2, nums)
+        nums_pl = list(nums_pl)
 
-    nums_py = map(lambda x: x ** 2, nums)
-    nums_py = list(nums_py)
+        assert nums_pl == nums_py
 
-    nums_pl = pl.process.map(lambda x: x ** 2, nums)
-    nums_pl = list(nums_pl)
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_map_square_event_start(self, nums: tp.List[int]):
 
-    assert nums_pl == nums_py
+        nums_py = map(lambda x: x ** 2, nums)
+        nums_py = list(nums_py)
 
+        namespace = pl.process.Namespace()
+        namespace.x = 0
 
-@hp.given(nums=st.lists(st.integers()))
-@hp.settings(max_examples=MAX_EXAMPLES)
-def test_map_square_event_start(nums):
+        def on_start():
+            namespace.x = 1
 
-    nums_py = map(lambda x: x ** 2, nums)
-    nums_py = list(nums_py)
+        nums_pl = pl.process.map(lambda x: x ** 2, nums, on_start=on_start)
+        nums_pl = list(nums_pl)
 
-    namespace = pl.process.get_namespace()
-    namespace.x = 0
+        assert nums_pl == nums_py
+        assert namespace.x == 1
 
-    def on_start():
-        namespace.x = 1
+    def test_timeout(self):
 
-    nums_pl = pl.process.map(lambda x: x ** 2, nums, on_start=on_start)
-    nums_pl = list(nums_pl)
+        nums = list(range(10))
 
-    assert nums_pl == nums_py
-    assert namespace.x == 1
+        def f(x):
+            if x == 2:
+                while True:
+                    time.sleep(0.1)
 
+            return x
 
-def test_timeout():
+        nums_pl = pl.process.map(f, nums, timeout=0.5)
+        nums_pl = list(nums_pl)
 
-    nums = list(range(10))
+        assert len(nums_pl) == 9
 
-    def f(x):
-        if x == 2:
-            while True:
-                time.sleep(0.1)
+    def test_worker_info(self):
 
-        return x
+        nums = range(100)
+        n_workers = 4
 
-    nums_pl = pl.process.map(f, nums, timeout=0.5)
-    nums_pl = list(nums_pl)
+        def on_start(worker_info):
+            return dict(worker_info=worker_info)
 
-    assert len(nums_pl) == 9
+        nums_pl = pl.process.map(
+            lambda x, worker_info: worker_info.index,
+            nums,
+            on_start=on_start,
+            workers=n_workers,
+        )
+        nums_pl = set(nums_pl)
 
+        assert nums_pl.issubset(set(range(n_workers)))
 
-def test_worker_info():
+    def test_kwargs(self):
 
-    nums = range(100)
-    n_workers = 4
+        nums = range(100)
+        n_workers = 4
+        letters = "abc"
+        namespace = pl.process.Namespace()
+        namespace.on_done = None
 
-    def on_start(worker_info):
-        return dict(worker_info=worker_info)
+        def on_start():
+            return dict(y=letters)
 
-    nums_pl = pl.process.map(
-        lambda x, worker_info: worker_info.index,
-        nums,
-        on_start=on_start,
-        workers=n_workers,
-    )
-    nums_pl = set(nums_pl)
+        def on_done(y):
+            namespace.on_done = y
 
-    assert nums_pl.issubset(set(range(n_workers)))
+        nums_pl = pl.process.map(
+            lambda x, y: y, nums, on_start=on_start, on_done=on_done, workers=n_workers,
+        )
+        nums_pl = list(nums_pl)
 
+        assert namespace.on_done == letters
+        assert nums_pl == [letters] * len(nums)
 
-def test_kwargs():
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_map_square_event_end(self, nums: tp.List[int]):
 
-    nums = range(100)
-    n_workers = 4
-    letters = "abc"
-    namespace = pl.process.get_namespace()
-    namespace.on_done = None
+        namespace = pl.process.Namespace()
+        namespace.x = 0
+        namespace.done = False
+        namespace.active_workers = -1
 
-    def on_start():
-        return dict(y=letters)
+        def on_start():
+            namespace.x = 1
 
-    def on_done(y):
-        namespace.on_done = y
+        def on_done(stage_status):
+            namespace.x = 2
+            namespace.active_workers = stage_status.active_workers
+            namespace.done = stage_status.done
 
-    nums_pl = pl.process.map(
-        lambda x, y: y, nums, on_start=on_start, on_done=on_done, workers=n_workers,
-    )
-    nums_pl = list(nums_pl)
+        nums_pl = pl.process.map(
+            lambda x: x ** 2, nums, workers=3, on_start=on_start, on_done=on_done
+        )
+        nums_pl = list(nums_pl)
 
-    assert namespace.on_done == letters
-    assert nums_pl == [letters] * len(nums)
+        assert namespace.x == 2
+        assert namespace.done == True
+        assert namespace.active_workers == 0
 
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_map_square_workers(self, nums: tp.List[int]):
 
-@hp.given(nums=st.lists(st.integers()))
-@hp.settings(max_examples=MAX_EXAMPLES)
-def test_map_square_event_end(nums):
+        nums_py = map(lambda x: x ** 2, nums)
+        nums_py = list(nums_py)
 
-    namespace = pl.process.get_namespace()
-    namespace.x = 0
-    namespace.done = False
-    namespace.active_workers = -1
+        nums_pl = pl.process.map(lambda x: x ** 2, nums, workers=2)
+        nums_pl = list(nums_pl)
 
-    def on_start():
-        namespace.x = 1
-
-    def on_done(stage_status):
-        namespace.x = 2
-        namespace.active_workers = stage_status.active_workers
-        namespace.done = stage_status.done
-
-    nums_pl = pl.process.map(
-        lambda x: x ** 2, nums, workers=3, on_start=on_start, on_done=on_done
-    )
-    nums_pl = list(nums_pl)
-
-    assert namespace.x == 2
-    assert namespace.done == True
-    assert namespace.active_workers == 0
-
-
-@hp.given(nums=st.lists(st.integers()))
-@hp.settings(max_examples=MAX_EXAMPLES)
-def test_map_square_workers(nums):
-
-    nums_py = map(lambda x: x ** 2, nums)
-    nums_py = list(nums_py)
-
-    nums_pl = pl.process.map(lambda x: x ** 2, nums, workers=2)
-    nums_pl = list(nums_pl)
-
-    assert sorted(nums_pl) == sorted(nums_py)
+        assert sorted(nums_pl) == sorted(nums_py)
 
 
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-def test_map_square_workers_sorted(nums):
+def test_map_square_workers_sorted(nums: tp.List[int]):
 
     nums_py = map(lambda x: x ** 2, nums)
     nums_py = list(nums_py)
@@ -627,7 +816,7 @@ def test_map_square_workers_sorted(nums):
 
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-def test_each(nums):
+def test_each(nums: tp.List[int]):
 
     nums_pl = pl.process.each(lambda x: x, nums)
     pl.process.run(nums_pl)
@@ -635,7 +824,7 @@ def test_each(nums):
 
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-def test_each_list(nums):
+def test_each_list(nums: tp.List[int]):
 
     nums_pl = pl.process.each(lambda x: x, nums)
     nums_pl = list(nums_pl)
@@ -650,7 +839,7 @@ def test_each_list(nums):
 
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-def test_flat_map_square(nums):
+def test_flat_map_square(nums: tp.List[int]):
     def _generator(x):
         yield x
         yield x + 1
@@ -669,7 +858,7 @@ def test_flat_map_square(nums):
 
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-def test_flat_map_square_workers(nums):
+def test_flat_map_square_workers(nums: tp.List[int]):
     def _generator(x):
         yield x
         yield x + 1
@@ -693,7 +882,7 @@ def test_flat_map_square_workers(nums):
 
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-def test_flat_map_square_filter_workers(nums):
+def test_flat_map_square_filter_workers(nums: tp.List[int]):
     def _generator(x):
         yield x
         yield x + 1
@@ -714,7 +903,7 @@ def test_flat_map_square_filter_workers(nums):
 
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-def test_flat_map_square_filter_workers_pipe(nums):
+def test_flat_map_square_filter_workers_pipe(nums: tp.List[int]):
     def _generator(x):
         yield x
         yield x + 1
@@ -743,7 +932,7 @@ def test_flat_map_square_filter_workers_pipe(nums):
 
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-def test_concat_basic(nums):
+def test_concat_basic(nums: tp.List[int]):
 
     nums_py = list(map(lambda x: x + 1, nums))
     nums_py1 = list(map(lambda x: x ** 2, nums_py))
@@ -760,7 +949,7 @@ def test_concat_basic(nums):
 
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-def test_concat_multiple(nums):
+def test_concat_multiple(nums: tp.List[int]):
 
     nums_py = [x + 1 for x in nums]
     nums_py1 = nums_py + nums_py
@@ -806,7 +995,7 @@ def test_error_handling():
 # ----------------------------------------------------------------#######
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-def test_from_to_iterable(nums):
+def test_from_to_iterable(nums: tp.List[int]):
 
     nums_pl = nums
     nums_pl = pl.process.from_iterable(nums_pl)

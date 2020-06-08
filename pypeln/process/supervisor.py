@@ -46,6 +46,9 @@ class Supervisor:
     def __exit__(self, *args):
         self.done = True
 
+        for worker in self.workers:
+            worker.stop()
+
     def start(self):
 
         t = threading.Thread(target=self)

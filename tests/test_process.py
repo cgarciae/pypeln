@@ -837,42 +837,42 @@ def test_each_list(nums: tp.List[int]):
 # ----------------------------------------------------------------
 
 
-@hp.given(nums=st.lists(st.integers()))
-@hp.settings(max_examples=MAX_EXAMPLES)
-def test_flat_map_square(nums: tp.List[int]):
-    def _generator(x):
-        yield x
-        yield x + 1
-        yield x + 2
+class TestFlatMap(unittest.TestCase):
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_flat_map_square(self, nums: tp.List[int]):
+        def _generator(x):
+            yield x
+            yield x + 1
+            yield x + 2
 
-    nums_py = map(lambda x: x ** 2, nums)
-    nums_py = cz.mapcat(_generator, nums_py)
-    nums_py = list(nums_py)
+        nums_py = map(lambda x: x ** 2, nums)
+        nums_py = cz.mapcat(_generator, nums_py)
+        nums_py = list(nums_py)
 
-    nums_pl = pl.process.map(lambda x: x ** 2, nums)
-    nums_pl = pl.process.flat_map(_generator, nums_pl)
-    nums_pl = list(nums_pl)
+        nums_pl = pl.process.map(lambda x: x ** 2, nums)
+        nums_pl = pl.process.flat_map(_generator, nums_pl)
+        nums_pl = list(nums_pl)
 
-    assert nums_pl == nums_py
+        assert nums_pl == nums_py
 
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_flat_map_square_workers(self, nums: tp.List[int]):
+        def _generator(x):
+            yield x
+            yield x + 1
+            yield x + 2
 
-@hp.given(nums=st.lists(st.integers()))
-@hp.settings(max_examples=MAX_EXAMPLES)
-def test_flat_map_square_workers(nums: tp.List[int]):
-    def _generator(x):
-        yield x
-        yield x + 1
-        yield x + 2
+        nums_py = map(lambda x: x ** 2, nums)
+        nums_py = cz.mapcat(_generator, nums_py)
+        nums_py = list(nums_py)
 
-    nums_py = map(lambda x: x ** 2, nums)
-    nums_py = cz.mapcat(_generator, nums_py)
-    nums_py = list(nums_py)
+        nums_pl = pl.process.map(lambda x: x ** 2, nums)
+        nums_pl = pl.process.flat_map(_generator, nums_pl, workers=3)
+        nums_pl = list(nums_pl)
 
-    nums_pl = pl.process.map(lambda x: x ** 2, nums)
-    nums_pl = pl.process.flat_map(_generator, nums_pl, workers=3)
-    nums_pl = list(nums_pl)
-
-    assert sorted(nums_pl) == sorted(nums_py)
+        assert sorted(nums_pl) == sorted(nums_py)
 
 
 # ----------------------------------------------------------------

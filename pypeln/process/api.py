@@ -281,25 +281,53 @@ def map(
 # ----------------------------------------------------------------
 
 
-class FlatMap(Stage):
-    def apply(self, elem, **kwargs):
-        if "element_index" in self.f_args:
+class FlatMap(ApplyWorkerConstructor[T]):
+    def apply(self, elem: pypeln_utils.Element, f_args: tp.List[str], **kwargs):
+
+        if "element_index" in f_args:
             kwargs["element_index"] = elem.index
 
         for i, y in enumerate(self.f(elem.value, **kwargs)):
             elem_y = pypeln_utils.Element(index=elem.index + (i,), value=y)
-            self.output_queues.put(elem_y)
+            self.stage_params.output_queues.put(elem_y)
 
 
+@tp.overload
 def flat_map(
-    f: typing.Callable,
-    stage: Stage = pypeln_utils.UNDEFINED,
+    f: typing.Callable[..., B],
+    stage: Stage[A],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
     on_start: typing.Callable = None,
     on_done: typing.Callable = None,
-) -> Stage:
+) -> Stage[B]:
+    ...
+
+
+@tp.overload
+def flat_map(
+    f: typing.Callable[..., B],
+    workers: int = 1,
+    maxsize: int = 0,
+    timeout: float = 0,
+    on_start: typing.Callable = None,
+    on_done: typing.Callable = None,
+) -> pypeln_utils.Partial[Stage[B]]:
+    ...
+
+
+def flat_map(
+    f: typing.Callable[..., B],
+    stage: tp.Union[
+        Stage[A], tp.Iterable[A], pypeln_utils.Undefined
+    ] = pypeln_utils.UNDEFINED,
+    workers: int = 1,
+    maxsize: int = 0,
+    timeout: float = 0,
+    on_start: typing.Callable = None,
+    on_done: typing.Callable = None,
+) -> tp.Union[Stage[B], pypeln_utils.Partial[Stage[B]]]:
     """
     Creates a stage that maps a function `f` over the data, however unlike `pypeln.process.map` in this case `f` returns an iterable. As its name implies, `flat_map` will flatten out these iterables so the resulting stage just contains their elements.
 
@@ -350,7 +378,7 @@ def flat_map(
         If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.
     """
 
-    if pypeln_utils.is_undefined(stage):
+    if isinstance(stage, pypeln_utils.Undefined):
         return pypeln_utils.Partial(
             lambda stage: flat_map(
                 f,
@@ -365,13 +393,12 @@ def flat_map(
 
     stage = to_stage(stage)
 
-    return FlatMap(
-        f=f,
+    return Stage.create(
         workers=workers,
         maxsize=maxsize,
-        timeout=timeout,
-        on_start=on_start,
-        on_done=on_done,
+        worker_constructor=FlatMap.get_worker_constructor(
+            f=f, timeout=timeout, on_start=on_start, on_done=on_done
+        ),
         dependencies=[stage],
     )
 
@@ -434,7 +461,7 @@ def filter(
         If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.
     """
 
-    if pypeln_utils.is_undefined(stage):
+    if isinstance(stage, pypeln_utils.Undefined):
         return pypeln_utils.Partial(
             lambda stage: filter(
                 f,
@@ -523,7 +550,7 @@ def each(
         If the `stage` parameters is not given then this function returns a `Partial`, else if `run=False` (default) it return a new stage, if `run=True` then it runs the stage and returns `None`.
     """
 
-    if pypeln_utils.is_undefined(stage):
+    if isinstance(stage, pypeln_utils.Undefined):
         return pypeln_utils.Partial(
             lambda stage: each(
                 f,
@@ -661,7 +688,7 @@ def ordered(stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0) -> Stage:
         If the `stage` parameters is given then this function returns an iterable, else it returns a `Partial`.
     """
 
-    if pypeln_utils.is_undefined(stage):
+    if isinstance(stage, pypeln_utils.Undefined):
         return pypeln_utils.Partial(lambda stage: ordered(stage, maxsize=maxsize))
 
     stage = to_stage(stage)
@@ -736,7 +763,7 @@ def to_iterable(
         If the `stage` parameters is given then this function returns an iterable, else it returns a `Partial`.
     """
 
-    if pypeln_utils.is_undefined(stage):
+    if isinstance(stage, pypeln_utils.Undefined):
         return pypeln_utils.Partial(lambda stage: to_iterable(stage, maxsize=maxsize))
 
     if isinstance(stage, Stage):

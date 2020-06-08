@@ -814,22 +814,36 @@ def test_map_square_workers_sorted(nums: tp.List[int]):
 # ----------------------------------------------------------------
 
 
-@hp.given(nums=st.lists(st.integers()))
-@hp.settings(max_examples=MAX_EXAMPLES)
-def test_each(nums: tp.List[int]):
+class TestEach(TestCase):
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_each(self, nums: tp.List[int]):
 
-    nums_pl = pl.process.each(lambda x: x, nums)
-    pl.process.run(nums_pl)
+        nums_pl = pl.process.each(lambda x: x, nums)
 
+        assert nums is not None
 
-@hp.given(nums=st.lists(st.integers()))
-@hp.settings(max_examples=MAX_EXAMPLES)
-def test_each_list(nums: tp.List[int]):
+        if nums_pl is not None:
+            pl.process.run(nums_pl)
 
-    nums_pl = pl.process.each(lambda x: x, nums)
-    nums_pl = list(nums_pl)
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_each_list(self, nums: tp.List[int]):
 
-    assert nums_pl == []
+        nums_pl = pl.process.each(lambda x: x, nums)
+
+        assert nums is not None
+
+        if nums_pl is not None:
+
+            nums_pl = list(nums_pl)
+
+            if nums:
+                assert nums_pl != nums
+            else:
+                assert nums_pl == nums
+
+            assert nums_pl == []
 
 
 # ----------------------------------------------------------------

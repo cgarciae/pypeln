@@ -518,24 +518,53 @@ def filter(
 # ----------------------------------------------------------------
 
 
-class Each(Stage):
-    def apply(self, elem, **kwargs):
-        if "element_index" in self.f_args:
+class Each(ApplyWorkerConstructor[T]):
+    def apply(self, elem: pypeln_utils.Element, f_args: tp.List[str], **kwargs):
+        if "element_index" in f_args:
             kwargs["element_index"] = elem.index
 
         self.f(elem.value, **kwargs)
 
 
+@tp.overload
 def each(
-    f: typing.Callable,
-    stage: Stage = pypeln_utils.UNDEFINED,
+    f: typing.Callable[..., B],
+    stage: tp.Union[Stage[A], tp.Iterable[A]],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
     on_start: typing.Callable = None,
     on_done: typing.Callable = None,
     run: bool = False,
-) -> Stage:
+) -> tp.Optional[Stage[B]]:
+    ...
+
+
+@tp.overload
+def each(
+    f: typing.Callable[..., B],
+    workers: int = 1,
+    maxsize: int = 0,
+    timeout: float = 0,
+    on_start: typing.Callable = None,
+    on_done: typing.Callable = None,
+    run: bool = False,
+) -> pypeln_utils.Partial[tp.Optional[Stage[B]]]:
+    ...
+
+
+def each(
+    f: typing.Callable,
+    stage: tp.Union[
+        Stage[A], tp.Iterable[A], pypeln_utils.Undefined
+    ] = pypeln_utils.UNDEFINED,
+    workers: int = 1,
+    maxsize: int = 0,
+    timeout: float = 0,
+    on_start: typing.Callable = None,
+    on_done: typing.Callable = None,
+    run: bool = False,
+) -> tp.Union[tp.Optional[Stage[B]], pypeln_utils.Partial[tp.Optional[Stage[B]]]]:
     """
     Creates a stage that runs the function `f` for each element in the data but the stage itself yields no elements. Its useful for sink stages that perform certain actions such as writting to disk, saving to a database, etc, and dont produce any results. For example:
 
@@ -591,13 +620,12 @@ def each(
 
     stage = to_stage(stage)
 
-    stage = Each(
-        f=f,
+    stage = Stage.create(
         workers=workers,
         maxsize=maxsize,
-        timeout=timeout,
-        on_start=on_start,
-        on_done=on_done,
+        worker_constructor=Each.get_worker_constructor(
+            f=f, timeout=timeout, on_start=on_start, on_done=on_done
+        ),
         dependencies=[stage],
     )
 
@@ -734,8 +762,12 @@ def ordered(stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0) -> Stage:
 # run
 # ----------------------------------------------------------------
 
+StageOrIterable = tp.Union[Stage[A], tp.Iterable[A]]
 
-def run(stages: typing.List[Stage], maxsize: int = 0) -> None:
+
+def run(
+    stages: tp.Union[StageOrIterable, typing.List[StageOrIterable]], maxsize: int = 0
+) -> None:
     """
     Iterates over one or more stages until their iterators run out of elements.
 

@@ -137,20 +137,20 @@ class TestOutputQueues(TestCase):
         queues: pl.process.OutputQueues[int] = pl.process.OutputQueues()
         queue: pl.process.IterableQueue[int] = pl.process.IterableQueue()
 
-        queues.add(queue)
+        queues.append(queue)
 
         queues.put(3)
 
         x = queue.get()
 
-        assert isinstance(queues, set)
+        assert isinstance(queues, list)
         assert x == 3
 
     def test_done(self):
         queues: pl.process.OutputQueues[int] = pl.process.OutputQueues()
         queue = pl.process.IterableQueue()
 
-        queues.add(queue)
+        queues.append(queue)
 
         queues.done()
 
@@ -162,7 +162,7 @@ class TestOutputQueues(TestCase):
         queues: pl.process.OutputQueues[int] = pl.process.OutputQueues()
         queue = pl.process.IterableQueue()
 
-        queues.add(queue)
+        queues.append(queue)
 
         assert queue.namespace.remaining == 1
 
@@ -174,7 +174,7 @@ class TestOutputQueues(TestCase):
         queues: pl.process.OutputQueues[int] = pl.process.OutputQueues()
         queue = pl.process.IterableQueue()
 
-        queues.add(queue)
+        queues.append(queue)
 
         assert queue.namespace.force_stop == False
 
@@ -265,7 +265,7 @@ class TestWorkerProcess(TestCase):
         worker.start()
 
         assert not worker.did_timeout()
-        time.sleep(0.02)
+        time.sleep(0.01)
         assert worker.did_timeout()
 
     def test_del1(self):
@@ -578,6 +578,7 @@ class TestSupervisor(TestCase):
         queue: pl.process.IterableQueue = mock.Mock()
 
         worker: pl.process.Worker = mock.Mock(timeout=0)
+        worker.process.is_alive.return_value = False
 
         supervisor = pl.process.Supervisor(workers=[worker], main_queue=queue)
 
@@ -595,6 +596,8 @@ class TestSupervisor(TestCase):
         queue: pl.process.IterableQueue = mock.Mock()
 
         worker: pl.process.Worker = mock.Mock(timeout=0)
+        worker.process.is_alive.return_value = False
+
         supervisor = pl.process.Supervisor(workers=[worker], main_queue=queue)
 
         def generator():
@@ -629,6 +632,17 @@ class TestFromIterable(TestCase):
         nums_py = nums
 
         nums_pl = pl.process.from_iterable(nums)
+        nums_pl = list(nums_pl)
+
+        assert nums_pl == nums_py
+
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_from_to_iterable_process(self, nums: tp.List[int]):
+
+        nums_py = nums
+
+        nums_pl = pl.process.from_iterable(nums, use_thread=False)
         nums_pl = list(nums_pl)
 
         assert nums_pl == nums_py
@@ -795,18 +809,19 @@ class TestMap(TestCase):
         assert sorted(nums_pl) == sorted(nums_py)
 
 
-@hp.given(nums=st.lists(st.integers()))
-@hp.settings(max_examples=MAX_EXAMPLES)
-def test_map_square_workers_sorted(nums: tp.List[int]):
+class TestOrdered(unittest.TestCase):
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_map_square_workers_sorted(self, nums: tp.List[int]):
 
-    nums_py = map(lambda x: x ** 2, nums)
-    nums_py = list(nums_py)
+        nums_py = map(lambda x: x ** 2, nums)
+        nums_py = list(nums_py)
 
-    nums_pl = pl.process.map(lambda x: x ** 2, nums, workers=2)
-    nums_pl = pl.process.ordered(nums_pl)
-    nums_pl = list(nums_pl)
+        nums_pl = pl.process.map(lambda x: x ** 2, nums, workers=2)
+        nums_pl = pl.process.ordered(nums_pl)
+        nums_pl = list(nums_pl)
 
-    assert nums_pl == nums_py
+        assert nums_pl == nums_py
 
 
 # ----------------------------------------------------------------
@@ -944,37 +959,37 @@ class TestFilter(unittest.TestCase):
 # ----------------------------------------------------------------
 
 
-@hp.given(nums=st.lists(st.integers()))
-@hp.settings(max_examples=MAX_EXAMPLES)
-def test_concat_basic(nums: tp.List[int]):
+class TestConcat(unittest.TestCase):
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_concat_basic(self, nums: tp.List[int]):
 
-    nums_py = list(map(lambda x: x + 1, nums))
-    nums_py1 = list(map(lambda x: x ** 2, nums_py))
-    nums_py2 = list(map(lambda x: -x, nums_py))
-    nums_py = nums_py1 + nums_py2
+        nums_py = list(map(lambda x: x + 1, nums))
+        nums_py1 = list(map(lambda x: x ** 2, nums_py))
+        nums_py2 = list(map(lambda x: -x, nums_py))
+        nums_py = nums_py1 + nums_py2
 
-    nums_pl = pl.process.map(lambda x: x + 1, nums)
-    nums_pl1 = pl.process.map(lambda x: x ** 2, nums_pl)
-    nums_pl2 = pl.process.map(lambda x: -x, nums_pl)
-    nums_pl = pl.process.concat([nums_pl1, nums_pl2])
+        nums_pl = pl.process.map(lambda x: x + 1, nums)
+        nums_pl1 = pl.process.map(lambda x: x ** 2, nums_pl)
+        nums_pl2 = pl.process.map(lambda x: -x, nums_pl)
+        nums_pl = pl.process.concat([nums_pl1, nums_pl2])
 
-    assert sorted(nums_pl) == sorted(nums_py)
+        assert sorted(nums_pl) == sorted(nums_py)
 
+    # @hp.given(nums=st.lists(st.integers()))
+    # @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_concat_multiple(self, nums: tp.List[int] = [1, 2, 3]):
 
-@hp.given(nums=st.lists(st.integers()))
-@hp.settings(max_examples=MAX_EXAMPLES)
-def test_concat_multiple(nums: tp.List[int]):
+        nums_py = [x + 1 for x in nums]
+        nums_py1 = nums_py + nums_py
+        nums_py2 = nums_py1 + nums_py
 
-    nums_py = [x + 1 for x in nums]
-    nums_py1 = nums_py + nums_py
-    nums_py2 = nums_py1 + nums_py
+        nums_pl = pl.process.map(lambda x: x + 1, nums)
+        nums_pl1 = pl.process.concat([nums_pl, nums_pl])
+        nums_pl2 = pl.process.concat([nums_pl1, nums_pl])
 
-    nums_pl = pl.process.map(lambda x: x + 1, nums)
-    nums_pl1 = pl.process.concat([nums_pl, nums_pl])
-    nums_pl2 = pl.process.concat([nums_pl1, nums_pl])
-
-    # assert sorted(nums_py1) == sorted(list(nums_pl1))
-    assert sorted(nums_py2) == sorted(list(nums_pl2))
+        # assert sorted(nums_py1) == sorted(list(nums_pl1))
+        assert sorted(nums_py2) == sorted(list(nums_pl2))
 
 
 # ----------------------------------------------------------------#######
@@ -986,43 +1001,47 @@ class MyError(Exception):
     pass
 
 
-def test_error_handling():
+class TestErrorHandling(unittest.TestCase):
+    def test_error_handling(self):
 
-    error = None
+        error = None
 
-    def raise_error(x):
-        raise MyError()
+        def raise_error(x):
+            raise MyError()
 
-    stage = pl.process.map(raise_error, range(10))
+        stage = pl.process.map(raise_error, range(10))
 
-    try:
-        list(stage)
+        try:
+            list(stage)
 
-    except MyError as e:
-        error = e
+        except MyError as e:
+            error = e
 
-    assert isinstance(error, MyError)
+        assert isinstance(error, MyError)
 
 
 # ----------------------------------------------------------------#######
 # from_to_iterable
 # ----------------------------------------------------------------#######
-@hp.given(nums=st.lists(st.integers()))
-@hp.settings(max_examples=MAX_EXAMPLES)
-def test_from_to_iterable(nums: tp.List[int]):
 
-    nums_pl = nums
-    nums_pl = pl.process.from_iterable(nums_pl)
-    nums_pl = cz.partition_all(10, nums_pl)
-    nums_pl = pl.process.map(sum, nums_pl)
-    nums_pl = list(nums_pl)
 
-    nums_py = nums
-    nums_py = cz.partition_all(10, nums_py)
-    nums_py = map(sum, nums_py)
-    nums_py = list(nums_py)
+class TestToIterable(unittest.TestCase):
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_from_to_iterable(self, nums: tp.List[int]):
 
-    assert nums_py == nums_pl
+        nums_pl = nums
+        nums_pl = pl.process.from_iterable(nums_pl)
+        nums_pl = cz.partition_all(10, nums_pl)
+        nums_pl = pl.process.map(sum, nums_pl)
+        nums_pl = list(nums_pl)
+
+        nums_py = nums
+        nums_py = cz.partition_all(10, nums_py)
+        nums_py = map(sum, nums_py)
+        nums_py = list(nums_py)
+
+        assert nums_py == nums_pl
 
 
 if __name__ == "__main__":

@@ -55,23 +55,23 @@ class FromIterable(Worker[T]):
         index: int,
         stage_params: StageParams,
         main_queue: IterableQueue,
-        timeout: float = 0,
+        use_threads: bool,
     ):
         super().__init__(
             f=pypeln_utils.no_op,
             index=index,
             stage_params=stage_params,
             main_queue=main_queue,
-            use_threads=True,
+            use_threads=use_threads,
         )
 
         self.iterable = iterable
 
     @classmethod
     def get_worker_constructor(
-        cls, iterable: tp.Iterable, timeout: float = 0,
+        cls, iterable: tp.Iterable, use_threads: bool
     ) -> WorkerConstructor:
-        def from_iterable(
+        def worker_constructor(
             index: int, stage_params: StageParams, main_queue: IterableQueue
         ) -> FromIterable:
             return cls(
@@ -79,10 +79,10 @@ class FromIterable(Worker[T]):
                 index=index,
                 stage_params=stage_params,
                 main_queue=main_queue,
-                timeout=timeout,
+                use_threads=use_threads,
             )
 
-        return from_iterable
+        return worker_constructor
 
     def process_fn(self, f_args: tp.List[str], **kwargs):
 
@@ -107,30 +107,28 @@ class FromIterable(Worker[T]):
 
 
 @tp.overload
-def from_iterable(iterable: typing.Iterable[T], maxsize: int = 0,) -> Stage[T]:
+def from_iterable(
+    iterable: typing.Iterable[T], maxsize: int = 0, use_thread: bool = True
+) -> Stage[T]:
     ...
 
 
 @tp.overload
 def from_iterable(
-    maxsize: int = 0, worker_constructor: typing.Type = Thread,
+    maxsize: int = 0, worker_constructor: typing.Type = Thread, use_thread: bool = True
 ) -> pypeln_utils.Partial[Stage[T]]:
     ...
 
 
 def from_iterable(
-    iterable=pypeln_utils.UNDEFINED, maxsize: int = 0,
+    iterable=pypeln_utils.UNDEFINED, maxsize: int = 0, use_thread: bool = True
 ):
     """
-    Creates a stage from an iterable. This function gives you more control of how a stage is created through the `worker_constructor` parameter which can be either:
-    
-    * `threading.Thread`: (default) is efficient for iterables that already have the data in memory like lists or numpy arrays because threads can share memory so no serialization is needed. 
-    * `multiprocessing.Process`: is efficient for iterables who's data is not in memory like arbitrary generators and benefit from escaping the GIL. This is inefficient for iterables which have data in memory because they have to be serialized when sent to the background process.
-
+    Creates a stage from an iterable. This function gives you more control of the iterable is consumed.
     Arguments:
         iterable: a source iterable.
         maxsize: this parameter is not used and only kept for API compatibility with the other modules.
-        worker_constructor: defines the worker type for the producer stage.
+        use_thread: If set to `True` (default) it will use a thread instead of a process to consume the iterable. Threads start faster and use thread memory to the iterable is not serialized, however, if the iterable is going to perform slow computations it better to use a process.
 
     Returns:
         If the `iterable` parameters is given then this function returns a new stage, else it returns a `Partial`.
@@ -138,13 +136,18 @@ def from_iterable(
 
     if isinstance(iterable, pypeln_utils.Undefined):
         return pypeln_utils.Partial(
-            lambda iterable: from_iterable(iterable, maxsize=maxsize,)
+            lambda iterable: from_iterable(
+                iterable, maxsize=maxsize, use_thread=use_thread
+            )
         )
 
     return Stage.create(
         workers=1,
+        total_sources=1,
         maxsize=maxsize,
-        worker_constructor=FromIterable.get_worker_constructor(iterable),
+        worker_constructor=FromIterable.get_worker_constructor(
+            iterable, use_threads=use_thread
+        ),
         dependencies=[],
     )
 
@@ -154,7 +157,7 @@ def from_iterable(
 # ----------------------------------------------------------------
 
 
-def to_stage(obj: tp.Union[Stage[A], tp.Iterable[A]]):
+def to_stage(obj: tp.Union[Stage[A], tp.Iterable[A]]) -> Stage[A]:
 
     if isinstance(obj, Stage):
         return obj
@@ -269,6 +272,7 @@ def map(
     return Stage.create(
         workers=workers,
         maxsize=maxsize,
+        total_sources=stage.workers,
         worker_constructor=Map.get_worker_constructor(
             f=f, timeout=timeout, on_start=on_start, on_done=on_done
         ),
@@ -395,6 +399,7 @@ def flat_map(
 
     return Stage.create(
         workers=workers,
+        total_sources=stage.workers,
         maxsize=maxsize,
         worker_constructor=FlatMap.get_worker_constructor(
             f=f, timeout=timeout, on_start=on_start, on_done=on_done
@@ -505,6 +510,7 @@ def filter(
 
     return Stage.create(
         workers=workers,
+        total_sources=stage.workers,
         maxsize=maxsize,
         worker_constructor=Filter.get_worker_constructor(
             f=f, timeout=timeout, on_start=on_start, on_done=on_done
@@ -622,6 +628,7 @@ def each(
 
     stage = Stage.create(
         workers=workers,
+        total_sources=stage.workers,
         maxsize=maxsize,
         worker_constructor=Each.get_worker_constructor(
             f=f, timeout=timeout, on_start=on_start, on_done=on_done
@@ -641,12 +648,14 @@ def each(
 # ----------------------------------------------------------------
 
 
-class Concat(Stage):
-    def apply(self, elem):
-        self.output_queues.put(elem)
+class Concat(ApplyWorkerConstructor[T]):
+    def apply(self, elem: pypeln_utils.Element, f_args: tp.List[str], **kwargs):
+        self.stage_params.output_queues.put(elem)
 
 
-def concat(stages: typing.List[Stage], maxsize: int = 0) -> Stage:
+def concat(
+    stages: typing.List[tp.Union[Stage[A], tp.Iterable[A]]], maxsize: int = 0
+) -> Stage:
     """
     Concatenates / merges many stages into a single one by appending elements from each stage as they come, order is not preserved.
 
@@ -669,13 +678,13 @@ def concat(stages: typing.List[Stage], maxsize: int = 0) -> Stage:
 
     stages = [to_stage(stage) for stage in stages]
 
-    return Concat(
-        f=None,
+    return Stage.create(
         workers=1,
+        total_sources=sum(stage.workers for stage in stages),
         maxsize=maxsize,
-        timeout=0,
-        on_start=None,
-        on_done=None,
+        worker_constructor=Concat.get_worker_constructor(
+            f=pypeln_utils.no_op, timeout=0, on_start=None, on_done=None
+        ),
         dependencies=stages,
     )
 
@@ -683,12 +692,33 @@ def concat(stages: typing.List[Stage], maxsize: int = 0) -> Stage:
 # ----------------------------------------------------------------
 # ordered
 # ----------------------------------------------------------------
-class Ordered(Stage):
-    def process(self, worker_namespace, **kwargs) -> None:
+
+
+class Ordered(Worker[T]):
+    def __init__(
+        self, index: int, stage_params: StageParams, main_queue: IterableQueue,
+    ):
+        super().__init__(
+            f=pypeln_utils.no_op,
+            index=index,
+            stage_params=stage_params,
+            main_queue=main_queue,
+        )
+
+    @classmethod
+    def get_worker_constructor(cls) -> WorkerConstructor:
+        def from_iterable(
+            index: int, stage_params: StageParams, main_queue: IterableQueue
+        ) -> Ordered:
+            return cls(index=index, stage_params=stage_params, main_queue=main_queue)
+
+        return from_iterable
+
+    def process_fn(self, f_args: tp.List[str], **kwargs):
 
         elems = []
 
-        for elem in self.input_queue:
+        for elem in self.stage_params.input_queue:
             if self.main_queue.namespace.exception:
                 return
 
@@ -704,10 +734,25 @@ class Ordered(Stage):
                         elems.insert(0, elem)
 
         for _ in range(len(elems)):
-            self.output_queues.put(elems.pop(0))
+            self.stage_params.output_queues.put(elems.pop(0))
 
 
-def ordered(stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0) -> Stage:
+@tp.overload
+def ordered(stage: Stage[A], maxsize: int = 0) -> Stage[A]:
+    ...
+
+
+@tp.overload
+def ordered(maxsize: int = 0) -> pypeln_utils.Partial[Stage[A]]:
+    ...
+
+
+def ordered(
+    stage: tp.Union[
+        Stage[A], tp.Iterable[A], pypeln_utils.Undefined
+    ] = pypeln_utils.UNDEFINED,
+    maxsize: int = 0,
+) -> tp.Union[Stage[A], pypeln_utils.Partial[Stage[A]]]:
     """
     Creates a stage that sorts its elements based on their order of creation on the source iterable(s) of the pipeline.
 
@@ -747,13 +792,11 @@ def ordered(stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0) -> Stage:
 
     stage = to_stage(stage)
 
-    return Ordered(
-        f=None,
+    return Stage.create(
         workers=1,
+        total_sources=stage.workers,
         maxsize=maxsize,
-        timeout=0,
-        on_start=None,
-        on_done=None,
+        worker_constructor=Ordered.get_worker_constructor(),
         dependencies=[stage],
     )
 
@@ -762,12 +805,8 @@ def ordered(stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0) -> Stage:
 # run
 # ----------------------------------------------------------------
 
-StageOrIterable = tp.Union[Stage[A], tp.Iterable[A]]
 
-
-def run(
-    stages: tp.Union[StageOrIterable, typing.List[StageOrIterable]], maxsize: int = 0
-) -> None:
+def run(*stages: tp.Union[Stage[A], tp.Iterable[A]], maxsize: int = 0) -> None:
     """
     Iterates over one or more stages until their iterators run out of elements.
 
@@ -787,18 +826,15 @@ def run(
 
     """
 
-    if isinstance(stages, list) and len(stages) == 0:
-        raise ValueError("Expected at least 1 stage to run")
-
-    elif isinstance(stages, list):
-        stage = concat(stages, maxsize=maxsize)
+    if len(stages) > 0:
+        stage = concat(list(stages), maxsize=maxsize)
 
     else:
-        stage = stages
+        stage = stages[0]
 
     stage = to_iterable(stage, maxsize=maxsize)
 
-    for _ in stages:
+    for _ in stage:
         pass
 
 
@@ -807,9 +843,29 @@ def run(
 # ----------------------------------------------------------------
 
 
+@tp.overload
 def to_iterable(
-    stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0, return_index: bool = False
-) -> typing.Iterable:
+    stage: tp.Union[Stage[A], tp.Iterable[A]],
+    maxsize: int = 0,
+    return_index: bool = False,
+) -> tp.Iterable[A]:
+    ...
+
+
+@tp.overload
+def to_iterable(
+    maxsize: int = 0, return_index: bool = False,
+) -> pypeln_utils.Partial[tp.Iterable[A]]:
+    ...
+
+
+def to_iterable(
+    stage: tp.Union[
+        Stage[A], tp.Iterable[A], pypeln_utils.Undefined
+    ] = pypeln_utils.UNDEFINED,
+    maxsize: int = 0,
+    return_index: bool = False,
+) -> tp.Union[tp.Iterable[A], pypeln_utils.Partial[tp.Iterable[A]]]:
     """
     Creates an iterable from a stage.
 

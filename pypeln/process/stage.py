@@ -24,6 +24,7 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
     stage_params: StageParams
     worker_constructor: WorkerConstructor
     workers: int
+    total_sources: int
     dependencies: tp.List["Stage"]
     built: bool = False
     started: bool = False
@@ -32,17 +33,18 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
     def create(
         cls,
         workers: int,
+        total_sources: int,
         maxsize: int,
         worker_constructor: WorkerConstructor,
         dependencies: tp.List["Stage"],
     ):
 
         input_queue: IterableQueue[T] = IterableQueue(
-            maxsize=maxsize, total_sources=len(dependencies)
+            maxsize=maxsize, total_sources=total_sources,
         )
 
         for dependency in dependencies:
-            dependency.stage_params.output_queues.add(input_queue)
+            dependency.stage_params.output_queues.append(input_queue)
 
         return cls(
             stage_params=StageParams.create(
@@ -51,6 +53,7 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
                 total_workers=workers,
             ),
             workers=workers,
+            total_sources=total_sources,
             worker_constructor=worker_constructor,
             dependencies=dependencies,
         )
@@ -86,13 +89,15 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
         stages = list(self.build())
 
         main_queue: IterableQueue[pypeln_utils.Element[T]] = IterableQueue(
-            maxsize=maxsize, total_sources=self.workers
+            maxsize=maxsize, total_sources=self.workers,
         )
 
         # add main_queue before starting
-        self.stage_params.output_queues.add(main_queue)
+        self.stage_params.output_queues.append(main_queue)
 
-        workers = list(pypeln_utils.concat(stage.start(main_queue) for stage in stages))
+        workers: tp.List[Worker] = list(
+            pypeln_utils.concat(stage.start(main_queue) for stage in stages)
+        )
         supervisor = Supervisor(workers=workers, main_queue=main_queue)
 
         with supervisor:

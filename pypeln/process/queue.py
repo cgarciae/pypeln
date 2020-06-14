@@ -20,8 +20,6 @@ class PipelineException(tp.NamedTuple):
     trace: str
 
 
-utils.MANAGER.register("PipelineException", PipelineException)
-
 
 class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
     def __init__(self, maxsize: int = 0, total_sources: int = 1):
@@ -89,7 +87,7 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
         self.exception_queue.put(PipelineException(exception_type, trace))
 
 
-class OutputQueues(tp.Set[IterableQueue[T]], tp.Generic[T]):
+class OutputQueues(tp.List[IterableQueue[T]], tp.Generic[T]):
     def put(self, x: T):
         for queue in self:
             queue.put(x)

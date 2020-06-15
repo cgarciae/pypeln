@@ -17,6 +17,8 @@ import pytest
 
 from pypeln import utils as pypeln_utils
 import pypeln as pl
+from utils_io import run_async
+import asyncio
 
 MAX_EXAMPLES = 10
 T = tp.TypeVar("T")
@@ -45,6 +47,26 @@ class TestQueue(TestCase):
         processes = pl.task.start_workers(worker)
 
         nums_pl = list(queue)
+
+        assert len(processes) == 1
+        assert nums_pl == nums
+
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    @run_async
+    async def test_done_async(self, nums):
+
+        queue = pl.task.IterableQueue()
+
+        async def worker():
+            for i in nums:
+                await queue.put(i)
+
+            await queue.done()
+
+        processes = pl.task.start_workers(worker)
+
+        nums_pl = [x async for x in queue]
 
         assert len(processes) == 1
         assert nums_pl == nums
@@ -90,6 +112,27 @@ class TestQueue(TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
+    @run_async
+    async def test_done_many_async(self, nums):
+        n_workers = 3
+
+        queue = pl.task.IterableQueue(total_sources=n_workers)
+
+        async def worker():
+            for i in nums:
+                await queue.put(i)
+
+            await queue.done()
+
+        processes = pl.task.start_workers(worker, n_workers=n_workers)
+
+        nums_pl = [x async for x in queue]
+
+        assert len(processes) == n_workers
+        assert len(nums_pl) == (len(nums) * 3)
+
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
     def test_stop(self, nums):
 
         queue = pl.task.IterableQueue()
@@ -103,6 +146,26 @@ class TestQueue(TestCase):
         processes = pl.task.start_workers(worker)
 
         nums_pl = list(queue)
+
+        assert len(processes) == 1
+        assert nums_pl == nums
+
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    @run_async
+    async def test_stop_async(self, nums):
+
+        queue = pl.task.IterableQueue()
+
+        async def worker():
+            for i in nums:
+                await queue.put(i)
+
+            await queue.stop()
+
+        processes = pl.task.start_workers(worker)
+
+        nums_pl = [x async for x in queue]
 
         assert len(processes) == 1
         assert nums_pl == nums
@@ -147,6 +210,26 @@ class TestQueue(TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
+    @run_async
+    async def test_kill_async(self, nums):
+
+        queue = pl.task.IterableQueue()
+
+        async def worker():
+            for i in nums:
+                await queue.put(i)
+
+            await queue.kill()
+
+        processes = pl.task.start_workers(worker)
+
+        nums_pl = [x async for x in queue]
+
+        assert len(processes) == 1
+        assert len(nums_pl) <= len(nums)
+
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
     def test_kill_nowait(self, nums):
 
         queue = pl.task.IterableQueue()
@@ -185,6 +268,26 @@ class TestQueue(TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
+    @run_async
+    async def test_raise_async(self, nums):
+
+        queue = pl.task.IterableQueue()
+
+        async def worker():
+            try:
+                raise MyException()
+            except BaseException as e:
+                await queue.raise_exception(e)
+
+        processes = pl.task.start_workers(worker)
+
+        with pytest.raises(MyException):
+            nums_pl = [x async for x in queue]
+
+        assert len(processes) == 1
+
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
     def test_raise_nowait(self, nums):
 
         queue = pl.task.IterableQueue()
@@ -209,32 +312,60 @@ class TestQueue(TestCase):
 
 
 class TestOutputQueues(TestCase):
-    def test_basic(self):
+    def test_basic_nowait(self):
         queues: pl.task.OutputQueues[int] = pl.task.OutputQueues()
         queue: pl.task.IterableQueue[int] = pl.task.IterableQueue()
 
         queues.append(queue)
 
-        queues.put(3)
+        queues.put_nowait(3)
 
-        x = queue.get()
+        x = queue.get_nowait()
 
         assert isinstance(queues, list)
         assert x == 3
 
-    def test_done(self):
+    @run_async
+    async def test_basic(self):
+        queues: pl.task.OutputQueues[int] = pl.task.OutputQueues()
+        queue: pl.task.IterableQueue[int] = pl.task.IterableQueue()
+
+        queues.append(queue)
+
+        await queues.put(3)
+
+        x = await queue.get()
+
+        assert isinstance(queues, list)
+        assert x == 3
+
+    @run_async
+    async def test_done(self):
         queues: pl.task.OutputQueues[int] = pl.task.OutputQueues()
         queue = pl.task.IterableQueue()
 
         queues.append(queue)
 
-        queues.done()
+        await queues.done()
 
-        x = queue.get()
+        x = await queue.get()
 
         assert isinstance(x, pypeln_utils.Done)
 
-    def test_stop(self):
+    def test_done_nowait(self):
+        queues: pl.task.OutputQueues[int] = pl.task.OutputQueues()
+        queue = pl.task.IterableQueue()
+
+        queues.append(queue)
+
+        queues.done_nowait()
+
+        x = queue.get_nowait()
+
+        assert isinstance(x, pypeln_utils.Done)
+
+    @run_async
+    async def test_stop(self):
         queues: pl.task.OutputQueues[int] = pl.task.OutputQueues()
         queue = pl.task.IterableQueue()
 
@@ -242,11 +373,24 @@ class TestOutputQueues(TestCase):
 
         assert queue.namespace.remaining == 1
 
-        queues.stop()
+        await queues.stop()
 
         assert queue.namespace.remaining == 0
 
-    def test_kill(self):
+    def test_stop_nowait(self):
+        queues: pl.task.OutputQueues[int] = pl.task.OutputQueues()
+        queue = pl.task.IterableQueue()
+
+        queues.append(queue)
+
+        assert queue.namespace.remaining == 1
+
+        queues.stop_nowait()
+
+        assert queue.namespace.remaining == 0
+
+    @run_async
+    async def test_kill(self):
         queues: pl.task.OutputQueues[int] = pl.task.OutputQueues()
         queue = pl.task.IterableQueue()
 
@@ -254,7 +398,19 @@ class TestOutputQueues(TestCase):
 
         assert queue.namespace.force_stop == False
 
-        queues.kill()
+        await queues.kill()
+
+        assert queue.namespace.remaining == True
+
+    def test_kill_nowait(self):
+        queues: pl.task.OutputQueues[int] = pl.task.OutputQueues()
+        queue = pl.task.IterableQueue()
+
+        queues.append(queue)
+
+        assert queue.namespace.force_stop == False
+
+        queues.kill_nowait()
 
         assert queue.namespace.remaining == True
 

@@ -1,5 +1,6 @@
 import asyncio
 import functools
+import pypeln as pl
 
 
 def run_async(f):
@@ -10,7 +11,6 @@ def run_async(f):
         # new_loop = asyncio.new_event_loop()
         # asyncio.set_event_loop(new_loop)
 
-        task = f(*args, **kwargs)
-        asyncio.run(task)
+        return pl.task.execute_in_loop(lambda: f(*args, **kwargs))
 
     return wrapped

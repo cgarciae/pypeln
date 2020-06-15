@@ -81,7 +81,6 @@ class IterableQueue(asyncio.Queue, tp.Generic[T], tp.Iterable[T]):
             x = await self.get()
 
             if isinstance(x, pypeln_utils.Continue):
-                print(x)
                 continue
             elif isinstance(x, pypeln_utils.Done):
                 self.namespace.remaining -= 1
@@ -123,6 +122,7 @@ class IterableQueue(asyncio.Queue, tp.Generic[T], tp.Iterable[T]):
         )
         self.namespace.exception = True
         await self.exception_queue.put(PipelineException(exception_type, trace))
+        await self.put(pypeln_utils.CONTINUE)
 
     def raise_exception_nowait(self, exception: BaseException):
         exception_type, _exception, _traceback = sys.exc_info()
@@ -138,14 +138,30 @@ class OutputQueues(tp.List[IterableQueue[T]], tp.Generic[T]):
         for queue in self:
             await queue.put(x)
 
+    def put_nowait(self, x: T):
+        for queue in self:
+            queue.put_nowait(x)
+
     async def done(self):
         for queue in self:
             await queue.done()
+
+    def done_nowait(self):
+        for queue in self:
+            queue.done_nowait()
 
     async def stop(self):
         for queue in self:
             await queue.stop()
 
+    def stop_nowait(self):
+        for queue in self:
+            queue.stop_nowait()
+
     async def kill(self):
         for queue in self:
             await queue.kill()
+
+    def kill_nowait(self):
+        for queue in self:
+            queue.kill_nowait()

@@ -1,11 +1,10 @@
-import multiprocessing
-from multiprocessing.queues import Empty, Queue
 import sys
 import traceback
 import typing as tp
+from queue import Queue, Empty
+import threading
 
 
-from pypeln import interfaces
 from pypeln import utils as pypeln_utils
 
 from . import utils
@@ -22,15 +21,13 @@ class PipelineException(tp.NamedTuple):
 
 class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
     def __init__(self, maxsize: int = 0, total_sources: int = 1):
-        super().__init__(maxsize=maxsize, ctx=multiprocessing.get_context())
+        super().__init__(maxsize=maxsize)
 
-        self.lock = multiprocessing.Lock()
+        self.lock = threading.Lock()
         self.namespace = utils.Namespace(
             remaining=total_sources, exception=False, force_stop=False
         )
-        self.exception_queue: Queue[PipelineException] = Queue(
-            ctx=multiprocessing.get_context()
-        )
+        self.exception_queue: Queue[PipelineException] = Queue(maxsize=1)
 
     def get(self, *arg, **kwargs) -> T:
         return super().get(*arg, **kwargs)

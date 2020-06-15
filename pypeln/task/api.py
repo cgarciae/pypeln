@@ -1,208 +1,239 @@
 """
-The `task` module lets you create pipelines using objects from python's [asyncio](https://docs.python.org/3/library/asyncio.html) module according to Pypeln's general [architecture](https://cgarciae.github.io/pypeln/advanced/#architecture). Use this module when you are in need to perform efficient asynchronous IO operations and DONT need to perform heavy CPU operations.
+The `process` module lets you create pipelines using objects from python's [multiprocessing](https://docs.python.org/3/library/multiprocessing.html) module according to Pypeln's general [architecture](https://cgarciae.github.io/pypeln/advanced/#architecture). Use this module when you are in need of true parallelism for CPU heavy operations but be aware of its implications.
 """
 
-import asyncio
-import sys
-import time
-import traceback
 import typing
 from threading import Thread
 
 from pypeln import utils as pypeln_utils
 
 from . import utils
-from .stage import Stage
+from .worker import Worker, WorkerApply, StageParams, Kwargs
+from .queue import IterableQueue
+from .stage import Stage, WorkerConstructor
+import typing as tp
 
-#############################################################
-# to_stage
-#############################################################
+T = tp.TypeVar("T")
+A = tp.TypeVar("A")
+B = tp.TypeVar("B")
 
 
-class FromIterable(Stage):
-    def __init__(self, iterable, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class ApplyWorkerConstructor(WorkerApply[T]):
+    @classmethod
+    def get_worker_constructor(
+        cls,
+        f: tp.Callable,
+        timeout: float,
+        on_start: tp.Optional[tp.Callable[..., Kwargs]],
+        on_done: tp.Optional[tp.Callable[..., Kwargs]],
+    ) -> WorkerConstructor:
+        def worker_constructor(
+            index: int, stage_params: StageParams, main_queue: IterableQueue
+        ) -> WorkerApply[T]:
+            return cls(
+                f=f,
+                index=index,
+                stage_params=stage_params,
+                main_queue=main_queue,
+                timeout=timeout,
+                on_start=on_start,
+                on_done=on_done,
+            )
+
+        return worker_constructor
+
+
+# ----------------------------------------------------------------
+# from_iterable
+# ----------------------------------------------------------------
+
+
+class FromIterable(Worker[T]):
+    def __init__(
+        self,
+        iterable: tp.Union[tp.Iterable[T], pypeln_utils.BaseStage[T]],
+        index: int,
+        stage_params: StageParams,
+        main_queue: IterableQueue,
+        use_threads: bool,
+    ):
+        super().__init__(
+            f=pypeln_utils.no_op,
+            index=index,
+            stage_params=stage_params,
+            main_queue=main_queue,
+            use_threads=use_threads,
+        )
 
         self.iterable = iterable
 
-    async def process(self):
-        i = 0
-        async for x in self.to_async_iterable():
-            if self.pipeline_namespace.error:
-                return
-
-            if isinstance(x, pypeln_utils.Element):
-                await self.output_queues.put(x)
-            else:
-                await self.output_queues.put(pypeln_utils.Element(index=(i,), value=x))
-                i += 1
-
-    async def to_async_iterable(self):
-        if not (
-            hasattr(self.iterable, "__iter__") or hasattr(self.iterable, "__aiter__")
-        ):
-            raise ValueError(
-                f"Object {self.iterable} most be either iterable or async iterable."
+    @classmethod
+    def get_worker_constructor(
+        cls, iterable: tp.Iterable, use_threads: bool
+    ) -> WorkerConstructor:
+        def worker_constructor(
+            index: int, stage_params: StageParams, main_queue: IterableQueue
+        ) -> FromIterable:
+            return cls(
+                iterable=iterable,
+                index=index,
+                stage_params=stage_params,
+                main_queue=main_queue,
+                use_threads=use_threads,
             )
 
-        if hasattr(self.iterable, "__aiter__"):
-            async for x in self.iterable:
-                yield x
+        return worker_constructor
 
-        elif type(self.iterable) in (list, dict, tuple, set):
-            for i, x in enumerate(self.iterable):
-                yield x
+    def process_fn(self, f_args: tp.List[str], **kwargs):
 
-                if i % 1000 == 0:
-                    await asyncio.sleep(0)
+        if isinstance(self.iterable, pypeln_utils.BaseStage):
 
+            for x in self.iterable.to_iterable(maxsize=0, return_index=True):
+                if self.main_queue.namespace.exception:
+                    return
+
+                self.stage_params.output_queues.put(x)
         else:
-            queue = utils.IterableQueue(
-                maxsize=self.maxsize,
-                total_done=1,
-                pipeline_namespace=self.pipeline_namespace,
-                loop=self.loop,
-            )
+            for i, x in enumerate(self.iterable):
+                if self.main_queue.namespace.exception:
+                    return
 
-            task = self.loop.run_in_executor(None, lambda: self.consume_iterable(queue))
-            async for x in queue:
-                yield x
-
-            await task
-
-    def consume_iterable(self, queue):
-        iterable = (
-            self.iterable.to_iterable(maxsize=pypeln_utils.MAXSIZE, return_index=True)
-            if isinstance(self.iterable, pypeln_utils.BaseStage)
-            else self.iterable
-        )
-
-        try:
-            for x in iterable:
-                while True:
-                    if not queue.full():
-                        self.loop.call_soon_threadsafe(queue.put_nowait, x)
-                        break
-                    else:
-                        time.sleep(pypeln_utils.TIMEOUT)
-
-            while True:
-                if not queue.full():
-                    self.loop.call_soon_threadsafe(queue.done_nowait)
-                    break
+                if isinstance(x, pypeln_utils.Element):
+                    self.stage_params.output_queues.put(x)
                 else:
-                    time.sleep(pypeln_utils.TIMEOUT)
+                    self.stage_params.output_queues.put(
+                        pypeln_utils.Element(index=(i,), value=x)
+                    )
 
-        except BaseException as e:
-            try:
-                for stage in self.pipeline_stages:
-                    self.loop.call_soon_threadsafe(stage.input_queue.done_nowait)
 
-                self.loop.call_soon_threadsafe(
-                    self.pipeline_error_queue.put_nowait,
-                    (type(e), e, "".join(traceback.format_exception(*sys.exc_info()))),
-                )
-                self.pipeline_namespace.error = True
-                self.loop.call_soon_threadsafe(queue.done_nowait)
-            except BaseException as e:
-                print(e)
+@tp.overload
+def from_iterable(
+    iterable: typing.Iterable[T], maxsize: int = 0, use_thread: bool = True
+) -> Stage[T]:
+    ...
+
+
+@tp.overload
+def from_iterable(
+    maxsize: int = 0, worker_constructor: typing.Type = Thread, use_thread: bool = True
+) -> pypeln_utils.Partial[Stage[T]]:
+    ...
 
 
 def from_iterable(
-    iterable: typing.Iterable = pypeln_utils.UNDEFINED,
-    maxsize: int = None,
-    worker_constructor: typing.Type = Thread,
-) -> Stage:
+    iterable=pypeln_utils.UNDEFINED, maxsize: int = 0, use_thread: bool = True
+):
     """
-    Creates a stage from an iterable. This function gives you more control of how a stage is created through the `worker_constructor` parameter which can be either:
-    
-    * `threading.Thread`: (default) is efficient for iterables that already have the data in memory like lists or numpy arrays because threads can share memory so no serialization is needed. 
-    * `multiprocessing.Process`: is efficient for iterables who's data is not in memory like arbitrary generators and benefit from escaping the GIL. This is inefficient for iterables which have data in memory because they have to be serialized when sent to the background process.
-
+    Creates a stage from an iterable. This function gives you more control of the iterable is consumed.
     Arguments:
         iterable: a source iterable.
         maxsize: this parameter is not used and only kept for API compatibility with the other modules.
-        worker_constructor: defines the worker type for the producer stage.
+        use_thread: If set to `True` (default) it will use a thread instead of a process to consume the iterable. Threads start faster and use thread memory to the iterable is not serialized, however, if the iterable is going to perform slow computations it better to use a process.
 
     Returns:
         If the `iterable` parameters is given then this function returns a new stage, else it returns a `Partial`.
     """
 
-    if pypeln_utils.is_undefined(iterable):
+    if isinstance(iterable, pypeln_utils.Undefined):
         return pypeln_utils.Partial(
-            lambda iterable: from_iterable(iterable, maxsize=None,)
+            lambda iterable: from_iterable(
+                iterable, maxsize=maxsize, use_thread=use_thread
+            )
         )
 
-    return FromIterable(
-        iterable=iterable,
-        f=None,
+    return Stage.create(
         workers=1,
-        maxsize=0,
-        timeout=0,
-        on_start=None,
-        on_done=None,
+        total_sources=1,
+        maxsize=maxsize,
+        worker_constructor=FromIterable.get_worker_constructor(
+            iterable, use_threads=use_thread
+        ),
         dependencies=[],
     )
 
 
-#############################################################
+# ----------------------------------------------------------------
 # to_stage
-#############################################################
+# ----------------------------------------------------------------
 
 
-def to_stage(obj):
+def to_stage(obj: tp.Union[Stage[A], tp.Iterable[A]]) -> Stage[A]:
 
     if isinstance(obj, Stage):
         return obj
 
-    elif hasattr(obj, "__iter__") or hasattr(obj, "__aiter__"):
+    elif hasattr(obj, "__iter__"):
         return from_iterable(obj)
 
     else:
         raise ValueError(f"Object {obj} is not a Stage or iterable")
 
 
-#############################################################
+# ----------------------------------------------------------------
 # map
-#############################################################
+# ----------------------------------------------------------------
 
 
-class Map(Stage):
-    async def apply(self, elem, **kwargs):
-        if "element_index" in self.f_args:
+class Map(ApplyWorkerConstructor[T]):
+    def apply(self, elem: pypeln_utils.Element, f_args: tp.List[str], **kwargs):
+
+        if "element_index" in f_args:
             kwargs["element_index"] = elem.index
 
         y = self.f(elem.value, **kwargs)
-
-        if hasattr(y, "__await__"):
-            y = await y
-
-        await self.output_queues.put(elem.set(y))
+        self.stage_params.output_queues.put(elem.set(y))
 
 
+@tp.overload
 def map(
-    f: typing.Callable,
-    stage: Stage = pypeln_utils.UNDEFINED,
+    f: typing.Callable[..., B],
+    stage: tp.Union[Stage[A], tp.Iterable[A]],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
     on_start: typing.Callable = None,
     on_done: typing.Callable = None,
-) -> Stage:
+) -> Stage[B]:
+    ...
+
+
+@tp.overload
+def map(
+    f: typing.Callable[..., B],
+    workers: int = 1,
+    maxsize: int = 0,
+    timeout: float = 0,
+    on_start: typing.Callable = None,
+    on_done: typing.Callable = None,
+) -> pypeln_utils.Partial[Stage[B]]:
+    ...
+
+
+def map(
+    f: typing.Callable,
+    stage: tp.Union[
+        Stage[A], tp.Iterable[A], pypeln_utils.Undefined
+    ] = pypeln_utils.UNDEFINED,
+    workers: int = 1,
+    maxsize: int = 0,
+    timeout: float = 0,
+    on_start: typing.Callable = None,
+    on_done: typing.Callable = None,
+) -> tp.Union[Stage[B], pypeln_utils.Partial[Stage[B]]]:
     """
     Creates a stage that maps a function `f` over the data. Its intended to behave like python's built-in `map` function but with the added concurrency.
 
     ```python
     import pypeln as pl
-    import asyncio
+    import time
     from random import random
 
-    async def slow_add1(x):
-        await asyncio.sleep(random()) # <= some slow computation
+    def slow_add1(x):
+        time.sleep(random()) # <= some slow computation
         return x + 1
 
     data = range(10) # [0, 1, 2, ..., 9]
-    stage = pl.task.map(slow_add1, data, workers=3, maxsize=4)
+    stage = pl.process.map(slow_add1, data, workers=3, maxsize=4)
 
     data = list(stage) # e.g. [2, 1, 5, 6, 3, 4, 7, 8, 9, 10]
     ```
@@ -211,7 +242,7 @@ def map(
         Because of concurrency order is not guaranteed. 
 
     Arguments:
-        f: A function with the signature `async? f(x) -> y`. `f` can accept special additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
+        f: A function with the signature `f(x) -> y`. `f` can accept special additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
         stage: A stage or iterable.
         workers: The number of workers the stage should contain.
         maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
@@ -223,7 +254,7 @@ def map(
         If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.
     """
 
-    if pypeln_utils.is_undefined(stage):
+    if isinstance(stage, pypeln_utils.Undefined):
         return pypeln_utils.Partial(
             lambda stage: map(
                 f,
@@ -238,69 +269,79 @@ def map(
 
     stage = to_stage(stage)
 
-    return Map(
-        f=f,
+    return Stage.create(
         workers=workers,
         maxsize=maxsize,
-        timeout=timeout,
-        on_start=on_start,
-        on_done=on_done,
+        total_sources=stage.workers,
+        worker_constructor=Map.get_worker_constructor(
+            f=f, timeout=timeout, on_start=on_start, on_done=on_done
+        ),
         dependencies=[stage],
     )
 
 
-#############################################################
+# ----------------------------------------------------------------
 # flat_map
-#############################################################
+# ----------------------------------------------------------------
 
 
-class FlatMap(Stage):
-    async def apply(self, elem, **kwargs):
-        if "element_index" in self.f_args:
+class FlatMap(ApplyWorkerConstructor[T]):
+    def apply(self, elem: pypeln_utils.Element, f_args: tp.List[str], **kwargs):
+
+        if "element_index" in f_args:
             kwargs["element_index"] = elem.index
 
-        iterable = self.f(elem.value, **kwargs)
-
-        if hasattr(iterable, "__aiter__"):
-            i = 0
-            async for y in iterable:
-                await self.output_queues.put(
-                    pypeln_utils.Element(index=elem.index + (i,), value=y)
-                )
-                i += 1
-        else:
-            if hasattr(iterable, "__await__"):
-                iterable = await iterable
-
-            for i, y in enumerate(iterable):
-
-                if hasattr(y, "__await__"):
-                    y = await y
-
-                await self.output_queues.put(
-                    pypeln_utils.Element(index=elem.index + (i,), value=y)
-                )
+        for i, y in enumerate(self.f(elem.value, **kwargs)):
+            elem_y = pypeln_utils.Element(index=elem.index + (i,), value=y)
+            self.stage_params.output_queues.put(elem_y)
 
 
+@tp.overload
 def flat_map(
-    f: typing.Callable,
-    stage: Stage = pypeln_utils.UNDEFINED,
+    f: typing.Callable[..., B],
+    stage: Stage[A],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
     on_start: typing.Callable = None,
     on_done: typing.Callable = None,
-) -> Stage:
+) -> Stage[B]:
+    ...
+
+
+@tp.overload
+def flat_map(
+    f: typing.Callable[..., B],
+    workers: int = 1,
+    maxsize: int = 0,
+    timeout: float = 0,
+    on_start: typing.Callable = None,
+    on_done: typing.Callable = None,
+) -> pypeln_utils.Partial[Stage[B]]:
+    ...
+
+
+def flat_map(
+    f: typing.Callable[..., B],
+    stage: tp.Union[
+        Stage[A], tp.Iterable[A], pypeln_utils.Undefined
+    ] = pypeln_utils.UNDEFINED,
+    workers: int = 1,
+    maxsize: int = 0,
+    timeout: float = 0,
+    on_start: typing.Callable = None,
+    on_done: typing.Callable = None,
+) -> tp.Union[Stage[B], pypeln_utils.Partial[Stage[B]]]:
     """
-    Creates a stage that maps a function `f` over the data, however unlike `pypeln.task.map` in this case `f` returns an iterable. As its name implies, `flat_map` will flatten out these iterables so the resulting stage just contains their elements.
+    Creates a stage that maps a function `f` over the data, however unlike `pypeln.process.map` in this case `f` returns an iterable. As its name implies, `flat_map` will flatten out these iterables so the resulting stage just contains their elements.
 
     ```python
     import pypeln as pl
-    import asyncio
+    import time
     from random import random
 
-    async def slow_integer_pair(x):
-        await asyncio.sleep(random()) # <= some slow computation
+    def slow_integer_pair(x):
+        time.sleep(random()) # <= some slow computation
 
         if x == 0:
             yield x
@@ -309,7 +350,7 @@ def flat_map(
             yield -x
 
     data = range(10) # [0, 1, 2, ..., 9]
-    stage = pl.task.flat_map(slow_integer_pair, data, workers=3, maxsize=4)
+    stage = pl.process.flat_map(slow_integer_pair, data, workers=3, maxsize=4)
 
     list(stage) # e.g. [2, -2, 3, -3, 0, 1, -1, 6, -6, 4, -4, ...]
     ```
@@ -317,19 +358,19 @@ def flat_map(
     !!! note
         Because of concurrency order is not guaranteed. 
         
-    `flat_map` is a more general operation, you can actually implement `pypeln.task.map` and `pypeln.task.filter` with it, for example:
+    `flat_map` is a more general operation, you can actually implement `pypeln.process.map` and `pypeln.process.filter` with it, for example:
 
     ```python
     import pypeln as pl
 
-    pl.task.map(f, stage) = pl.task.flat_map(lambda x: [f(x)], stage)
-    pl.task.filter(f, stage) = pl.task.flat_map(lambda x: [x] if f(x) else [], stage)
+    pl.process.map(f, stage) = pl.process.flat_map(lambda x: [f(x)], stage)
+    pl.process.filter(f, stage) = pl.process.flat_map(lambda x: [x] if f(x) else [], stage)
     ```
 
     Using `flat_map` with a generator function is very useful as e.g. you are able to filter out unwanted elements when there are exceptions, missing data, etc.
 
     Arguments:
-        f: A function with signature `async? f(x) -> iterable`, it can also be an [async generator](https://www.python.org/dev/peps/pep-0525/#id8). `f` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
+        f: A function with signature `f(x) -> iterable`. `f` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
         stage: A stage or iterable.
         workers: The number of workers the stage should contain.
         maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
@@ -341,7 +382,7 @@ def flat_map(
         If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.
     """
 
-    if pypeln_utils.is_undefined(stage):
+    if isinstance(stage, pypeln_utils.Undefined):
         return pypeln_utils.Partial(
             lambda stage: flat_map(
                 f,
@@ -356,59 +397,82 @@ def flat_map(
 
     stage = to_stage(stage)
 
-    return FlatMap(
-        f=f,
+    return Stage.create(
         workers=workers,
+        total_sources=stage.workers,
         maxsize=maxsize,
-        timeout=timeout,
-        on_start=on_start,
-        on_done=on_done,
+        worker_constructor=FlatMap.get_worker_constructor(
+            f=f, timeout=timeout, on_start=on_start, on_done=on_done
+        ),
         dependencies=[stage],
     )
 
 
-#############################################################
+# ----------------------------------------------------------------
 # filter
-#############################################################
+# ----------------------------------------------------------------
 
 
-class Filter(Stage):
-    async def apply(self, elem, **kwargs):
-        if "element_index" in self.f_args:
+class Filter(ApplyWorkerConstructor[T]):
+    def apply(self, elem: pypeln_utils.Element, f_args: tp.List[str], **kwargs):
+
+        if "element_index" in f_args:
             kwargs["element_index"] = elem.index
 
-        y = self.f(elem.value, **kwargs)
-
-        if hasattr(y, "__await__"):
-            y = await y
-
-        if y:
-            await self.output_queues.put(elem)
+        if self.f(elem.value, **kwargs):
+            self.stage_params.output_queues.put(elem)
 
 
+@tp.overload
 def filter(
-    f: typing.Callable,
-    stage: Stage = pypeln_utils.UNDEFINED,
+    f: typing.Callable[..., B],
+    stage: Stage[A],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
     on_start: typing.Callable = None,
     on_done: typing.Callable = None,
-) -> Stage:
+) -> Stage[B]:
+    ...
+
+
+@tp.overload
+def filter(
+    f: typing.Callable[..., B],
+    workers: int = 1,
+    maxsize: int = 0,
+    timeout: float = 0,
+    on_start: typing.Callable = None,
+    on_done: typing.Callable = None,
+) -> pypeln_utils.Partial[Stage[B]]:
+    ...
+
+
+def filter(
+    f: typing.Callable,
+    stage: tp.Union[
+        Stage[A], tp.Iterable[A], pypeln_utils.Undefined
+    ] = pypeln_utils.UNDEFINED,
+    workers: int = 1,
+    maxsize: int = 0,
+    timeout: float = 0,
+    on_start: typing.Callable = None,
+    on_done: typing.Callable = None,
+) -> tp.Union[Stage[B], pypeln_utils.Partial[Stage[B]]]:
     """
     Creates a stage that filter the data given a predicate function `f`. It is intended to behave like python's built-in `filter` function but with the added concurrency.
 
     ```python
     import pypeln as pl
-    import asyncio
+    import time
     from random import random
 
-    async def slow_gt3(x):
-        await asyncio.sleep(random()) # <= some slow computation
+    def slow_gt3(x):
+        time.sleep(random()) # <= some slow computation
         return x > 3
 
     data = range(10) # [0, 1, 2, ..., 9]
-    stage = pl.task.filter(slow_gt3, data, workers=3, maxsize=4)
+    stage = pl.process.filter(slow_gt3, data, workers=3, maxsize=4)
 
     data = list(stage) # e.g. [5, 6, 3, 4, 7, 8, 9]
     ```
@@ -417,7 +481,7 @@ def filter(
         Because of concurrency order is not guaranteed.
 
     Arguments:
-        f: A function with signature `async? f(x) -> bool`. `f` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
+        f: A function with signature `f(x) -> bool`. `f` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
         stage: A stage or iterable.
         workers: The number of workers the stage should contain.
         maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
@@ -429,7 +493,7 @@ def filter(
         If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.
     """
 
-    if pypeln_utils.is_undefined(stage):
+    if isinstance(stage, pypeln_utils.Undefined):
         return pypeln_utils.Partial(
             lambda stage: filter(
                 f,
@@ -444,57 +508,83 @@ def filter(
 
     stage = to_stage(stage)
 
-    return Filter(
-        f=f,
+    return Stage.create(
         workers=workers,
+        total_sources=stage.workers,
         maxsize=maxsize,
-        timeout=timeout,
-        on_start=on_start,
-        on_done=on_done,
+        worker_constructor=Filter.get_worker_constructor(
+            f=f, timeout=timeout, on_start=on_start, on_done=on_done
+        ),
         dependencies=[stage],
     )
 
 
-#############################################################
+# ----------------------------------------------------------------
 # each
-#############################################################
+# ----------------------------------------------------------------
 
 
-class Each(Stage):
-    async def apply(self, elem, **kwargs):
-        if "element_index" in self.f_args:
+class Each(ApplyWorkerConstructor[T]):
+    def apply(self, elem: pypeln_utils.Element, f_args: tp.List[str], **kwargs):
+        if "element_index" in f_args:
             kwargs["element_index"] = elem.index
 
-        y = self.f(elem.value, **kwargs)
-
-        if hasattr(y, "__await__"):
-            y = await y
+        self.f(elem.value, **kwargs)
 
 
+@tp.overload
 def each(
-    f: typing.Callable,
-    stage: Stage = pypeln_utils.UNDEFINED,
+    f: typing.Callable[..., B],
+    stage: tp.Union[Stage[A], tp.Iterable[A]],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
     on_start: typing.Callable = None,
     on_done: typing.Callable = None,
     run: bool = False,
-) -> Stage:
+) -> tp.Optional[Stage[B]]:
+    ...
+
+
+@tp.overload
+def each(
+    f: typing.Callable[..., B],
+    workers: int = 1,
+    maxsize: int = 0,
+    timeout: float = 0,
+    on_start: typing.Callable = None,
+    on_done: typing.Callable = None,
+    run: bool = False,
+) -> pypeln_utils.Partial[tp.Optional[Stage[B]]]:
+    ...
+
+
+def each(
+    f: typing.Callable,
+    stage: tp.Union[
+        Stage[A], tp.Iterable[A], pypeln_utils.Undefined
+    ] = pypeln_utils.UNDEFINED,
+    workers: int = 1,
+    maxsize: int = 0,
+    timeout: float = 0,
+    on_start: typing.Callable = None,
+    on_done: typing.Callable = None,
+    run: bool = False,
+) -> tp.Union[tp.Optional[Stage[B]], pypeln_utils.Partial[tp.Optional[Stage[B]]]]:
     """
     Creates a stage that runs the function `f` for each element in the data but the stage itself yields no elements. Its useful for sink stages that perform certain actions such as writting to disk, saving to a database, etc, and dont produce any results. For example:
 
     ```python
     import pypeln as pl
 
-    async def process_image(image_path):
-        image = await load_image(image_path)
-        image = await transform_image(image)
-        await save_image(image_path, image)
+    def process_image(image_path):
+        image = load_image(image_path)
+        image = transform_image(image)
+        save_image(image_path, image)
 
     files_paths = get_file_paths()
-    stage = pl.task.each(process_image, file_paths, workers=4)
-    pl.task.run(stage)
+    stage = pl.process.each(process_image, file_paths, workers=4)
+    pl.process.run(stage)
 
     ```
 
@@ -502,14 +592,14 @@ def each(
 
     ```python
     files_paths = get_file_paths()
-    pl.task.each(process_image, file_paths, workers=4, run=True)
+    pl.process.each(process_image, file_paths, workers=4, run=True)
     ```
 
     !!! note
         Because of concurrency order is not guaranteed.
 
     Arguments:
-        f: A function with signature `async? f(x) -> None`. `f` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
+        f: A function with signature `f(x) -> None`. `f` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
         workers: The number of workers the stage should contain.
         maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
         timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. 
@@ -521,7 +611,7 @@ def each(
         If the `stage` parameters is not given then this function returns a `Partial`, else if `run=False` (default) it return a new stage, if `run=True` then it runs the stage and returns `None`.
     """
 
-    if pypeln_utils.is_undefined(stage):
+    if isinstance(stage, pypeln_utils.Undefined):
         return pypeln_utils.Partial(
             lambda stage: each(
                 f,
@@ -536,13 +626,13 @@ def each(
 
     stage = to_stage(stage)
 
-    stage = Each(
-        f=f,
+    stage = Stage.create(
         workers=workers,
+        total_sources=stage.workers,
         maxsize=maxsize,
-        timeout=timeout,
-        on_start=on_start,
-        on_done=on_done,
+        worker_constructor=Each.get_worker_constructor(
+            f=f, timeout=timeout, on_start=on_start, on_done=on_done
+        ),
         dependencies=[stage],
     )
 
@@ -553,17 +643,19 @@ def each(
         pass
 
 
-#############################################################
+# ----------------------------------------------------------------
 # concat
-#############################################################
+# ----------------------------------------------------------------
 
 
-class Concat(Stage):
-    async def apply(self, x):
-        await self.output_queues.put(x)
+class Concat(ApplyWorkerConstructor[T]):
+    def apply(self, elem: pypeln_utils.Element, f_args: tp.List[str], **kwargs):
+        self.stage_params.output_queues.put(elem)
 
 
-def concat(stages: typing.List[Stage], maxsize: int = 0) -> Stage:
+def concat(
+    stages: typing.List[tp.Union[Stage[A], tp.Iterable[A]]], maxsize: int = 0
+) -> Stage:
     """
     Concatenates / merges many stages into a single one by appending elements from each stage as they come, order is not preserved.
 
@@ -573,7 +665,7 @@ def concat(stages: typing.List[Stage], maxsize: int = 0) -> Stage:
     stage_1 = [1, 2, 3]
     stage_2 = [4, 5, 6, 7]
 
-    stage_3 = pl.task.concat([stage_1, stage_2]) # e.g. [1, 4, 5, 2, 6, 3, 7]
+    stage_3 = pl.process.concat([stage_1, stage_2]) # e.g. [1, 4, 5, 2, 6, 3, 7]
     ```
 
     Arguments:
@@ -586,27 +678,48 @@ def concat(stages: typing.List[Stage], maxsize: int = 0) -> Stage:
 
     stages = [to_stage(stage) for stage in stages]
 
-    return Concat(
-        f=None,
+    return Stage.create(
         workers=1,
+        total_sources=sum(stage.workers for stage in stages),
         maxsize=maxsize,
-        timeout=0,
-        on_start=None,
-        on_done=None,
+        worker_constructor=Concat.get_worker_constructor(
+            f=pypeln_utils.no_op, timeout=0, on_start=None, on_done=None
+        ),
         dependencies=stages,
     )
 
 
-#############################################################
+# ----------------------------------------------------------------
 # ordered
-#############################################################
-class Ordered(Stage):
-    async def process(self, **kwargs) -> None:
+# ----------------------------------------------------------------
+
+
+class Ordered(Worker[T]):
+    def __init__(
+        self, index: int, stage_params: StageParams, main_queue: IterableQueue,
+    ):
+        super().__init__(
+            f=pypeln_utils.no_op,
+            index=index,
+            stage_params=stage_params,
+            main_queue=main_queue,
+        )
+
+    @classmethod
+    def get_worker_constructor(cls) -> WorkerConstructor:
+        def from_iterable(
+            index: int, stage_params: StageParams, main_queue: IterableQueue
+        ) -> Ordered:
+            return cls(index=index, stage_params=stage_params, main_queue=main_queue)
+
+        return from_iterable
+
+    def process_fn(self, f_args: tp.List[str], **kwargs):
 
         elems = []
 
-        async for elem in self.input_queue:
-            if self.pipeline_namespace.error:
+        for elem in self.stage_params.input_queue:
+            if self.main_queue.namespace.exception:
                 return
 
             if len(elems) == 0:
@@ -621,26 +734,41 @@ class Ordered(Stage):
                         elems.insert(0, elem)
 
         for _ in range(len(elems)):
-            await self.output_queues.put(elems.pop(0))
+            self.stage_params.output_queues.put(elems.pop(0))
 
 
-def ordered(stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0) -> Stage:
+@tp.overload
+def ordered(stage: Stage[A], maxsize: int = 0) -> Stage[A]:
+    ...
+
+
+@tp.overload
+def ordered(maxsize: int = 0) -> pypeln_utils.Partial[Stage[A]]:
+    ...
+
+
+def ordered(
+    stage: tp.Union[
+        Stage[A], tp.Iterable[A], pypeln_utils.Undefined
+    ] = pypeln_utils.UNDEFINED,
+    maxsize: int = 0,
+) -> tp.Union[Stage[A], pypeln_utils.Partial[Stage[A]]]:
     """
     Creates a stage that sorts its elements based on their order of creation on the source iterable(s) of the pipeline.
 
     ```python
     import pypeln as pl
     import random
-    import asyncio
+    import time
 
-    async def slow_squared(x):
-        await asyncio.sleep(random.random())
+    def slow_squared(x):
+        time.sleep(random.random())
         
         return x ** 2
 
     stage = range(5)
-    stage = pl.task.map(slow_squared, stage, workers = 2)
-    stage = pl.task.ordered(stage)
+    stage = pl.process.map(slow_squared, stage, workers = 2)
+    stage = pl.process.ordered(stage)
 
     print(list(stage)) # [0, 1, 4, 9, 16]
     ```
@@ -659,28 +787,26 @@ def ordered(stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0) -> Stage:
         If the `stage` parameters is given then this function returns an iterable, else it returns a `Partial`.
     """
 
-    if pypeln_utils.is_undefined(stage):
+    if isinstance(stage, pypeln_utils.Undefined):
         return pypeln_utils.Partial(lambda stage: ordered(stage, maxsize=maxsize))
 
     stage = to_stage(stage)
 
-    return Ordered(
-        f=None,
+    return Stage.create(
         workers=1,
+        total_sources=stage.workers,
         maxsize=maxsize,
-        timeout=0,
-        on_start=None,
-        on_done=None,
+        worker_constructor=Ordered.get_worker_constructor(),
         dependencies=[stage],
     )
 
 
-#############################################################
+# ----------------------------------------------------------------
 # run
-#############################################################
+# ----------------------------------------------------------------
 
 
-def run(stages: typing.List[Stage], maxsize: int = 0) -> None:
+def run(*stages: tp.Union[Stage[A], tp.Iterable[A]], maxsize: int = 0) -> None:
     """
     Iterates over one or more stages until their iterators run out of elements.
 
@@ -688,10 +814,10 @@ def run(stages: typing.List[Stage], maxsize: int = 0) -> None:
     import pypeln as pl
 
     data = get_data()
-    stage = pl.task.each(slow_fn, data, workers=6)
+    stage = pl.process.each(slow_fn, data, workers=6)
 
     # execute pipeline
-    pl.task.run(stage)
+    pl.process.run(stage)
     ```
 
     Arguments:
@@ -700,29 +826,46 @@ def run(stages: typing.List[Stage], maxsize: int = 0) -> None:
 
     """
 
-    if isinstance(stages, list) and len(stages) == 0:
-        raise ValueError("Expected at least 1 stage to run")
-
-    elif isinstance(stages, list):
-        stage = concat(stages, maxsize=maxsize)
+    if len(stages) > 0:
+        stage = concat(list(stages), maxsize=maxsize)
 
     else:
-        stage = stages
+        stage = stages[0]
 
     stage = to_iterable(stage, maxsize=maxsize)
 
-    for _ in stages:
+    for _ in stage:
         pass
 
 
-#############################################################
+# ----------------------------------------------------------------
 # to_iterable
-#############################################################
+# ----------------------------------------------------------------
+
+
+@tp.overload
+def to_iterable(
+    stage: tp.Union[Stage[A], tp.Iterable[A]],
+    maxsize: int = 0,
+    return_index: bool = False,
+) -> tp.Iterable[A]:
+    ...
+
+
+@tp.overload
+def to_iterable(
+    maxsize: int = 0, return_index: bool = False,
+) -> pypeln_utils.Partial[tp.Iterable[A]]:
+    ...
 
 
 def to_iterable(
-    stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0, return_index: bool = False
-) -> typing.Iterable:
+    stage: tp.Union[
+        Stage[A], tp.Iterable[A], pypeln_utils.Undefined
+    ] = pypeln_utils.UNDEFINED,
+    maxsize: int = 0,
+    return_index: bool = False,
+) -> tp.Union[tp.Iterable[A], pypeln_utils.Partial[tp.Iterable[A]]]:
     """
     Creates an iterable from a stage.
 
@@ -734,10 +877,8 @@ def to_iterable(
         If the `stage` parameters is given then this function returns an iterable, else it returns a `Partial`.
     """
 
-    if pypeln_utils.is_undefined(stage):
-        return pypeln_utils.Partial(
-            lambda stage: to_iterable(stage, maxsize=maxsize, return_index=return_index)
-        )
+    if isinstance(stage, pypeln_utils.Undefined):
+        return pypeln_utils.Partial(lambda stage: to_iterable(stage, maxsize=maxsize))
 
     if isinstance(stage, Stage):
         iterable = stage.to_iterable(maxsize=maxsize, return_index=return_index)

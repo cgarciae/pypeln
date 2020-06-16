@@ -415,6 +415,90 @@ class TestOutputQueues(TestCase):
         assert queue.namespace.remaining == True
 
 
+class TestTaskPool(unittest.TestCase):
+    @run_async
+    async def test_basic(self):
+
+        namespace = pl.task.Namespace(x=0)
+
+        async def task():
+            await asyncio.sleep(0.1)
+            namespace.x = 1
+
+        tasks = pl.task.TaskPool.create(workers=0)
+
+        await tasks.put(task)
+
+        assert namespace.x == 0
+
+        await tasks.join()
+
+        assert namespace.x == 1
+
+    @run_async
+    async def test_context(self):
+
+        namespace = pl.task.Namespace(x=0)
+
+        async def task():
+            await asyncio.sleep(0.1)
+            namespace.x = 1
+
+        async with pl.task.TaskPool.create(workers=0) as tasks:
+            await tasks.put(task)
+
+        assert namespace.x == 1
+
+    @run_async
+    async def test_put_wait(self):
+
+        timeout = 0.1
+        namespace = pl.task.Namespace(x=0)
+
+        async def task():
+            await asyncio.sleep(timeout)
+            namespace.x = 1
+
+        async def no_task():
+            pass
+
+        async with pl.task.TaskPool.create(workers=1) as tasks:
+            await tasks.put(task)
+            assert len(tasks.tasks) == 1
+
+            t0 = time.time()
+            await tasks.put(no_task)
+
+            assert time.time() - t0 > timeout
+
+        assert namespace.x == 1
+
+    @run_async
+    async def test_put_no_wait(self):
+
+        timeout = 0.1
+        namespace = pl.task.Namespace(x=0)
+
+        async def task():
+            await asyncio.sleep(timeout)
+            namespace.x = 1
+
+        async def no_task():
+            pass
+
+        async with pl.task.TaskPool.create(workers=2) as tasks:
+            await tasks.put(task)
+            assert len(tasks.tasks) == 1
+
+            t0 = time.time()
+            await tasks.put(no_task)
+
+            assert len(tasks.tasks) == 2
+            assert time.time() - t0 < timeout
+
+        assert namespace.x == 1
+
+
 # ----------------------------------------------------------------
 # worker
 # ----------------------------------------------------------------
@@ -422,11 +506,11 @@ class TestOutputQueues(TestCase):
 
 @dataclass
 class CustomWorker(pl.task.Worker[int]):
-    def process_fn(self, f_args: tp.List[str], **kwargs):
-        self.f(self, **kwargs)
+    async def process_fn(self, f_args: tp.List[str], **kwargs):
+        await self.f(self, **kwargs)
 
 
-class TestWorkerProcess(TestCase):
+class TestWorker(TestCase):
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
     def test_basic(self, nums):
@@ -434,179 +518,71 @@ class TestWorkerProcess(TestCase):
         output_queue = pl.task.IterableQueue()
         output_queues = pl.task.OutputQueues([output_queue])
 
-        def f(self: CustomWorker):
+        async def f(self: CustomWorker):
             for x in nums:
-                self.stage_params.output_queues.put(x)
+                await self.stage_params.output_queues.put(x)
 
         stage_params: pl.task.StageParams = mock.Mock(
             input_queue=input_queue, output_queues=output_queues, total_workers=1,
         )
 
-        worker = CustomWorker(
-            index=0, stage_params=stage_params, main_queue=output_queue, f=f,
+        worker = CustomWorker.create(
+            stage_params=stage_params, main_queue=output_queue, f=f
         )
 
         worker.start()
+        assert not worker.process.cancelled()
 
         nums_pl = list(output_queue)
 
         assert nums_pl == nums
 
-    def test_raises(self):
-        input_queue = pl.task.IterableQueue()
-        output_queue = pl.task.IterableQueue()
-        output_queues = pl.task.OutputQueues([output_queue])
-
-        def f(self: CustomWorker):
-            raise MyException()
-
-        stage_params: pl.task.StageParams = mock.Mock(
-            input_queue=input_queue, output_queues=output_queues, total_workers=1,
-        )
-
-        worker = CustomWorker(
-            index=0, stage_params=stage_params, main_queue=output_queue, f=f,
-        )
-
-        worker.start()
-
-        with pytest.raises(MyException):
-            nums_pl = list(output_queue)
-
-        worker
-
-    def test_timeout(self):
-        input_queue = pl.task.IterableQueue()
-        output_queue = pl.task.IterableQueue()
-        output_queues = pl.task.OutputQueues([output_queue])
-
-        def f(self: CustomWorker):
-            with self.measure_task_time():
-                time.sleep(0.2)
-
-        stage_params: pl.task.StageParams = mock.Mock(
-            input_queue=input_queue, output_queues=output_queues, total_workers=1,
-        )
-        worker = CustomWorker(
-            index=0,
-            stage_params=stage_params,
-            main_queue=output_queue,
-            f=f,
-            timeout=0.001,
-        )
-        worker.start()
-
-        assert not worker.did_timeout()
         time.sleep(0.01)
-        assert worker.did_timeout()
+        assert worker.is_done
 
-    def test_del1(self):
-        input_queue = pl.task.IterableQueue()
-        output_queue = pl.task.IterableQueue()
-        output_queues = pl.task.OutputQueues([output_queue])
-
-        def f(self: CustomWorker):
-            for _ in range(1000):
-                time.sleep(0.01)
-
-        stage_params: pl.task.StageParams = mock.Mock(
-            input_queue=input_queue, output_queues=output_queues, total_workers=1,
-        )
-
-        worker = CustomWorker(
-            index=0, stage_params=stage_params, main_queue=output_queue, f=f,
-        )
-
-        worker.start()
-        task = worker.process
-
-        worker.stop()
-        time.sleep(0.01)
-
-        assert not task.is_alive()
-
-    def test_del3(self):
-        def start_worker():
-            input_queue = pl.task.IterableQueue()
-            output_queue = pl.task.IterableQueue()
-            output_queues = pl.task.OutputQueues([output_queue])
-
-            def f(self: CustomWorker):
-                for _ in range(1000):
-                    time.sleep(0.01)
-
-            stage_params: pl.task.StageParams = mock.Mock(
-                input_queue=input_queue, output_queues=output_queues, total_workers=1,
-            )
-
-            stage_params: pl.task.StageParams = mock.Mock(
-                input_queue=input_queue, output_queues=output_queues, total_workers=1,
-            )
-
-            worker = CustomWorker(
-                index=0, stage_params=stage_params, main_queue=output_queue, f=f,
-            )
-            worker.start()
-
-            time.sleep(0.01)
-
-            assert worker.process.is_alive()
-
-            return worker, worker.process
-
-        worker, task = start_worker()
-
-        assert task.is_alive()
-
-
-class TestWorkerThread(TestCase):
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    def test_basic(self, nums):
+    @run_async
+    async def test_basic_async(self, nums):
         input_queue = pl.task.IterableQueue()
         output_queue = pl.task.IterableQueue()
         output_queues = pl.task.OutputQueues([output_queue])
 
-        def f(self: CustomWorker):
+        async def f(self: CustomWorker):
             for x in nums:
-                self.stage_params.output_queues.put(x)
+                await self.stage_params.output_queues.put(x)
 
         stage_params: pl.task.StageParams = mock.Mock(
             input_queue=input_queue, output_queues=output_queues, total_workers=1,
         )
 
-        worker = CustomWorker(
-            index=0,
-            stage_params=stage_params,
-            main_queue=output_queue,
-            f=f,
-            use_threads=True,
+        worker = CustomWorker.create(
+            stage_params=stage_params, main_queue=output_queue, f=f
         )
 
         worker.start()
 
-        nums_pl = list(output_queue)
+        nums_pl = [x async for x in output_queue]
 
         assert nums_pl == nums
+
+        await asyncio.sleep(0.01)
+        assert worker.is_done
 
     def test_raises(self):
         input_queue = pl.task.IterableQueue()
         output_queue = pl.task.IterableQueue()
         output_queues = pl.task.OutputQueues([output_queue])
 
-        def f(self: CustomWorker):
+        async def f(self: CustomWorker):
             raise MyException()
 
         stage_params: pl.task.StageParams = mock.Mock(
             input_queue=input_queue, output_queues=output_queues, total_workers=1,
         )
 
-        worker = CustomWorker(
-            index=0,
-            stage_params=stage_params,
-            main_queue=output_queue,
-            f=f,
-            use_threads=True,
+        worker = CustomWorker.create(
+            stage_params=stage_params, main_queue=output_queue, f=f,
         )
 
         worker.start()
@@ -614,60 +590,228 @@ class TestWorkerThread(TestCase):
         with pytest.raises(MyException):
             nums_pl = list(output_queue)
 
-    def test_timeout(self):
+        time.sleep(0.01)
+        assert worker.is_done
+
+    @run_async
+    async def test_raises_async(self):
         input_queue = pl.task.IterableQueue()
         output_queue = pl.task.IterableQueue()
         output_queues = pl.task.OutputQueues([output_queue])
 
-        def f(self: CustomWorker):
-            with self.measure_task_time():
-                time.sleep(0.2)
+        async def f(self: CustomWorker):
+            raise MyException()
 
         stage_params: pl.task.StageParams = mock.Mock(
             input_queue=input_queue, output_queues=output_queues, total_workers=1,
         )
-        worker = CustomWorker(
-            index=0,
-            stage_params=stage_params,
-            main_queue=output_queue,
-            f=f,
-            timeout=0.001,
-            use_threads=True,
+
+        worker = CustomWorker.create(
+            stage_params=stage_params, main_queue=output_queue, f=f,
         )
+
         worker.start()
 
-        assert not worker.did_timeout()
+        with pytest.raises(MyException):
+            nums_pl = [x async for x in output_queue]
+
+        await asyncio.sleep(0.01)
+        assert worker.is_done
+
+    def test_timeout(self):
+        input_queue = pl.task.IterableQueue()
+        output_queue = pl.task.IterableQueue()
+        output_queues = pl.task.OutputQueues([output_queue])
+        namespace = pl.task.Namespace(x=0)
+
+        async def f(self: CustomWorker):
+            async def task():
+                await asyncio.sleep(0.01)
+                namespace.x = 1
+
+            await self.tasks.put(task)
+
+        stage_params: pl.task.StageParams = mock.Mock(
+            input_queue=input_queue, output_queues=output_queues, total_workers=1,
+        )
+        worker = CustomWorker.create(
+            stage_params=stage_params, main_queue=output_queue, f=f, timeout=0.001,
+        )
+
+        # wait for worker to start
         time.sleep(0.02)
-        assert worker.did_timeout()
+
+        worker.start()
+
+        while len(worker.tasks.tasks) > 0:
+            time.sleep(0.001)
+
+        assert namespace.x == 0
+
+        time.sleep(0.01)
+
+        assert worker.is_done
+
+    @run_async
+    async def test_timeout_async(self):
+        input_queue = pl.task.IterableQueue()
+        output_queue = pl.task.IterableQueue()
+        output_queues = pl.task.OutputQueues([output_queue])
+        namespace = pl.task.Namespace(x=0)
+
+        async def f(self: CustomWorker):
+            async def task():
+                await asyncio.sleep(0.01)
+                namespace.x = 1
+
+            await self.tasks.put(task)
+
+        stage_params: pl.task.StageParams = mock.Mock(
+            input_queue=input_queue, output_queues=output_queues, total_workers=1,
+        )
+        worker = CustomWorker.create(
+            stage_params=stage_params, main_queue=output_queue, f=f, timeout=0.001,
+        )
+
+        # wait for worker to start
+        await asyncio.sleep(0.02)
+
+        worker.start()
+
+        await worker.tasks.join()
+
+        assert namespace.x == 0
+
+        await asyncio.sleep(0.01)
+
+        assert worker.is_done
+
+    def test_no_timeout(self):
+        input_queue = pl.task.IterableQueue()
+        output_queue = pl.task.IterableQueue()
+        output_queues = pl.task.OutputQueues([output_queue])
+        namespace = pl.task.Namespace(x=0)
+
+        async def f(self: CustomWorker):
+            async def task():
+                await asyncio.sleep(0.01)
+                namespace.x = 1
+
+            await self.tasks.put(task)
+
+        stage_params: pl.task.StageParams = mock.Mock(
+            input_queue=input_queue, output_queues=output_queues, total_workers=1,
+        )
+        worker = CustomWorker.create(
+            stage_params=stage_params,
+            main_queue=output_queue,
+            f=f,
+            timeout=0.02,
+            max_tasks=0,
+        )
+        worker.start()
+
+        # wait for worker to start
+        time.sleep(0.02)
+
+        while len(worker.tasks.tasks) > 0:
+            time.sleep(0.001)
+
+        assert namespace.x == 1
+
+        assert worker.is_done
+
+    @run_async
+    async def test_no_timeout_async(self):
+        input_queue = pl.task.IterableQueue()
+        output_queue = pl.task.IterableQueue()
+        output_queues = pl.task.OutputQueues([output_queue])
+        namespace = pl.task.Namespace(x=0)
+
+        async def f(self: CustomWorker):
+            async def task():
+                await asyncio.sleep(0.01)
+                namespace.x = 1
+
+            await self.tasks.put(task)
+
+        stage_params: pl.task.StageParams = mock.Mock(
+            input_queue=input_queue, output_queues=output_queues, total_workers=1,
+        )
+        worker = CustomWorker.create(
+            stage_params=stage_params,
+            main_queue=output_queue,
+            f=f,
+            timeout=0.02,
+            max_tasks=0,
+        )
+        worker.start()
+
+        # wait for worker to start
+        await asyncio.sleep(0.02)
+
+        await worker.tasks.join()
+
+        assert namespace.x == 1
+
+        assert worker.is_done
 
     def test_del1(self):
         input_queue = pl.task.IterableQueue()
         output_queue = pl.task.IterableQueue()
         output_queues = pl.task.OutputQueues([output_queue])
 
-        def f(self: CustomWorker):
+        async def f(self: CustomWorker):
             for _ in range(1000):
-                time.sleep(0.01)
+                await asyncio.sleep(0.01)
 
         stage_params: pl.task.StageParams = mock.Mock(
             input_queue=input_queue, output_queues=output_queues, total_workers=1,
         )
 
-        worker = CustomWorker(
-            index=0,
-            stage_params=stage_params,
-            main_queue=output_queue,
-            f=f,
-            use_threads=True,
+        worker = CustomWorker.create(
+            stage_params=stage_params, main_queue=output_queue, f=f,
         )
 
         worker.start()
         task = worker.process
 
-        worker.stop()
-        time.sleep(0.1)
+        time.sleep(0.01)
 
-        assert not task.is_alive()
+        worker.stop()
+        time.sleep(0.02)
+
+        assert task.cancelled()
+        assert worker.is_done
+
+    @run_async
+    async def test_del1_async(self):
+        input_queue = pl.task.IterableQueue()
+        output_queue = pl.task.IterableQueue()
+        output_queues = pl.task.OutputQueues([output_queue])
+
+        async def f(self: CustomWorker):
+            for _ in range(1000):
+                await asyncio.sleep(0.01)
+
+        stage_params: pl.task.StageParams = mock.Mock(
+            input_queue=input_queue, output_queues=output_queues, total_workers=1,
+        )
+
+        worker = CustomWorker.create(
+            stage_params=stage_params, main_queue=output_queue, f=f,
+        )
+
+        worker.start()
+        task = worker.process
+
+        await asyncio.sleep(0.01)
+
+        worker.stop()
+        await asyncio.sleep(0.01)
+
+        assert task.cancelled()
+        assert worker.is_done
 
     def test_del3(self):
         def start_worker():
@@ -675,9 +819,9 @@ class TestWorkerThread(TestCase):
             output_queue = pl.task.IterableQueue()
             output_queues = pl.task.OutputQueues([output_queue])
 
-            def f(self: CustomWorker):
+            async def f(self: CustomWorker):
                 for _ in range(1000):
-                    time.sleep(0.01)
+                    await asyncio.sleep(0.01)
 
             stage_params: pl.task.StageParams = mock.Mock(
                 input_queue=input_queue, output_queues=output_queues, total_workers=1,
@@ -687,26 +831,58 @@ class TestWorkerThread(TestCase):
                 input_queue=input_queue, output_queues=output_queues, total_workers=1,
             )
 
-            worker = CustomWorker(
-                index=0,
-                stage_params=stage_params,
-                main_queue=output_queue,
-                f=f,
-                use_threads=True,
+            worker = CustomWorker.create(
+                stage_params=stage_params, main_queue=output_queue, f=f,
             )
             worker.start()
 
             time.sleep(0.01)
 
-            assert worker.process.is_alive()
-
-            worker.stop()
+            assert not worker.process.cancelled()
 
             return worker, worker.process
 
         worker, task = start_worker()
 
-        assert task.is_alive()
+        assert not task.cancelled()
+        assert not worker.is_done
+
+    @run_async
+    async def test_del3_async(self):
+        async def start_worker():
+            input_queue = pl.task.IterableQueue()
+            output_queue = pl.task.IterableQueue()
+            output_queues = pl.task.OutputQueues([output_queue])
+
+            async def f(self: CustomWorker):
+                for _ in range(1000):
+                    await asyncio.sleep(0.01)
+
+            stage_params: pl.task.StageParams = mock.Mock(
+                input_queue=input_queue, output_queues=output_queues, total_workers=1,
+            )
+
+            stage_params: pl.task.StageParams = mock.Mock(
+                input_queue=input_queue, output_queues=output_queues, total_workers=1,
+            )
+
+            worker = CustomWorker.create(
+                stage_params=stage_params, main_queue=output_queue, f=f,
+            )
+            worker.start()
+
+            await asyncio.sleep(0.01)
+
+            assert not worker.process.cancelled()
+
+            return worker, worker.process
+
+        worker, task = await start_worker()
+
+        await asyncio.sleep(0.01)
+
+        assert not task.cancelled()
+        assert not worker.is_done
 
 
 class TestSupervisor(TestCase):

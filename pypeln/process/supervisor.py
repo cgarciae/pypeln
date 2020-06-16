@@ -7,17 +7,13 @@ import typing as tp
 from pypeln import utils as pypeln_utils
 
 from .worker import Worker
-
-
-class RaisesException(pypeln_utils.Protocol):
-    def raise_exception(self, exception: BaseException):
-        ...
+from .queue import IterableQueue
 
 
 @dataclass
 class Supervisor:
     workers: tp.List[Worker]
-    main_queue: RaisesException
+    main_queue: IterableQueue
     done: bool = False
 
     def __call__(self):

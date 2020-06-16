@@ -133,9 +133,9 @@ class Worker(tp.Generic[T]):
 
     def start(self):
         # create a copy to avoid referece to self on thread
-        target_worker = copy(self)
+        # target_worker = copy(self)
 
-        [self.process] = start_workers(target_worker, use_threads=self.use_threads)
+        [self.process] = start_workers(self, use_threads=self.use_threads)
 
     def stop(self):
         if self.process is None:

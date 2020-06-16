@@ -5,6 +5,7 @@ import threading
 import time
 import traceback
 import typing as tp
+from concurrent.futures import Future
 
 from pypeln import utils as pypeln_utils
 
@@ -19,7 +20,7 @@ class _Namespace:
 def Namespace(**kwargs) -> tp.Any:
     return _Namespace(**kwargs)
 
-def run_in_loop(f_coro: tp.Callable[[], tp.Awaitable]):
+def run_in_loop(f_coro: tp.Callable[[], tp.Awaitable]) -> Future:
 
     loop = asyncio.get_event_loop()
     
@@ -31,7 +32,11 @@ def run_in_loop(f_coro: tp.Callable[[], tp.Awaitable]):
         thread.daemon = True
         thread.start()
 
-    return loop.call_soon_threadsafe(lambda: loop.create_task(f_coro()))
+    
+    return asyncio.run_coroutine_threadsafe(f_coro(), loop)
+
+    
+
 
 
 
@@ -51,7 +56,7 @@ def execute_in_loop(f_coro: tp.Callable[[], tp.Coroutine]):
             )
             output.ref = None
 
-    run_in_loop(target)
+    task = run_in_loop(target)
 
     while output.ref is initial_ref:
         time.sleep(pypeln_utils.TIMEOUT)

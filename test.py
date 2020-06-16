@@ -1,26 +1,13 @@
-import time
+import typing as tp
+import aiohttp
+import httpx
 
 
-class Dummy:
-    def __enter__(self):
-        pass
-
-    def __exit__(self, *args):
-        print("EXIT")
+async def abc():
+    pass
 
 
-def generator():
-    with Dummy():
-        yield 1
+client = httpx.AsyncClient()
+a = client.get("http://google.com")
 
-
-g = generator()
-i = iter(g)
-x = next(i)
-
-print("BEFORE DEL")
-del i
-del g
-print("AFTER DEL")
-
-time.sleep(10)
+print(isinstance(a, tp.Awaitable))

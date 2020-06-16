@@ -1,12 +1,13 @@
 import abc
 import asyncio
+import asyncio
 from copy import copy
 from dataclasses import dataclass, field
-import threading
+import inspect
 import time
 import typing as tp
 
-import stopit
+from concurrent.futures import Future
 
 from pypeln import utils as pypeln_utils
 
@@ -21,7 +22,6 @@ T = tp.TypeVar("T")
 class StageParams(tp.NamedTuple):
     input_queue: IterableQueue
     output_queues: OutputQueues
-    lock: threading.Lock
     namespace: utils.Namespace
 
     @classmethod
@@ -29,15 +29,13 @@ class StageParams(tp.NamedTuple):
         cls, input_queue: IterableQueue, output_queues: OutputQueues, total_workers: int
     ) -> "StageParams":
         return cls(
-            lock=threading.Lock(),
             namespace=utils.Namespace(active_workers=total_workers),
             input_queue=input_queue,
             output_queues=output_queues,
         )
 
     def worker_done(self):
-        with self.lock:
-            self.namespace.active_workers -= 1
+        self.namespace.active_workers -= 1
 
 
 class WorkerInfo(tp.NamedTuple):
@@ -47,25 +45,50 @@ class WorkerInfo(tp.NamedTuple):
 @dataclass
 class Worker(tp.Generic[T]):
     f: tp.Callable
-    index: int
     stage_params: StageParams
     main_queue: IterableQueue
-    timeout: float = 0
-    on_start: tp.Optional[tp.Callable[..., Kwargs]] = None
-    on_done: tp.Optional[tp.Callable[..., Kwargs]] = None
-    namespace: utils.Namespace = field(
-        default_factory=lambda: utils.Namespace(done=False, task_start_time=None)
-    )
-    process: tp.Optional[threading.Thread] = None
-    use_threads: bool = False
+    tasks: "TaskPool"
+    on_start: tp.Optional[
+        tp.Callable[..., tp.Union[Kwargs, tp.Awaitable[Kwargs]]]
+    ] = None
+    on_done: tp.Optional[
+        tp.Callable[..., tp.Union[tp.Any, tp.Awaitable[tp.Any]]]
+    ] = None
+    process: tp.Optional[Future] = None
+    is_done: bool = False
+
+    @classmethod
+    def create(
+        cls,
+        f: tp.Callable,
+        stage_params: StageParams,
+        main_queue: IterableQueue,
+        timeout: float = 0,
+        max_tasks: int = 0,
+        on_start: tp.Optional[
+            tp.Callable[..., tp.Union[Kwargs, tp.Awaitable[Kwargs]]]
+        ] = None,
+        on_done: tp.Optional[
+            tp.Callable[..., tp.Union[tp.Any, tp.Awaitable[tp.Any]]]
+        ] = None,
+    ):
+
+        return cls(
+            f=f,
+            stage_params=stage_params,
+            main_queue=main_queue,
+            tasks=TaskPool.create(workers=max_tasks, timeout=timeout),
+            on_start=on_start,
+            on_done=on_done,
+        )
 
     @abc.abstractmethod
-    def process_fn(self, f_args: tp.List[str], **kwargs):
+    async def process_fn(self, f_args: tp.List[str], **kwargs):
         ...
 
-    def __call__(self):
+    async def __call__(self):
 
-        worker_info = WorkerInfo(index=self.index)
+        worker_info = WorkerInfo(index=0)
 
         f_args: tp.List[str] = (
             pypeln_utils.function_args(self.f) if self.on_start else []
@@ -87,6 +110,8 @@ class Worker(tp.Generic[T]):
                         if key in on_start_args
                     }
                 )
+                if isinstance(kwargs, tp.Awaitable):
+                    kwargs = await kwargs
             else:
                 kwargs = {}
 
@@ -95,24 +120,21 @@ class Worker(tp.Generic[T]):
 
             kwargs.setdefault("worker_info", worker_info)
 
-            self.process_fn(
-                f_args,
-                **{key: value for key, value in kwargs.items() if key in f_args},
-            )
+            async with self.tasks:
+                await self.process_fn(
+                    f_args,
+                    **{key: value for key, value in kwargs.items() if key in f_args},
+                )
 
             self.stage_params.worker_done()
 
             if self.on_done is not None:
 
                 kwargs.setdefault(
-                    "stage_status",
-                    StageStatus(
-                        namespace=self.stage_params.namespace,
-                        lock=self.stage_params.lock,
-                    ),
+                    "stage_status", StageStatus(),
                 )
 
-                self.on_done(
+                on_done = self.on_done(
                     **{
                         key: value
                         for key, value in kwargs.items()
@@ -120,103 +142,136 @@ class Worker(tp.Generic[T]):
                     }
                 )
 
-        except pypeln_utils.StopThreadException:
+                if isinstance(on_done, tp.Awaitable):
+                    await on_done
+
+        except asyncio.CancelledError:
             pass
         except BaseException as e:
-            try:
-                self.main_queue.raise_exception(e)
-                time.sleep(0.001)
-            except pypeln_utils.StopThreadException:
-                pass
+            await self.main_queue.raise_exception(e)
         finally:
-            self.namespace.done = True
-            self.stage_params.output_queues.done()
+            self.is_done = True
+            await self.stage_params.output_queues.done()
 
     def start(self):
-        # create a copy to avoid referece to self on thread
-        target_worker = copy(self)
-
-        [self.process] = start_workers(target_worker, use_threads=self.use_threads)
+        [self.process] = start_workers(self)
 
     def stop(self):
+
         if self.process is None:
             return
 
-        self.namespace.task_start_time = None
+        loop = asyncio.get_event_loop()
 
-        if not self.process.is_alive():
-            return
-
-        stopit.async_raise(
-            self.process.ident, pypeln_utils.StopThreadException,
-        )
-
-    def done(self):
-        self.namespace.done = True
-
-    def did_timeout(self):
-        return (
-            self.timeout
-            and not self.namespace.done
-            and self.namespace.task_start_time is not None
-            and (time.time() - self.namespace.task_start_time > self.timeout)
-        )
-
-    @dataclass
-    class MeasureTaskTime:
-        worker: "Worker"
-
-        def __enter__(self):
-            self.worker.namespace.task_start_time = time.time()
-            1
-
-        def __exit__(self, *args):
-            self.worker.namespace.task_start_time = None
-
-    def measure_task_time(self):
-        return self.MeasureTaskTime(self)
+        self.tasks.stop()
+        loop.call_soon_threadsafe(self.process.cancel)
 
 
 class WorkerApply(Worker[T], tp.Generic[T]):
     @abc.abstractmethod
-    def apply(self, elem: T, f_args: tp.List[str], **kwargs):
+    async def apply(self, elem: T, f_args: tp.List[str], **kwargs):
         ...
 
-    def process_fn(self, f_args: tp.List[str], **kwargs):
-        for elem in self.stage_params.input_queue:
-            with self.measure_task_time():
-                self.apply(elem, f_args, **kwargs)
+    async def process_fn(self, f_args: tp.List[str], **kwargs):
+
+        async for elem in self.stage_params.input_queue:
+
+            await self.tasks.put(lambda: self.apply(elem, f_args, **kwargs))
 
 
-class StageStatus:
+class StageStatus(tp.NamedTuple):
     """
     Object passed to various `on_done` callbacks. It contains information about the stage in case book keeping is needed.
     """
-
-    def __init__(self, namespace, lock):
-        self._namespace = namespace
-        self._lock = lock
 
     @property
     def done(self) -> bool:
         """
         `bool` : `True` if all workers finished. 
         """
-        with self._lock:
-            return self._namespace.active_workers == 0
+        return True
 
     @property
     def active_workers(self):
         """
         `int` : Number of active workers. 
         """
-        with self._lock:
-            return self._namespace.active_workers
+        return 0
 
     def __str__(self):
         return (
             f"StageStatus(done = {self.done}, active_workers = {self.active_workers})"
         )
+
+
+@dataclass
+class TaskPool:
+    semaphore: tp.Optional[asyncio.Semaphore]
+    tasks: tp.Set[asyncio.Task]
+    timeout: float
+    closed: bool
+
+    @classmethod
+    def create(cls, workers: int, timeout: float = 0):
+        return cls(
+            semaphore=asyncio.Semaphore(workers) if workers else None,
+            tasks=set(),
+            timeout=timeout,
+            closed=False,
+        )
+
+    async def put(self, coro_f: tp.Callable[[], tp.Awaitable]):
+
+        if self.closed:
+            raise RuntimeError("Trying put items into a closed TaskPool")
+
+        if self.semaphore:
+            await self.semaphore.acquire()
+
+        task = asyncio.create_task(self.get_task(coro_f))
+
+        self.tasks.add(task)
+
+        task.add_done_callback(self.on_task_done)
+
+    async def get_task(self, coro_f: tp.Callable[[], tp.Awaitable]):
+        coro = coro_f()
+
+        if self.timeout:
+            coro = asyncio.wait_for(coro, timeout=self.timeout)
+
+        try:
+            await coro
+        except asyncio.TimeoutError:
+            pass
+
+    def on_task_done(self, task):
+        self.tasks.remove(task)
+
+        if self.semaphore:
+            self.semaphore.release()
+
+    def stop(self):
+        loop = asyncio.get_event_loop()
+
+        for task in self.tasks:
+            if not task.cancelled() or not task.done():
+                loop.call_soon_threadsafe(task.cancel)
+
+        self.tasks.clear()
+
+    async def join(self):
+        self.closed = True
+        await asyncio.gather(*self.tasks)
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.join()
+
+    def __len__(self) -> int:
+        return len(self.tasks)
 
 
 # ----------------------------------------------------------------
@@ -230,12 +285,12 @@ def start_workers(
     args: tp.Tuple[tp.Any, ...] = tuple(),
     kwargs: tp.Optional[tp.Dict[tp.Any, tp.Any]] = None,
     use_threads: bool = False,
-) -> tp.List[asyncio.Handle]:
+) -> tp.List[Future]:
 
     if kwargs is None:
         kwargs = {}
 
-    workers: tp.List[asyncio.Handle] = []
+    workers: tp.List[Future] = []
 
     for _ in range(n_workers):
         t = utils.run_in_loop(lambda: target(*args, **kwargs))

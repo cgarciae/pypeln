@@ -14,7 +14,7 @@ from pypeln import utils as pypeln_utils
 from . import utils
 from .queue import IterableQueue, OutputQueues
 
-WorkerConstructor = tp.Callable[[int, "StageParams", IterableQueue], "Worker"]
+WorkerConstructor = tp.Callable[["StageParams", IterableQueue], "Worker"]
 Kwargs = tp.Dict[str, tp.Any]
 T = tp.TypeVar("T")
 

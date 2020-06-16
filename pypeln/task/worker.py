@@ -150,8 +150,9 @@ class Worker(tp.Generic[T]):
         except BaseException as e:
             await self.main_queue.raise_exception(e)
         finally:
-            self.is_done = True
+            self.tasks.stop()
             await self.stage_params.output_queues.done()
+            self.is_done = True
 
     def start(self):
         [self.process] = start_workers(self)

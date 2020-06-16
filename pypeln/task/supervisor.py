@@ -7,6 +7,7 @@ from pypeln import utils as pypeln_utils
 
 from .worker import Worker
 from .queue import IterableQueue
+import asyncio
 
 
 @dataclass
@@ -15,14 +16,32 @@ class Supervisor:
     main_queue: IterableQueue
     done: bool = False
 
-    def __enter__(self):
-        pass
-
-    def __exit__(self, *args):
+    async def stop(self):
         self.done = True
 
         for worker in self.workers:
             worker.stop()
 
-        while any(worker.process.cancelled() for worker in self.workers):
+        while any(not worker.is_done for worker in self.workers):
+            await asyncio.sleep(pypeln_utils.TIMEOUT)
+
+    def stop_nowait(self):
+        self.done = True
+
+        for worker in self.workers:
+            worker.stop()
+
+        while any(not worker.is_done for worker in self.workers):
             time.sleep(pypeln_utils.TIMEOUT)
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, *args):
+        self.stop_nowait()
+
+    async def __aenter__(self):
+        pass
+
+    async def __aexit__(self, *args):
+        await self.stop()

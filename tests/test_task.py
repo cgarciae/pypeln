@@ -887,113 +887,76 @@ class TestWorker(TestCase):
 
 class TestSupervisor(TestCase):
     def test_basic(self):
-        def did_timeout():
-            while True:
-                yield False
 
         queue = pl.task.IterableQueue()
 
         worker: pl.task.Worker = mock.Mock(timeout=1)
 
-        worker.did_timeout.side_effect = did_timeout()
-
         supervisor = pl.task.Supervisor(workers=[worker], main_queue=queue)
-        supervisor.start()
 
         time.sleep(0.1)
 
         supervisor.done = True
 
-        worker.did_timeout.assert_called()
         worker.stop.assert_not_called()
-        worker.start.assert_not_called()
 
-    def test_timeout(self):
-        def did_timeout():
-            yield False
-            yield True
-
-            while True:
-                yield False
+    def test_stop_nowait(self):
 
         queue = pl.task.IterableQueue()
 
         worker: pl.task.Worker = mock.Mock(timeout=1)
 
-        worker.did_timeout.side_effect = did_timeout()
-
         supervisor = pl.task.Supervisor(workers=[worker], main_queue=queue)
-        supervisor.start()
 
         time.sleep(0.1)
 
-        supervisor.done = True
+        supervisor.stop_nowait()
 
-        worker.did_timeout.assert_called()
         worker.stop.assert_called_once()
-        worker.start.assert_called_once()
 
-    def test_error(self):
-        def did_timeout():
-            yield False
-            yield True
+    @run_async
+    async def test_stop(self):
 
-            yield ValueError()
-
-            while True:
-                yield False
-
-        queue: pl.task.IterableQueue = mock.Mock()
+        queue = pl.task.IterableQueue()
 
         worker: pl.task.Worker = mock.Mock(timeout=1)
 
-        worker.did_timeout.side_effect = did_timeout()
-
         supervisor = pl.task.Supervisor(workers=[worker], main_queue=queue)
-        supervisor.start()
 
-        time.sleep(0.2)
+        time.sleep(0.1)
 
-        supervisor.done = True
+        await supervisor.stop()
 
-        worker.did_timeout.assert_called()
         worker.stop.assert_called_once()
-        worker.start.assert_called_once()
-
-        queue.raise_exception.assert_called_once()
-
-    def test_no_timeout(self):
-
-        queue: pl.task.IterableQueue = mock.Mock()
-
-        worker: pl.task.Worker = mock.Mock(timeout=0)
-
-        supervisor = pl.task.Supervisor(workers=[worker], main_queue=queue)
-        supervisor.start()
-
-        time.sleep(0.2)
-
-        supervisor.done = True
-
-        worker.did_timeout.assert_not_called()
-        worker.stop.assert_not_called()
-        worker.start.assert_not_called()
-
-        queue.raise_exception.assert_not_called()
 
     def test_context(self):
 
         queue: pl.task.IterableQueue = mock.Mock()
 
-        worker: pl.task.Worker = mock.Mock(timeout=0)
-        worker.process.is_alive.return_value = False
+        worker: pl.task.Worker = mock.Mock(timeout=0, is_done=True)
 
         supervisor = pl.task.Supervisor(workers=[worker], main_queue=queue)
 
         with supervisor:
             assert not supervisor.done
             worker.stop.assert_not_called()
-            worker.did_timeout.assert_not_called()
+
+        assert supervisor.done
+
+        worker.stop.assert_called_once()
+
+    @run_async
+    async def test_context_async(self):
+
+        queue: pl.task.IterableQueue = mock.Mock()
+
+        worker: pl.task.Worker = mock.Mock(timeout=0, is_done=True)
+
+        supervisor = pl.task.Supervisor(workers=[worker], main_queue=queue)
+
+        async with supervisor:
+            assert not supervisor.done
+            worker.stop.assert_not_called()
 
         assert supervisor.done
 
@@ -1003,8 +966,7 @@ class TestSupervisor(TestCase):
 
         queue: pl.task.IterableQueue = mock.Mock()
 
-        worker: pl.task.Worker = mock.Mock(timeout=0)
-        worker.process.is_alive.return_value = False
+        worker: pl.task.Worker = mock.Mock(timeout=0, is_done=True)
 
         supervisor = pl.task.Supervisor(workers=[worker], main_queue=queue)
 
@@ -1017,8 +979,8 @@ class TestSupervisor(TestCase):
         next(iterator)
 
         assert not supervisor.done
+        time.sleep(0.02)
         worker.stop.assert_not_called()
-        worker.did_timeout.assert_not_called()
 
         del iterator
         time.sleep(0.02)
@@ -1027,437 +989,437 @@ class TestSupervisor(TestCase):
         worker.stop.assert_called_once()
 
 
-# ----------------------------------------------------------------
-# from iterable
-# ----------------------------------------------------------------
+# # ----------------------------------------------------------------
+# # from iterable
+# # ----------------------------------------------------------------
 
 
-class TestFromIterable(TestCase):
-    @hp.given(nums=st.lists(st.integers()))
-    @hp.settings(max_examples=MAX_EXAMPLES)
-    def test_from_to_iterable(self, nums: tp.List[int]):
+# class TestFromIterable(TestCase):
+#     @hp.given(nums=st.lists(st.integers()))
+#     @hp.settings(max_examples=MAX_EXAMPLES)
+#     def test_from_to_iterable(self, nums: tp.List[int]):
 
-        nums_py = nums
+#         nums_py = nums
 
-        nums_pl = pl.task.from_iterable(nums)
-        nums_pl = list(nums_pl)
+#         nums_pl = pl.task.from_iterable(nums)
+#         nums_pl = list(nums_pl)
 
-        assert nums_pl == nums_py
+#         assert nums_pl == nums_py
 
-    @hp.given(nums=st.lists(st.integers()))
-    @hp.settings(max_examples=MAX_EXAMPLES)
-    def test_from_to_iterable_process(self, nums: tp.List[int]):
+#     @hp.given(nums=st.lists(st.integers()))
+#     @hp.settings(max_examples=MAX_EXAMPLES)
+#     def test_from_to_iterable_process(self, nums: tp.List[int]):
 
-        nums_py = nums
+#         nums_py = nums
 
-        nums_pl = pl.task.from_iterable(nums, use_thread=False)
-        nums_pl = list(nums_pl)
+#         nums_pl = pl.task.from_iterable(nums, use_thread=False)
+#         nums_pl = list(nums_pl)
 
-        assert nums_pl == nums_py
+#         assert nums_pl == nums_py
 
-    @hp.given(nums=st.lists(st.integers()))
-    @hp.settings(max_examples=MAX_EXAMPLES)
-    def test_from_to_iterable_pipe(self, nums):
+#     @hp.given(nums=st.lists(st.integers()))
+#     @hp.settings(max_examples=MAX_EXAMPLES)
+#     def test_from_to_iterable_pipe(self, nums):
 
-        nums_py = nums
+#         nums_py = nums
 
-        nums_pl = nums | pl.task.from_iterable() | list
+#         nums_pl = nums | pl.task.from_iterable() | list
 
-        assert nums_pl == nums_py
+#         assert nums_pl == nums_py
 
 
-# ----------------------------------------------------------------
-# map
-# ----------------------------------------------------------------
+# # ----------------------------------------------------------------
+# # map
+# # ----------------------------------------------------------------
 
 
-class TestMap(TestCase):
-    @hp.given(nums=st.lists(st.integers()))
-    @hp.settings(max_examples=MAX_EXAMPLES)
-    def test_map_id(self, nums: tp.List[int]):
+# class TestMap(TestCase):
+#     @hp.given(nums=st.lists(st.integers()))
+#     @hp.settings(max_examples=MAX_EXAMPLES)
+#     def test_map_id(self, nums: tp.List[int]):
 
-        nums_py = nums
+#         nums_py = nums
 
-        nums_pl = pl.task.map(lambda x: x, nums)
-        nums_pl = list(nums_pl)
+#         nums_pl = pl.task.map(lambda x: x, nums)
+#         nums_pl = list(nums_pl)
 
-        assert nums_pl == nums_py
+#         assert nums_pl == nums_py
 
-    @hp.given(nums=st.lists(st.integers()))
-    @hp.settings(max_examples=MAX_EXAMPLES)
-    def test_map_id_pipe(self, nums: tp.List[int]):
+#     @hp.given(nums=st.lists(st.integers()))
+#     @hp.settings(max_examples=MAX_EXAMPLES)
+#     def test_map_id_pipe(self, nums: tp.List[int]):
 
-        nums_pl = nums | pl.task.map(lambda x: x) | list
+#         nums_pl = nums | pl.task.map(lambda x: x) | list
 
-        assert nums_pl == nums
+#         assert nums_pl == nums
 
-    @hp.given(nums=st.lists(st.integers()))
-    @hp.settings(max_examples=MAX_EXAMPLES)
-    def test_map_square(self, nums: tp.List[int]):
+#     @hp.given(nums=st.lists(st.integers()))
+#     @hp.settings(max_examples=MAX_EXAMPLES)
+#     def test_map_square(self, nums: tp.List[int]):
 
-        nums_py = map(lambda x: x ** 2, nums)
-        nums_py = list(nums_py)
+#         nums_py = map(lambda x: x ** 2, nums)
+#         nums_py = list(nums_py)
 
-        nums_pl = pl.task.map(lambda x: x ** 2, nums)
-        nums_pl = list(nums_pl)
+#         nums_pl = pl.task.map(lambda x: x ** 2, nums)
+#         nums_pl = list(nums_pl)
 
-        assert nums_pl == nums_py
+#         assert nums_pl == nums_py
 
-    @hp.given(nums=st.lists(st.integers()))
-    @hp.settings(max_examples=MAX_EXAMPLES)
-    def test_map_square_event_start(self, nums: tp.List[int]):
+#     @hp.given(nums=st.lists(st.integers()))
+#     @hp.settings(max_examples=MAX_EXAMPLES)
+#     def test_map_square_event_start(self, nums: tp.List[int]):
 
-        nums_py = map(lambda x: x ** 2, nums)
-        nums_py = list(nums_py)
+#         nums_py = map(lambda x: x ** 2, nums)
+#         nums_py = list(nums_py)
 
-        namespace = pl.task.Namespace()
-        namespace.x = 0
+#         namespace = pl.task.Namespace()
+#         namespace.x = 0
 
-        def on_start():
-            namespace.x = 1
+#         def on_start():
+#             namespace.x = 1
 
-        nums_pl = pl.task.map(lambda x: x ** 2, nums, on_start=on_start)
-        nums_pl = list(nums_pl)
+#         nums_pl = pl.task.map(lambda x: x ** 2, nums, on_start=on_start)
+#         nums_pl = list(nums_pl)
 
-        assert nums_pl == nums_py
-        assert namespace.x == 1
+#         assert nums_pl == nums_py
+#         assert namespace.x == 1
 
-    def test_timeout(self):
+#     def test_timeout(self):
 
-        nums = list(range(10))
+#         nums = list(range(10))
 
-        def f(x):
-            if x == 2:
-                while True:
-                    time.sleep(0.1)
+#         def f(x):
+#             if x == 2:
+#                 while True:
+#                     time.sleep(0.1)
 
-            return x
+#             return x
 
-        nums_pl = pl.task.map(f, nums, timeout=0.5)
-        nums_pl = list(nums_pl)
+#         nums_pl = pl.task.map(f, nums, timeout=0.5)
+#         nums_pl = list(nums_pl)
 
-        assert len(nums_pl) == 9
+#         assert len(nums_pl) == 9
 
-    def test_worker_info(self):
+#     def test_worker_info(self):
 
-        nums = range(100)
-        n_workers = 4
+#         nums = range(100)
+#         n_workers = 4
 
-        def on_start(worker_info):
-            return dict(worker_info=worker_info)
+#         def on_start(worker_info):
+#             return dict(worker_info=worker_info)
 
-        nums_pl = pl.task.map(
-            lambda x, worker_info: worker_info.index,
-            nums,
-            on_start=on_start,
-            workers=n_workers,
-        )
-        nums_pl = set(nums_pl)
+#         nums_pl = pl.task.map(
+#             lambda x, worker_info: worker_info.index,
+#             nums,
+#             on_start=on_start,
+#             workers=n_workers,
+#         )
+#         nums_pl = set(nums_pl)
 
-        assert nums_pl.issubset(set(range(n_workers)))
+#         assert nums_pl.issubset(set(range(n_workers)))
 
-    def test_kwargs(self):
+#     def test_kwargs(self):
 
-        nums = range(100)
-        n_workers = 4
-        letters = "abc"
-        namespace = pl.task.Namespace()
-        namespace.on_done = None
+#         nums = range(100)
+#         n_workers = 4
+#         letters = "abc"
+#         namespace = pl.task.Namespace()
+#         namespace.on_done = None
 
-        def on_start():
-            return dict(y=letters)
+#         def on_start():
+#             return dict(y=letters)
 
-        def on_done(y):
-            namespace.on_done = y
+#         def on_done(y):
+#             namespace.on_done = y
 
-        nums_pl = pl.task.map(
-            lambda x, y: y, nums, on_start=on_start, on_done=on_done, workers=n_workers,
-        )
-        nums_pl = list(nums_pl)
+#         nums_pl = pl.task.map(
+#             lambda x, y: y, nums, on_start=on_start, on_done=on_done, workers=n_workers,
+#         )
+#         nums_pl = list(nums_pl)
 
-        assert namespace.on_done == letters
-        assert nums_pl == [letters] * len(nums)
+#         assert namespace.on_done == letters
+#         assert nums_pl == [letters] * len(nums)
 
-    @hp.given(nums=st.lists(st.integers()))
-    @hp.settings(max_examples=MAX_EXAMPLES)
-    def test_map_square_event_end(self, nums: tp.List[int]):
+#     @hp.given(nums=st.lists(st.integers()))
+#     @hp.settings(max_examples=MAX_EXAMPLES)
+#     def test_map_square_event_end(self, nums: tp.List[int]):
 
-        namespace = pl.task.Namespace()
-        namespace.x = 0
-        namespace.done = False
-        namespace.active_workers = -1
+#         namespace = pl.task.Namespace()
+#         namespace.x = 0
+#         namespace.done = False
+#         namespace.active_workers = -1
 
-        def on_start():
-            namespace.x = 1
+#         def on_start():
+#             namespace.x = 1
 
-        def on_done(stage_status):
-            namespace.x = 2
-            namespace.active_workers = stage_status.active_workers
-            namespace.done = stage_status.done
+#         def on_done(stage_status):
+#             namespace.x = 2
+#             namespace.active_workers = stage_status.active_workers
+#             namespace.done = stage_status.done
 
-        nums_pl = pl.task.map(
-            lambda x: x ** 2, nums, workers=3, on_start=on_start, on_done=on_done
-        )
-        nums_pl = list(nums_pl)
+#         nums_pl = pl.task.map(
+#             lambda x: x ** 2, nums, workers=3, on_start=on_start, on_done=on_done
+#         )
+#         nums_pl = list(nums_pl)
 
-        assert namespace.x == 2
-        assert namespace.done == True
-        assert namespace.active_workers == 0
+#         assert namespace.x == 2
+#         assert namespace.done == True
+#         assert namespace.active_workers == 0
 
-    @hp.given(nums=st.lists(st.integers()))
-    @hp.settings(max_examples=MAX_EXAMPLES)
-    def test_map_square_workers(self, nums: tp.List[int]):
+#     @hp.given(nums=st.lists(st.integers()))
+#     @hp.settings(max_examples=MAX_EXAMPLES)
+#     def test_map_square_workers(self, nums: tp.List[int]):
 
-        nums_py = map(lambda x: x ** 2, nums)
-        nums_py = list(nums_py)
+#         nums_py = map(lambda x: x ** 2, nums)
+#         nums_py = list(nums_py)
 
-        nums_pl = pl.task.map(lambda x: x ** 2, nums, workers=2)
-        nums_pl = list(nums_pl)
+#         nums_pl = pl.task.map(lambda x: x ** 2, nums, workers=2)
+#         nums_pl = list(nums_pl)
 
-        assert sorted(nums_pl) == sorted(nums_py)
+#         assert sorted(nums_pl) == sorted(nums_py)
 
 
-class TestOrdered(unittest.TestCase):
-    @hp.given(nums=st.lists(st.integers()))
-    @hp.settings(max_examples=MAX_EXAMPLES)
-    def test_map_square_workers_sorted(self, nums: tp.List[int]):
+# class TestOrdered(unittest.TestCase):
+#     @hp.given(nums=st.lists(st.integers()))
+#     @hp.settings(max_examples=MAX_EXAMPLES)
+#     def test_map_square_workers_sorted(self, nums: tp.List[int]):
 
-        nums_py = map(lambda x: x ** 2, nums)
-        nums_py = list(nums_py)
+#         nums_py = map(lambda x: x ** 2, nums)
+#         nums_py = list(nums_py)
 
-        nums_pl = pl.task.map(lambda x: x ** 2, nums, workers=2)
-        nums_pl = pl.task.ordered(nums_pl)
-        nums_pl = list(nums_pl)
+#         nums_pl = pl.task.map(lambda x: x ** 2, nums, workers=2)
+#         nums_pl = pl.task.ordered(nums_pl)
+#         nums_pl = list(nums_pl)
 
-        assert nums_pl == nums_py
+#         assert nums_pl == nums_py
 
 
-# ----------------------------------------------------------------
-# each
-# ----------------------------------------------------------------
+# # ----------------------------------------------------------------
+# # each
+# # ----------------------------------------------------------------
 
 
-class TestEach(TestCase):
-    @hp.given(nums=st.lists(st.integers()))
-    @hp.settings(max_examples=MAX_EXAMPLES)
-    def test_each(self, nums: tp.List[int]):
+# class TestEach(TestCase):
+#     @hp.given(nums=st.lists(st.integers()))
+#     @hp.settings(max_examples=MAX_EXAMPLES)
+#     def test_each(self, nums: tp.List[int]):
 
-        nums_pl = pl.task.each(lambda x: x, nums)
+#         nums_pl = pl.task.each(lambda x: x, nums)
 
-        assert nums is not None
+#         assert nums is not None
 
-        if nums_pl is not None:
-            pl.task.run(nums_pl)
+#         if nums_pl is not None:
+#             pl.task.run(nums_pl)
 
-    @hp.given(nums=st.lists(st.integers()))
-    @hp.settings(max_examples=MAX_EXAMPLES)
-    def test_each_list(self, nums: tp.List[int]):
+#     @hp.given(nums=st.lists(st.integers()))
+#     @hp.settings(max_examples=MAX_EXAMPLES)
+#     def test_each_list(self, nums: tp.List[int]):
 
-        nums_pl = pl.task.each(lambda x: x, nums)
+#         nums_pl = pl.task.each(lambda x: x, nums)
 
-        assert nums is not None
+#         assert nums is not None
 
-        if nums_pl is not None:
+#         if nums_pl is not None:
 
-            nums_pl = list(nums_pl)
+#             nums_pl = list(nums_pl)
 
-            if nums:
-                assert nums_pl != nums
-            else:
-                assert nums_pl == nums
+#             if nums:
+#                 assert nums_pl != nums
+#             else:
+#                 assert nums_pl == nums
 
-            assert nums_pl == []
+#             assert nums_pl == []
 
 
-# ----------------------------------------------------------------
-# flat_map
-# ----------------------------------------------------------------
+# # ----------------------------------------------------------------
+# # flat_map
+# # ----------------------------------------------------------------
 
 
-class TestFlatMap(unittest.TestCase):
-    @hp.given(nums=st.lists(st.integers()))
-    @hp.settings(max_examples=MAX_EXAMPLES)
-    def test_flat_map_square(self, nums: tp.List[int]):
-        def _generator(x):
-            yield x
-            yield x + 1
-            yield x + 2
+# class TestFlatMap(unittest.TestCase):
+#     @hp.given(nums=st.lists(st.integers()))
+#     @hp.settings(max_examples=MAX_EXAMPLES)
+#     def test_flat_map_square(self, nums: tp.List[int]):
+#         def _generator(x):
+#             yield x
+#             yield x + 1
+#             yield x + 2
 
-        nums_py = map(lambda x: x ** 2, nums)
-        nums_py = cz.mapcat(_generator, nums_py)
-        nums_py = list(nums_py)
+#         nums_py = map(lambda x: x ** 2, nums)
+#         nums_py = cz.mapcat(_generator, nums_py)
+#         nums_py = list(nums_py)
 
-        nums_pl = pl.task.map(lambda x: x ** 2, nums)
-        nums_pl = pl.task.flat_map(_generator, nums_pl)
-        nums_pl = list(nums_pl)
+#         nums_pl = pl.task.map(lambda x: x ** 2, nums)
+#         nums_pl = pl.task.flat_map(_generator, nums_pl)
+#         nums_pl = list(nums_pl)
 
-        assert nums_pl == nums_py
+#         assert nums_pl == nums_py
 
-    @hp.given(nums=st.lists(st.integers()))
-    @hp.settings(max_examples=MAX_EXAMPLES)
-    def test_flat_map_square_workers(self, nums: tp.List[int]):
-        def _generator(x):
-            yield x
-            yield x + 1
-            yield x + 2
+#     @hp.given(nums=st.lists(st.integers()))
+#     @hp.settings(max_examples=MAX_EXAMPLES)
+#     def test_flat_map_square_workers(self, nums: tp.List[int]):
+#         def _generator(x):
+#             yield x
+#             yield x + 1
+#             yield x + 2
 
-        nums_py = map(lambda x: x ** 2, nums)
-        nums_py = cz.mapcat(_generator, nums_py)
-        nums_py = list(nums_py)
+#         nums_py = map(lambda x: x ** 2, nums)
+#         nums_py = cz.mapcat(_generator, nums_py)
+#         nums_py = list(nums_py)
 
-        nums_pl = pl.task.map(lambda x: x ** 2, nums)
-        nums_pl = pl.task.flat_map(_generator, nums_pl, workers=3)
-        nums_pl = list(nums_pl)
+#         nums_pl = pl.task.map(lambda x: x ** 2, nums)
+#         nums_pl = pl.task.flat_map(_generator, nums_pl, workers=3)
+#         nums_pl = list(nums_pl)
 
-        assert sorted(nums_pl) == sorted(nums_py)
+#         assert sorted(nums_pl) == sorted(nums_py)
 
 
-# ----------------------------------------------------------------
-# filter
-# ----------------------------------------------------------------
+# # ----------------------------------------------------------------
+# # filter
+# # ----------------------------------------------------------------
 
 
-class TestFilter(unittest.TestCase):
-    @hp.given(nums=st.lists(st.integers()))
-    @hp.settings(max_examples=MAX_EXAMPLES)
-    def test_flat_map_square_filter_workers(self, nums: tp.List[int]):
-        def _generator(x):
-            yield x
-            yield x + 1
-            yield x + 2
+# class TestFilter(unittest.TestCase):
+#     @hp.given(nums=st.lists(st.integers()))
+#     @hp.settings(max_examples=MAX_EXAMPLES)
+#     def test_flat_map_square_filter_workers(self, nums: tp.List[int]):
+#         def _generator(x):
+#             yield x
+#             yield x + 1
+#             yield x + 2
 
-        nums_py = map(lambda x: x ** 2, nums)
-        nums_py = cz.mapcat(_generator, nums_py)
-        nums_py = cz.filter(lambda x: x > 1, nums_py)
-        nums_py = list(nums_py)
+#         nums_py = map(lambda x: x ** 2, nums)
+#         nums_py = cz.mapcat(_generator, nums_py)
+#         nums_py = cz.filter(lambda x: x > 1, nums_py)
+#         nums_py = list(nums_py)
 
-        nums_pl = pl.task.map(lambda x: x ** 2, nums)
-        nums_pl = pl.task.flat_map(_generator, nums_pl, workers=2)
-        nums_pl = pl.task.filter(lambda x: x > 1, nums_pl)
-        nums_pl = list(nums_pl)
+#         nums_pl = pl.task.map(lambda x: x ** 2, nums)
+#         nums_pl = pl.task.flat_map(_generator, nums_pl, workers=2)
+#         nums_pl = pl.task.filter(lambda x: x > 1, nums_pl)
+#         nums_pl = list(nums_pl)
 
-        assert sorted(nums_pl) == sorted(nums_py)
+#         assert sorted(nums_pl) == sorted(nums_py)
 
-    @hp.given(nums=st.lists(st.integers()))
-    @hp.settings(max_examples=MAX_EXAMPLES)
-    def test_flat_map_square_filter_workers_pipe(self, nums: tp.List[int]):
-        def _generator(x):
-            yield x
-            yield x + 1
-            yield x + 2
+#     @hp.given(nums=st.lists(st.integers()))
+#     @hp.settings(max_examples=MAX_EXAMPLES)
+#     def test_flat_map_square_filter_workers_pipe(self, nums: tp.List[int]):
+#         def _generator(x):
+#             yield x
+#             yield x + 1
+#             yield x + 2
 
-        nums_py = map(lambda x: x ** 2, nums)
-        nums_py = cz.mapcat(_generator, nums_py)
-        nums_py = cz.filter(lambda x: x > 1, nums_py)
-        nums_py = list(nums_py)
+#         nums_py = map(lambda x: x ** 2, nums)
+#         nums_py = cz.mapcat(_generator, nums_py)
+#         nums_py = cz.filter(lambda x: x > 1, nums_py)
+#         nums_py = list(nums_py)
 
-        nums_pl = (
-            nums
-            | pl.task.map(lambda x: x ** 2)
-            | pl.task.flat_map(_generator, workers=3)
-            | pl.task.filter(lambda x: x > 1)
-            | list
-        )
+#         nums_pl = (
+#             nums
+#             | pl.task.map(lambda x: x ** 2)
+#             | pl.task.flat_map(_generator, workers=3)
+#             | pl.task.filter(lambda x: x > 1)
+#             | list
+#         )
 
-        assert sorted(nums_pl) == sorted(nums_py)
+#         assert sorted(nums_pl) == sorted(nums_py)
 
 
-# ----------------------------------------------------------------
-# concat
-# ----------------------------------------------------------------
+# # ----------------------------------------------------------------
+# # concat
+# # ----------------------------------------------------------------
 
 
-class TestConcat(unittest.TestCase):
-    @hp.given(nums=st.lists(st.integers()))
-    @hp.settings(max_examples=MAX_EXAMPLES)
-    def test_concat_basic(self, nums: tp.List[int]):
+# class TestConcat(unittest.TestCase):
+#     @hp.given(nums=st.lists(st.integers()))
+#     @hp.settings(max_examples=MAX_EXAMPLES)
+#     def test_concat_basic(self, nums: tp.List[int]):
 
-        nums_py = list(map(lambda x: x + 1, nums))
-        nums_py1 = list(map(lambda x: x ** 2, nums_py))
-        nums_py2 = list(map(lambda x: -x, nums_py))
-        nums_py = nums_py1 + nums_py2
+#         nums_py = list(map(lambda x: x + 1, nums))
+#         nums_py1 = list(map(lambda x: x ** 2, nums_py))
+#         nums_py2 = list(map(lambda x: -x, nums_py))
+#         nums_py = nums_py1 + nums_py2
 
-        nums_pl = pl.task.map(lambda x: x + 1, nums)
-        nums_pl1 = pl.task.map(lambda x: x ** 2, nums_pl)
-        nums_pl2 = pl.task.map(lambda x: -x, nums_pl)
-        nums_pl = pl.task.concat([nums_pl1, nums_pl2])
+#         nums_pl = pl.task.map(lambda x: x + 1, nums)
+#         nums_pl1 = pl.task.map(lambda x: x ** 2, nums_pl)
+#         nums_pl2 = pl.task.map(lambda x: -x, nums_pl)
+#         nums_pl = pl.task.concat([nums_pl1, nums_pl2])
 
-        assert sorted(nums_pl) == sorted(nums_py)
+#         assert sorted(nums_pl) == sorted(nums_py)
 
-    # @hp.given(nums=st.lists(st.integers()))
-    # @hp.settings(max_examples=MAX_EXAMPLES)
-    def test_concat_multiple(self, nums: tp.List[int] = [1, 2, 3]):
+#     # @hp.given(nums=st.lists(st.integers()))
+#     # @hp.settings(max_examples=MAX_EXAMPLES)
+#     def test_concat_multiple(self, nums: tp.List[int] = [1, 2, 3]):
 
-        nums_py = [x + 1 for x in nums]
-        nums_py1 = nums_py + nums_py
-        nums_py2 = nums_py1 + nums_py
+#         nums_py = [x + 1 for x in nums]
+#         nums_py1 = nums_py + nums_py
+#         nums_py2 = nums_py1 + nums_py
 
-        nums_pl = pl.task.map(lambda x: x + 1, nums)
-        nums_pl1 = pl.task.concat([nums_pl, nums_pl])
-        nums_pl2 = pl.task.concat([nums_pl1, nums_pl])
+#         nums_pl = pl.task.map(lambda x: x + 1, nums)
+#         nums_pl1 = pl.task.concat([nums_pl, nums_pl])
+#         nums_pl2 = pl.task.concat([nums_pl1, nums_pl])
 
-        # assert sorted(nums_py1) == sorted(list(nums_pl1))
-        assert sorted(nums_py2) == sorted(list(nums_pl2))
+#         # assert sorted(nums_py1) == sorted(list(nums_pl1))
+#         assert sorted(nums_py2) == sorted(list(nums_pl2))
 
 
-# ----------------------------------------------------------------#######
-# error handling
-# ----------------------------------------------------------------#######
+# # ----------------------------------------------------------------#######
+# # error handling
+# # ----------------------------------------------------------------#######
 
 
-class MyError(Exception):
-    pass
+# class MyError(Exception):
+#     pass
 
 
-class TestErrorHandling(unittest.TestCase):
-    def test_error_handling(self):
+# class TestErrorHandling(unittest.TestCase):
+#     def test_error_handling(self):
 
-        error = None
+#         error = None
 
-        def raise_error(x):
-            raise MyError()
+#         def raise_error(x):
+#             raise MyError()
 
-        stage = pl.task.map(raise_error, range(10))
+#         stage = pl.task.map(raise_error, range(10))
 
-        try:
-            list(stage)
+#         try:
+#             list(stage)
 
-        except MyError as e:
-            error = e
+#         except MyError as e:
+#             error = e
 
-        assert isinstance(error, MyError)
+#         assert isinstance(error, MyError)
 
 
-# ----------------------------------------------------------------#######
-# from_to_iterable
-# ----------------------------------------------------------------#######
+# # ----------------------------------------------------------------#######
+# # from_to_iterable
+# # ----------------------------------------------------------------#######
 
 
-class TestToIterable(unittest.TestCase):
-    @hp.given(nums=st.lists(st.integers()))
-    @hp.settings(max_examples=MAX_EXAMPLES)
-    def test_from_to_iterable(self, nums: tp.List[int]):
+# class TestToIterable(unittest.TestCase):
+#     @hp.given(nums=st.lists(st.integers()))
+#     @hp.settings(max_examples=MAX_EXAMPLES)
+#     def test_from_to_iterable(self, nums: tp.List[int]):
 
-        nums_pl = nums
-        nums_pl = pl.task.from_iterable(nums_pl)
-        nums_pl = cz.partition_all(10, nums_pl)
-        nums_pl = pl.task.map(sum, nums_pl)
-        nums_pl = list(nums_pl)
+#         nums_pl = nums
+#         nums_pl = pl.task.from_iterable(nums_pl)
+#         nums_pl = cz.partition_all(10, nums_pl)
+#         nums_pl = pl.task.map(sum, nums_pl)
+#         nums_pl = list(nums_pl)
 
-        nums_py = nums
-        nums_py = cz.partition_all(10, nums_py)
-        nums_py = map(sum, nums_py)
-        nums_py = list(nums_py)
+#         nums_py = nums
+#         nums_py = cz.partition_all(10, nums_py)
+#         nums_py = map(sum, nums_py)
+#         nums_py = list(nums_py)
 
-        assert nums_py == nums_pl
+#         assert nums_py == nums_pl
 
 
-if __name__ == "__main__":
-    error = None
+# if __name__ == "__main__":
+#     error = None
 
-    def raise_error(x):
-        raise MyError()
+#     def raise_error(x):
+#         raise MyError()
 
-    stage = pl.task.map(raise_error, range(10))
+#     stage = pl.task.map(raise_error, range(10))
 
-    list(stage)
+#     list(stage)

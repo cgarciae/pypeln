@@ -1,6 +1,4 @@
-
 import typing as tp
-
 
 
 class _Namespace:

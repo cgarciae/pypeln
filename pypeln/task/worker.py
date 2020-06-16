@@ -162,10 +162,8 @@ class Worker(tp.Generic[T]):
         if self.process is None:
             return
 
-        loop = asyncio.get_event_loop()
-
         self.tasks.stop()
-        loop.call_soon_threadsafe(self.process.cancel)
+        utils.run_function_in_loop(self.process.cancel)
 
 
 class WorkerApply(Worker[T], tp.Generic[T]):
@@ -253,11 +251,10 @@ class TaskPool:
             self.semaphore.release()
 
     def stop(self):
-        loop = asyncio.get_event_loop()
 
         for task in self.tasks:
             if not task.cancelled() or not task.done():
-                loop.call_soon_threadsafe(task.cancel)
+                utils.run_function_in_loop(task.cancel)
 
         self.tasks.clear()
 
@@ -294,7 +291,7 @@ def start_workers(
     workers: tp.List[Future] = []
 
     for _ in range(n_workers):
-        t = utils.run_in_loop(lambda: target(*args, **kwargs))
+        t = utils.run_coroutine_in_loop(lambda: target(*args, **kwargs))
         workers.append(t)
 
     return workers

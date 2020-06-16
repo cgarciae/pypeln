@@ -26,10 +26,10 @@ class StageParams(tp.NamedTuple):
 
     @classmethod
     def create(
-        cls, input_queue: IterableQueue, output_queues: OutputQueues, total_workers: int
+        cls, input_queue: IterableQueue, output_queues: OutputQueues
     ) -> "StageParams":
         return cls(
-            namespace=utils.Namespace(active_workers=total_workers),
+            namespace=utils.Namespace(active_workers=1),
             input_queue=input_queue,
             output_queues=output_queues,
         )
@@ -175,7 +175,9 @@ class WorkerApply(Worker[T], tp.Generic[T]):
 
         async for elem in self.stage_params.input_queue:
 
-            await self.tasks.put(lambda: self.apply(elem, f_args, **kwargs))
+            await self.tasks.put(
+                pypeln_utils.get_callable(self.apply, elem, f_args, **kwargs)
+            )
 
 
 class StageStatus(tp.NamedTuple):
@@ -291,7 +293,9 @@ def start_workers(
     workers: tp.List[Future] = []
 
     for _ in range(n_workers):
-        t = utils.run_coroutine_in_loop(lambda: target(*args, **kwargs))
+        t = utils.run_coroutine_in_loop(
+            pypeln_utils.get_callable(target, *args, **kwargs)
+        )
         workers.append(t)
 
     return workers

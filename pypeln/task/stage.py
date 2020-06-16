@@ -14,7 +14,6 @@ T = tp.TypeVar("T")
 class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
     stage_params: StageParams
     worker_constructor: WorkerConstructor
-    workers: int
     total_sources: int
     dependencies: tp.List["Stage"]
     built: bool = False
@@ -23,7 +22,6 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
     @classmethod
     def create(
         cls,
-        workers: int,
         total_sources: int,
         maxsize: int,
         worker_constructor: WorkerConstructor,
@@ -39,11 +37,8 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
 
         return cls(
             stage_params=StageParams.create(
-                input_queue=input_queue,
-                output_queues=OutputQueues(),
-                total_workers=workers,
+                input_queue=input_queue, output_queues=OutputQueues(),
             ),
-            workers=workers,
             total_sources=total_sources,
             worker_constructor=worker_constructor,
             dependencies=dependencies,
@@ -95,5 +90,32 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
                 else:
                     yield elem.value
 
+    async def to_async_iterable(
+        self, maxsize: int, return_index: bool
+    ) -> tp.Iterable[T]:
+
+        # build stages first to verify reuse
+        stages = list(self.build())
+
+        main_queue: IterableQueue[pypeln_utils.Element] = IterableQueue(
+            maxsize=maxsize, total_sources=1,
+        )
+
+        # add main_queue before starting
+        self.stage_params.output_queues.append(main_queue)
+
+        workers: tp.List[Worker] = [stage.start(main_queue) for stage in stages]
+        supervisor = Supervisor(workers=workers, main_queue=main_queue)
+
+        async with supervisor:
+            async for elem in main_queue:
+                if return_index:
+                    yield elem
+                else:
+                    yield elem.value
+
     def __iter__(self):
         return self.to_iterable(maxsize=0, return_index=False)
+
+    def __aiter__(self):
+        return self.to_async_iterable(maxsize=0, return_index=False)

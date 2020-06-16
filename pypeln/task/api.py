@@ -2,16 +2,18 @@
 The `process` module lets you create pipelines using objects from python's [multiprocessing](https://docs.python.org/3/library/multiprocessing.html) module according to Pypeln's general [architecture](https://cgarciae.github.io/pypeln/advanced/#architecture). Use this module when you are in need of true parallelism for CPU heavy operations but be aware of its implications.
 """
 
-import typing
 from threading import Thread
+import time
+import typing
+import typing as tp
+import asyncio
 
 from pypeln import utils as pypeln_utils
 
 from . import utils
-from .worker import Worker, WorkerApply, StageParams, Kwargs
 from .queue import IterableQueue
 from .stage import Stage, WorkerConstructor
-import typing as tp
+from .worker import Kwargs, StageParams, Worker, WorkerApply, TaskPool
 
 T = tp.TypeVar("T")
 A = tp.TypeVar("A")
@@ -26,18 +28,19 @@ class ApplyWorkerConstructor(WorkerApply[T]):
         timeout: float,
         on_start: tp.Optional[tp.Callable[..., Kwargs]],
         on_done: tp.Optional[tp.Callable[..., Kwargs]],
+        max_tasks: int,
     ) -> WorkerConstructor:
         def worker_constructor(
-            index: int, stage_params: StageParams, main_queue: IterableQueue
-        ) -> WorkerApply[T]:
-            return cls(
+            stage_params: StageParams, main_queue: IterableQueue
+        ) -> Worker[T]:
+            return cls.create(
                 f=f,
-                index=index,
                 stage_params=stage_params,
                 main_queue=main_queue,
                 timeout=timeout,
                 on_start=on_start,
                 on_done=on_done,
+                max_tasks=max_tasks,
             )
 
         return worker_constructor
@@ -51,64 +54,99 @@ class ApplyWorkerConstructor(WorkerApply[T]):
 class FromIterable(Worker[T]):
     def __init__(
         self,
-        iterable: tp.Union[tp.Iterable[T], pypeln_utils.BaseStage[T]],
-        index: int,
+        iterable: tp.Union[tp.Iterable[T], tp.AsyncIterable[T]],
         stage_params: StageParams,
         main_queue: IterableQueue,
-        use_threads: bool,
+        maxsize: int,
     ):
         super().__init__(
             f=pypeln_utils.no_op,
-            index=index,
             stage_params=stage_params,
             main_queue=main_queue,
-            use_threads=use_threads,
+            tasks=TaskPool.create(workers=1, timeout=0),
         )
 
         self.iterable = iterable
+        self.maxsize = maxsize
 
     @classmethod
     def get_worker_constructor(
-        cls, iterable: tp.Iterable, use_threads: bool
+        cls, iterable: tp.Union[typing.Iterable[T], tp.AsyncIterable[T]], maxsize: int
     ) -> WorkerConstructor:
         def worker_constructor(
-            index: int, stage_params: StageParams, main_queue: IterableQueue
+            stage_params: StageParams, main_queue: IterableQueue
         ) -> FromIterable:
             return cls(
                 iterable=iterable,
-                index=index,
                 stage_params=stage_params,
                 main_queue=main_queue,
-                use_threads=use_threads,
+                maxsize=maxsize,
             )
 
         return worker_constructor
 
-    def process_fn(self, f_args: tp.List[str], **kwargs):
+    async def process_fn(self, f_args: tp.List[str], **kwargs):
+        iterable: tp.AsyncIterable
 
-        if isinstance(self.iterable, pypeln_utils.BaseStage):
-
-            for x in self.iterable.to_iterable(maxsize=0, return_index=True):
-                if self.main_queue.namespace.exception:
-                    return
-
-                self.stage_params.output_queues.put(x)
+        if isinstance(self.iterable, tp.AsyncIterable):
+            iterable = self.iterable
         else:
-            for i, x in enumerate(self.iterable):
-                if self.main_queue.namespace.exception:
+            sync_iterable: tp.Iterable
+
+            if isinstance(self.iterable, pypeln_utils.BaseStage):
+                sync_iterable = self.iterable.to_iterable(maxsize=0, return_index=True)
+            else:
+                sync_iterable = self.iterable
+
+            queue = IterableQueue()
+            loop = utils.get_running_loop()
+
+            loop.run_in_executor(
+                None, lambda: self.consume_iterable(sync_iterable, queue, loop)
+            )
+
+            iterable = queue
+
+        i = 0
+        async for x in iterable:
+            if not isinstance(x, pypeln_utils.Element):
+                x = pypeln_utils.Element(index=(i,), value=x)
+
+            await self.stage_params.output_queues.put(x)
+
+            i += 1
+
+    def consume_iterable(
+        self,
+        iterable: tp.Iterable,
+        queue: IterableQueue,
+        loop: asyncio.AbstractEventLoop,
+    ):
+
+        try:
+            for x in iterable:
+                if self.is_done:
                     return
 
-                if isinstance(x, pypeln_utils.Element):
-                    self.stage_params.output_queues.put(x)
-                else:
-                    self.stage_params.output_queues.put(
-                        pypeln_utils.Element(index=(i,), value=x)
-                    )
+                while queue.full():
+                    if self.is_done:
+                        return
+
+                    time.sleep(pypeln_utils.TIMEOUT)
+
+                asyncio.run_coroutine_threadsafe(queue.put(x), loop)
+
+            asyncio.run_coroutine_threadsafe(queue.done(), loop)
+
+        except BaseException as e:
+            asyncio.run_coroutine_threadsafe(queue.raise_exception(e), loop)
 
 
 @tp.overload
 def from_iterable(
-    iterable: typing.Iterable[T], maxsize: int = 0, use_thread: bool = True
+    iterable: tp.Union[typing.Iterable[T], tp.AsyncIterable[T]],
+    maxsize: int = 0,
+    use_thread: bool = True,
 ) -> Stage[T]:
     ...
 
@@ -121,7 +159,11 @@ def from_iterable(
 
 
 def from_iterable(
-    iterable=pypeln_utils.UNDEFINED, maxsize: int = 0, use_thread: bool = True
+    iterable: tp.Union[
+        typing.Iterable[T], tp.AsyncIterable[T], pypeln_utils.Undefined
+    ] = pypeln_utils.UNDEFINED,
+    maxsize: int = 0,
+    use_thread: bool = True,
 ):
     """
     Creates a stage from an iterable. This function gives you more control of the iterable is consumed.
@@ -142,11 +184,10 @@ def from_iterable(
         )
 
     return Stage.create(
-        workers=1,
         total_sources=1,
         maxsize=maxsize,
         worker_constructor=FromIterable.get_worker_constructor(
-            iterable, use_threads=use_thread
+            iterable=iterable, maxsize=maxsize
         ),
         dependencies=[],
     )
@@ -175,13 +216,17 @@ def to_stage(obj: tp.Union[Stage[A], tp.Iterable[A]]) -> Stage[A]:
 
 
 class Map(ApplyWorkerConstructor[T]):
-    def apply(self, elem: pypeln_utils.Element, f_args: tp.List[str], **kwargs):
+    async def apply(self, elem: pypeln_utils.Element, f_args: tp.List[str], **kwargs):
 
         if "element_index" in f_args:
             kwargs["element_index"] = elem.index
 
         y = self.f(elem.value, **kwargs)
-        self.stage_params.output_queues.put(elem.set(y))
+
+        if isinstance(y, tp.Awaitable):
+            y = await y
+
+        await self.stage_params.output_queues.put(elem.set(y))
 
 
 @tp.overload
@@ -270,11 +315,10 @@ def map(
     stage = to_stage(stage)
 
     return Stage.create(
-        workers=workers,
         maxsize=maxsize,
-        total_sources=stage.workers,
+        total_sources=1,
         worker_constructor=Map.get_worker_constructor(
-            f=f, timeout=timeout, on_start=on_start, on_done=on_done
+            f=f, timeout=timeout, on_start=on_start, on_done=on_done, max_tasks=workers
         ),
         dependencies=[stage],
     )

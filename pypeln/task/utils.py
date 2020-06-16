@@ -32,13 +32,19 @@ def get_running_loop() -> asyncio.AbstractEventLoop:
     return loop
 
 
-def run_coroutine_in_loop(f_coro: tp.Callable[[], tp.Awaitable]) -> Future:
-    loop = get_running_loop()
+def run_coroutine_in_loop(
+    f_coro: tp.Callable[[], tp.Awaitable],
+    loop: tp.Optional[asyncio.AbstractEventLoop] = None,
+) -> Future:
+
+    loop = loop if loop else get_running_loop()
 
     return asyncio.run_coroutine_threadsafe(f_coro(), loop)
 
 
-def run_function_in_loop(f: tp.Callable[[], tp.Any]) -> asyncio.Handle:
-    loop = get_running_loop()
+def run_function_in_loop(
+    f: tp.Callable[[], tp.Any], loop: tp.Optional[asyncio.AbstractEventLoop] = None,
+) -> asyncio.Handle:
+    loop = loop if loop else get_running_loop()
 
     return loop.call_soon_threadsafe(f)

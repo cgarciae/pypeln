@@ -112,3 +112,7 @@ def concat(iterables: tp.Iterable[tp.Iterable[T]]) -> tp.Iterable[T]:
 
 def no_op():
     pass
+
+
+def get_callable(f, *args, **kwargs) -> tp.Callable:
+    return lambda: f(*args, **kwargs)

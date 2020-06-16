@@ -9,4 +9,4 @@ from .worker import (
     TaskPool,
 )
 from .supervisor import Supervisor
-from .utils import Namespace, run_coroutine_in_loop
+from .utils import Namespace, run_coroutine_in_loop, run_function_in_loop

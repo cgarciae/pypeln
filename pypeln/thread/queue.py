@@ -14,7 +14,7 @@ import time
 T = tp.TypeVar("T")
 
 
-class PipelineException(tp.NamedTuple):
+class PipelineException(tp.NamedTuple, BaseException):
     exception: tp.Optional[tp.Type[BaseException]]
     trace: str
 
@@ -75,12 +75,23 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
         self.namespace.force_stop = True
 
     def raise_exception(self, exception: BaseException):
+        pipeline_exception = self.get_pipeline_exception(exception)
+        self.namespace.exception = True
+        self.exception_queue.put(pipeline_exception)
+
+    def get_pipeline_exception(self, exception: BaseException) -> PipelineException:
+
+        if isinstance(exception, PipelineException):
+            return exception
+
         exception_type, _exception, _traceback = sys.exc_info()
         trace = "".join(
             traceback.format_exception(exception_type, _exception, _traceback)
         )
-        self.namespace.exception = True
-        self.exception_queue.put(PipelineException(exception_type, trace))
+
+        trace = f"{exception.args}\n\n{trace}"
+
+        return PipelineException(exception_type, trace)
 
 
 class OutputQueues(tp.List[IterableQueue[T]], tp.Generic[T]):

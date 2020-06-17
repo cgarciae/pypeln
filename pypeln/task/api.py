@@ -139,7 +139,7 @@ class FromIterable(Worker[T]):
             asyncio.run_coroutine_threadsafe(queue.done(), loop)
 
         except BaseException as e:
-            e = queue.get_pypline_exception(e)
+            e = queue.get_pipeline_exception(e)
             asyncio.run_coroutine_threadsafe(queue.raise_exception(e), loop)
 
 

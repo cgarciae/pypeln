@@ -92,7 +92,7 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
 
     async def to_async_iterable(
         self, maxsize: int, return_index: bool
-    ) -> tp.Iterable[T]:
+    ) -> tp.AsyncIterable[T]:
 
         # build stages first to verify reuse
         stages = list(self.build())
@@ -119,3 +119,9 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
 
     def __aiter__(self):
         return self.to_async_iterable(maxsize=0, return_index=False)
+
+    async def _await(self):
+        return [x async for x in self]
+
+    def __await__(self) -> tp.Generator[tp.Any, None, tp.List[T]]:
+        return self._await().__await__()

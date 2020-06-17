@@ -198,12 +198,12 @@ def from_iterable(
 # ----------------------------------------------------------------
 
 
-def to_stage(obj: tp.Union[Stage[A], tp.Iterable[A]]) -> Stage[A]:
+def to_stage(obj: tp.Union[Stage[A], tp.Iterable[A], tp.AsyncIterable[A]]) -> Stage[A]:
 
     if isinstance(obj, Stage):
         return obj
 
-    elif hasattr(obj, "__iter__"):
+    elif isinstance(obj, tp.Iterable) or isinstance(obj, tp.AsyncIterable):
         return from_iterable(obj)
 
     else:
@@ -232,7 +232,7 @@ class Map(ApplyWorkerConstructor[T]):
 @tp.overload
 def map(
     f: typing.Callable[..., B],
-    stage: tp.Union[Stage[A], tp.Iterable[A]],
+    stage: tp.Union[Stage[A], tp.Iterable[A], tp.AsyncIterable[A]],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
@@ -257,7 +257,7 @@ def map(
 def map(
     f: typing.Callable,
     stage: tp.Union[
-        Stage[A], tp.Iterable[A], pypeln_utils.Undefined
+        Stage[A], tp.Iterable[A], tp.AsyncIterable[A], pypeln_utils.Undefined
     ] = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
@@ -330,20 +330,31 @@ def map(
 
 
 class FlatMap(ApplyWorkerConstructor[T]):
-    def apply(self, elem: pypeln_utils.Element, f_args: tp.List[str], **kwargs):
+    async def apply(self, elem: pypeln_utils.Element, f_args: tp.List[str], **kwargs):
 
         if "element_index" in f_args:
             kwargs["element_index"] = elem.index
 
-        for i, y in enumerate(self.f(elem.value, **kwargs)):
-            elem_y = pypeln_utils.Element(index=elem.index + (i,), value=y)
-            self.stage_params.output_queues.put(elem_y)
+        ys: tp.Union[
+            tp.Iterable[pypeln_utils.Element], tp.AsyncIterable[pypeln_utils.Element]
+        ] = self.f(elem.value, **kwargs)
+
+        if isinstance(ys, tp.AsyncIterable):
+            i = 0
+            async for y in ys:
+                elem_y = pypeln_utils.Element(index=elem.index + (i,), value=y)
+                await self.stage_params.output_queues.put(elem_y)
+                i += 1
+        else:
+            for i, y in enumerate(ys):
+                elem_y = pypeln_utils.Element(index=elem.index + (i,), value=y)
+                await self.stage_params.output_queues.put(elem_y)
 
 
 @tp.overload
 def flat_map(
-    f: typing.Callable[..., B],
-    stage: Stage[A],
+    f: typing.Callable[..., tp.Union[tp.Iterable[B], tp.AsyncIterable[B]]],
+    stage: tp.Union[Stage[A], tp.Iterable[A], tp.AsyncIterable[A]],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
@@ -355,7 +366,7 @@ def flat_map(
 
 @tp.overload
 def flat_map(
-    f: typing.Callable[..., B],
+    f: typing.Callable[..., tp.Union[tp.Iterable[B], tp.AsyncIterable[B]]],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
@@ -366,9 +377,9 @@ def flat_map(
 
 
 def flat_map(
-    f: typing.Callable[..., B],
+    f: typing.Callable[..., tp.Union[tp.Iterable[B], tp.AsyncIterable[B]]],
     stage: tp.Union[
-        Stage[A], tp.Iterable[A], pypeln_utils.Undefined
+        Stage[A], tp.Iterable[A], tp.AsyncIterable[A], pypeln_utils.Undefined
     ] = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
@@ -442,11 +453,10 @@ def flat_map(
     stage = to_stage(stage)
 
     return Stage.create(
-        workers=workers,
-        total_sources=stage.workers,
+        total_sources=1,
         maxsize=maxsize,
         worker_constructor=FlatMap.get_worker_constructor(
-            f=f, timeout=timeout, on_start=on_start, on_done=on_done
+            f=f, timeout=timeout, on_start=on_start, on_done=on_done, max_tasks=workers
         ),
         dependencies=[stage],
     )
@@ -458,19 +468,24 @@ def flat_map(
 
 
 class Filter(ApplyWorkerConstructor[T]):
-    def apply(self, elem: pypeln_utils.Element, f_args: tp.List[str], **kwargs):
+    async def apply(self, elem: pypeln_utils.Element, f_args: tp.List[str], **kwargs):
 
         if "element_index" in f_args:
             kwargs["element_index"] = elem.index
 
-        if self.f(elem.value, **kwargs):
-            self.stage_params.output_queues.put(elem)
+        y = self.f(elem.value, **kwargs)
+
+        if isinstance(y, tp.Awaitable):
+            y = await y
+
+        if y:
+            await self.stage_params.output_queues.put(elem)
 
 
 @tp.overload
 def filter(
-    f: typing.Callable[..., B],
-    stage: Stage[A],
+    f: typing.Callable[..., tp.Union[bool, tp.Awaitable[bool]]],
+    stage: tp.Union[Stage[A], tp.Iterable[A], tp.AsyncIterable[A]],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
@@ -482,7 +497,7 @@ def filter(
 
 @tp.overload
 def filter(
-    f: typing.Callable[..., B],
+    f: typing.Callable[..., tp.Union[bool, tp.Awaitable[bool]]],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
@@ -493,16 +508,16 @@ def filter(
 
 
 def filter(
-    f: typing.Callable,
+    f: typing.Callable[..., tp.Union[bool, tp.Awaitable[bool]]],
     stage: tp.Union[
-        Stage[A], tp.Iterable[A], pypeln_utils.Undefined
+        Stage[A], tp.Iterable[A], tp.AsyncIterable[A], pypeln_utils.Undefined
     ] = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
     on_start: typing.Callable = None,
     on_done: typing.Callable = None,
-) -> tp.Union[Stage[B], pypeln_utils.Partial[Stage[B]]]:
+) -> tp.Union[Stage[A], pypeln_utils.Partial[Stage[A]]]:
     """
     Creates a stage that filter the data given a predicate function `f`. It is intended to behave like python's built-in `filter` function but with the added concurrency.
 
@@ -553,11 +568,10 @@ def filter(
     stage = to_stage(stage)
 
     return Stage.create(
-        workers=workers,
-        total_sources=stage.workers,
+        total_sources=1,
         maxsize=maxsize,
         worker_constructor=Filter.get_worker_constructor(
-            f=f, timeout=timeout, on_start=on_start, on_done=on_done
+            f=f, timeout=timeout, on_start=on_start, on_done=on_done, max_tasks=workers
         ),
         dependencies=[stage],
     )
@@ -569,17 +583,20 @@ def filter(
 
 
 class Each(ApplyWorkerConstructor[T]):
-    def apply(self, elem: pypeln_utils.Element, f_args: tp.List[str], **kwargs):
+    async def apply(self, elem: pypeln_utils.Element, f_args: tp.List[str], **kwargs):
         if "element_index" in f_args:
             kwargs["element_index"] = elem.index
 
-        self.f(elem.value, **kwargs)
+        output = self.f(elem.value, **kwargs)
+
+        if isinstance(output, tp.Awaitable):
+            await output
 
 
 @tp.overload
 def each(
     f: typing.Callable[..., B],
-    stage: tp.Union[Stage[A], tp.Iterable[A]],
+    stage: tp.Union[Stage[A], tp.Iterable[A], tp.AsyncIterable[A]],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
@@ -592,7 +609,7 @@ def each(
 
 @tp.overload
 def each(
-    f: typing.Callable[..., B],
+    f: typing.Callable[..., None],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
@@ -606,7 +623,7 @@ def each(
 def each(
     f: typing.Callable,
     stage: tp.Union[
-        Stage[A], tp.Iterable[A], pypeln_utils.Undefined
+        Stage[A], tp.Iterable[A], tp.AsyncIterable[A], pypeln_utils.Undefined
     ] = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
@@ -671,11 +688,10 @@ def each(
     stage = to_stage(stage)
 
     stage = Stage.create(
-        workers=workers,
-        total_sources=stage.workers,
+        total_sources=1,
         maxsize=maxsize,
         worker_constructor=Each.get_worker_constructor(
-            f=f, timeout=timeout, on_start=on_start, on_done=on_done
+            f=f, timeout=timeout, on_start=on_start, on_done=on_done, max_tasks=workers
         ),
         dependencies=[stage],
     )
@@ -693,8 +709,8 @@ def each(
 
 
 class Concat(ApplyWorkerConstructor[T]):
-    def apply(self, elem: pypeln_utils.Element, f_args: tp.List[str], **kwargs):
-        self.stage_params.output_queues.put(elem)
+    async def apply(self, elem: pypeln_utils.Element, f_args: tp.List[str], **kwargs):
+        await self.stage_params.output_queues.put(elem)
 
 
 def concat(
@@ -720,16 +736,15 @@ def concat(
         A stage object.
     """
 
-    stages = [to_stage(stage) for stage in stages]
+    dependencies: tp.List[Stage[A]] = [to_stage(stage) for stage in stages]
 
     return Stage.create(
-        workers=1,
-        total_sources=sum(stage.workers for stage in stages),
+        total_sources=len(dependencies),
         maxsize=maxsize,
         worker_constructor=Concat.get_worker_constructor(
-            f=pypeln_utils.no_op, timeout=0, on_start=None, on_done=None
+            f=pypeln_utils.no_op, timeout=0, on_start=None, on_done=None, max_tasks=1
         ),
-        dependencies=stages,
+        dependencies=dependencies,
     )
 
 

@@ -5,7 +5,7 @@ from pypeln import utils as pypeln_utils
 from .queue import IterableQueue, OutputQueues
 from .worker import Worker, StageParams, WorkerConstructor
 from .supervisor import Supervisor
-
+from . import utils
 
 T = tp.TypeVar("T")
 
@@ -69,6 +69,9 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
         return worker
 
     def to_iterable(self, maxsize: int, return_index: bool) -> tp.Iterable[T]:
+
+        # create a running event loop in case it doesn't exist
+        utils.get_running_loop()
 
         # build stages first to verify reuse
         stages = list(self.build())

@@ -139,6 +139,7 @@ class FromIterable(Worker[T]):
             asyncio.run_coroutine_threadsafe(queue.done(), loop)
 
         except BaseException as e:
+            e = queue.get_pypline_exception(e)
             asyncio.run_coroutine_threadsafe(queue.raise_exception(e), loop)
 
 
@@ -754,32 +755,28 @@ def concat(
 
 
 class Ordered(Worker[T]):
-    def __init__(
-        self, index: int, stage_params: StageParams, main_queue: IterableQueue,
-    ):
+    def __init__(self, stage_params: StageParams, main_queue: IterableQueue):
         super().__init__(
             f=pypeln_utils.no_op,
-            index=index,
             stage_params=stage_params,
             main_queue=main_queue,
+            tasks=TaskPool.create(workers=1, timeout=0),
         )
 
     @classmethod
     def get_worker_constructor(cls) -> WorkerConstructor:
-        def from_iterable(
-            index: int, stage_params: StageParams, main_queue: IterableQueue
+        def worker_constructor(
+            stage_params: StageParams, main_queue: IterableQueue
         ) -> Ordered:
-            return cls(index=index, stage_params=stage_params, main_queue=main_queue)
+            return cls(stage_params=stage_params, main_queue=main_queue)
 
-        return from_iterable
+        return worker_constructor
 
-    def process_fn(self, f_args: tp.List[str], **kwargs):
+    async def process_fn(self, f_args: tp.List[str], **kwargs):
 
         elems = []
 
-        for elem in self.stage_params.input_queue:
-            if self.main_queue.namespace.exception:
-                return
+        async for elem in self.stage_params.input_queue:
 
             if len(elems) == 0:
                 elems.append(elem)
@@ -793,11 +790,13 @@ class Ordered(Worker[T]):
                         elems.insert(0, elem)
 
         for _ in range(len(elems)):
-            self.stage_params.output_queues.put(elems.pop(0))
+            await self.stage_params.output_queues.put(elems.pop(0))
 
 
 @tp.overload
-def ordered(stage: Stage[A], maxsize: int = 0) -> Stage[A]:
+def ordered(
+    stage: tp.Union[Stage[A], tp.Iterable[A], tp.AsyncIterable[A]], maxsize: int = 0
+) -> Stage[A]:
     ...
 
 
@@ -808,7 +807,7 @@ def ordered(maxsize: int = 0) -> pypeln_utils.Partial[Stage[A]]:
 
 def ordered(
     stage: tp.Union[
-        Stage[A], tp.Iterable[A], pypeln_utils.Undefined
+        Stage[A], tp.Iterable[A], tp.AsyncIterable[A], pypeln_utils.Undefined
     ] = pypeln_utils.UNDEFINED,
     maxsize: int = 0,
 ) -> tp.Union[Stage[A], pypeln_utils.Partial[Stage[A]]]:
@@ -852,8 +851,7 @@ def ordered(
     stage = to_stage(stage)
 
     return Stage.create(
-        workers=1,
-        total_sources=stage.workers,
+        total_sources=1,
         maxsize=maxsize,
         worker_constructor=Ordered.get_worker_constructor(),
         dependencies=[stage],
@@ -920,7 +918,7 @@ def to_iterable(
 
 def to_iterable(
     stage: tp.Union[
-        Stage[A], tp.Iterable[A], pypeln_utils.Undefined
+        Stage[A], tp.Iterable[A], tp.AsyncIterable[A], pypeln_utils.Undefined
     ] = pypeln_utils.UNDEFINED,
     maxsize: int = 0,
     return_index: bool = False,
@@ -941,7 +939,63 @@ def to_iterable(
 
     if isinstance(stage, Stage):
         iterable = stage.to_iterable(maxsize=maxsize, return_index=return_index)
+    elif isinstance(stage, tp.Iterable[A]):
+        return stage
     else:
-        iterable = stage
+        iterable = from_iterable(stage, maxsize=maxsize).to_iterable(
+            maxsize=maxsize, return_index=return_index
+        )
+
+    return iterable
+
+
+@tp.overload
+def to_async_iterable(
+    stage: tp.Union[Stage[A], tp.Iterable[A], tp.AsyncIterable[A]],
+    maxsize: int = 0,
+    return_index: bool = False,
+) -> tp.AsyncIterable[A]:
+    ...
+
+
+@tp.overload
+def to_async_iterable(
+    maxsize: int = 0, return_index: bool = False,
+) -> pypeln_utils.Partial[tp.AsyncIterable[A]]:
+    ...
+
+
+def to_async_iterable(
+    stage: tp.Union[
+        Stage[A], tp.Iterable[A], tp.AsyncIterable[A], pypeln_utils.Undefined
+    ] = pypeln_utils.UNDEFINED,
+    maxsize: int = 0,
+    return_index: bool = False,
+) -> tp.Union[tp.AsyncIterable[A], pypeln_utils.Partial[tp.AsyncIterable[A]]]:
+    """
+    Creates an iterable from a stage.
+
+    Arguments:
+        stage: A stage object.
+        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+
+    Returns:
+        If the `stage` parameters is given then this function returns an iterable, else it returns a `Partial`.
+    """
+
+    if isinstance(stage, pypeln_utils.Undefined):
+        return pypeln_utils.Partial(
+            lambda stage: to_async_iterable(stage, maxsize=maxsize)
+        )
+
+    if isinstance(stage, Stage):
+        iterable = stage.to_async_iterable(maxsize=maxsize, return_index=return_index)
+
+    elif isinstance(stage, tp.AsyncIterable[A]):
+        return stage
+    else:
+        iterable = from_iterable(stage, maxsize=maxsize).to_async_iterable(
+            maxsize=maxsize, return_index=return_index
+        )
 
     return iterable

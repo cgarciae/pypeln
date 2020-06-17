@@ -13,7 +13,7 @@ import time
 T = tp.TypeVar("T")
 
 
-class PipelineException(tp.NamedTuple):
+class PipelineException(tp.NamedTuple, BaseException):
     exception: tp.Optional[tp.Type[BaseException]]
     trace: str
 
@@ -116,21 +116,33 @@ class IterableQueue(asyncio.Queue, tp.Generic[T], tp.Iterable[T]):
         self.put_nowait(pypeln_utils.CONTINUE)
 
     async def raise_exception(self, exception: BaseException):
-        exception_type, _exception, _traceback = sys.exc_info()
-        trace = "".join(
-            traceback.format_exception(exception_type, _exception, _traceback)
-        )
+
+        pypeline_exception = self.get_pypline_exception(exception)
+
         self.namespace.exception = True
-        await self.exception_queue.put(PipelineException(exception_type, trace))
+        await self.exception_queue.put(pypeline_exception)
         await self.put(pypeln_utils.CONTINUE)
 
     def raise_exception_nowait(self, exception: BaseException):
+        pypeline_exception = self.get_pypline_exception(exception)
+
+        self.namespace.exception = True
+        self.exception_queue.put_nowait(pypeline_exception)
+        self.put_nowait(pypeln_utils.CONTINUE)
+
+    def get_pypline_exception(self, exception: BaseException) -> PipelineException:
+
+        if isinstance(exception, PipelineException):
+            return exception
+
         exception_type, _exception, _traceback = sys.exc_info()
         trace = "".join(
             traceback.format_exception(exception_type, _exception, _traceback)
         )
-        self.namespace.exception = True
-        self.exception_queue.put_nowait(PipelineException(exception_type, trace))
+
+        trace = f"{exception.args}\n\n{trace}"
+
+        return PipelineException(exception_type, trace)
 
 
 class OutputQueues(tp.List[IterableQueue[T]], tp.Generic[T]):

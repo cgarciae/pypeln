@@ -666,7 +666,7 @@ def each(
         timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. 
         on_start: A function with signature `on_start(worker_info?) -> kwargs?`, where `kwargs` can be a `dict` of keyword arguments that can be consumed by `f` and `on_done`. `on_start` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
         on_done: A function with signature `on_done(stage_status?)`. This function is executed once per worker when the worker finishes. `on_done` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
-        run: Whether or not to execute the stage immediately.
+        run: Whether or not to execute the stage immediately. If each is running inside another coroutine / task then avoid using `run=True` since it will block the event loop, use `await pl.task.each(...)` instead.
 
     Returns:
         If the `stage` parameters is not given then this function returns a `Partial`, else if `run=False` (default) it return a new stage, if `run=True` then it runs the stage and returns `None`.

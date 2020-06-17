@@ -73,6 +73,46 @@ class TestQueue(TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
+    @run_async
+    async def test_get(self, nums):
+
+        queue = pl.task.IterableQueue()
+
+        async def worker():
+            for i in nums:
+                await queue.put(i)
+
+            await queue.done()
+
+        processes = pl.task.start_workers(worker)
+
+        if len(nums) > 0:
+            x = await queue.get()
+            assert x == nums[0]
+
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    @run_async
+    async def test_get_2(self, nums):
+
+        queue = pl.task.IterableQueue()
+
+        async def worker():
+            for i in nums:
+                await queue.put(i)
+
+            await queue.done()
+
+        processes = pl.task.start_workers(worker)
+
+        await asyncio.sleep(0.01)
+
+        if len(nums) > 0:
+            x = queue.get_nowait()
+            assert x == nums[0]
+
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
     def test_done_nowait(self, nums):
 
         queue = pl.task.IterableQueue()
@@ -1454,15 +1494,6 @@ class TestEach(TestCase):
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
     def test_each_run(self, nums: tp.List[int]):
-
-        nums_pl = pl.task.each(lambda x: x, nums, run=True)
-
-        assert nums_pl is None
-
-    @hp.given(nums=st.lists(st.integers()))
-    @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
-    async def test_each_run_2(self, nums: tp.List[int]):
 
         nums_pl = pl.task.each(lambda x: x, nums, run=True)
 

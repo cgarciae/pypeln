@@ -34,8 +34,12 @@ class Supervisor:
         while any(not worker.is_done for worker in self.workers):
             time.sleep(pypeln_utils.TIMEOUT)
 
+    def start(self):
+        for worker in self.workers:
+            worker.start()
+
     def __enter__(self):
-        pass
+        self.start()
 
     def __exit__(self, *args):
         self.stop_nowait()

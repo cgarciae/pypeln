@@ -20,40 +20,15 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
 
     process_fn: ProcessFn
     workers: int
+    maxsize: int
+    total_sources: int
     timeout: float
     dependencies: tp.List["Stage"]
-    input_queue: IterableQueue
-    output_queues: OutputQueues
     on_start: tp.Optional[tp.Callable[..., tp.Union[Kwargs, tp.Awaitable[Kwargs]]]]
     on_done: tp.Optional[tp.Callable[..., tp.Union[Kwargs, tp.Awaitable[Kwargs]]]]
     f_args: tp.List[str]
     built: bool = False
     started: bool = False
-
-    @classmethod
-    def create(
-        cls,
-        process_fn: ProcessFn,
-        workers: int,
-        maxsize: int,
-        timeout: float,
-        total_sources: int,
-        dependencies: tp.List["Stage"],
-        on_start: tp.Optional[tp.Callable[..., tp.Union[Kwargs, tp.Awaitable[Kwargs]]]],
-        on_done: tp.Optional[tp.Callable[..., tp.Union[Kwargs, tp.Awaitable[Kwargs]]]],
-        f_args: tp.List[str],
-    ):
-        return cls(
-            process_fn=process_fn,
-            workers=workers,
-            timeout=timeout,
-            dependencies=dependencies,
-            input_queue=IterableQueue(maxsize=maxsize, total_sources=total_sources),
-            output_queues=OutputQueues(),
-            on_start=on_start,
-            on_done=on_done,
-            f_args=f_args,
-        )
 
     # @classmethod
     # def create(
@@ -81,60 +56,53 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
     #         dependencies=dependencies,
     #     )
 
-    def build(self) -> tp.Iterable["Stage"]:
+    def build(
+        self,
+        built: tp.Dict["Stage", OutputQueues],
+        output_queue: IterableQueue,
+        main_queue: IterableQueue,
+    ) -> tp.Iterable[Worker]:
 
-        if self.started:
-            raise pypeln_utils.StageReuseError()
-
-        if self.built:
+        if self in built:
+            built[self].append(output_queue)
             return
+        else:
+            built[self] = OutputQueues([output_queue])
 
-        self.built = True
+        input_queue = IterableQueue(
+            maxsize=self.maxsize, total_sources=self.total_sources
+        )
 
-        for dependency in self.dependencies:
-            dependency.output_queues.append(self.input_queue)
+        stage_params = StageParams.create(
+            input_queue=input_queue, output_queues=built[self],
+        )
 
-        yield self
-
-        for dependency in self.dependencies:
-            yield from dependency.build()
-
-    def start(self, main_queue: IterableQueue) -> Worker:
-
-        self.started = True
-
-        worker = Worker(
+        yield Worker(
             process_fn=self.process_fn,
             timeout=self.timeout,
-            stage_params=StageParams.create(
-                input_queue=self.input_queue, output_queues=self.output_queues,
-            ),
+            stage_params=stage_params,
             main_queue=main_queue,
             on_start=self.on_start,
             on_done=self.on_done,
             f_args=self.f_args,
             tasks=TaskPool.create(workers=self.workers, timeout=self.timeout),
         )
-        worker.start()
 
-        return worker
+        for dependency in self.dependencies:
+            yield from dependency.build(built, input_queue, main_queue)
 
     def to_iterable(self, maxsize: int, return_index: bool) -> tp.Iterable[T]:
 
         # create a running event loop in case it doesn't exist
         utils.get_running_loop()
 
-        # build stages first to verify reuse
-        stages = list(self.build())
-
         main_queue: IterableQueue[pypeln_utils.Element] = IterableQueue(
-            maxsize=maxsize, total_sources=1,
+            maxsize=maxsize, total_sources=self.workers,
         )
 
-        # add main_queue before starting
-        self.output_queues.append(main_queue)
+        built = {}
 
-        workers: tp.List[Worker] = [stage.start(main_queue) for stage in stages]
+        workers: tp.List[Worker] = list(self.build(built, main_queue, main_queue))
         supervisor = Supervisor(workers=workers, main_queue=main_queue)
 
         with supervisor:
@@ -149,16 +117,13 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
     ) -> tp.AsyncIterable[T]:
 
         # build stages first to verify reuse
-        stages = list(self.build())
-
         main_queue: IterableQueue[pypeln_utils.Element] = IterableQueue(
-            maxsize=maxsize, total_sources=1,
+            maxsize=maxsize, total_sources=self.workers,
         )
 
-        # add main_queue before starting
-        self.output_queues.append(main_queue)
+        built = {}
 
-        workers: tp.List[Worker] = [stage.start(main_queue) for stage in stages]
+        workers: tp.List[Worker] = list(self.build(built, main_queue, main_queue))
         supervisor = Supervisor(workers=workers, main_queue=main_queue)
 
         async with supervisor:

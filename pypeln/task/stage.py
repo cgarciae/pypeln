@@ -28,6 +28,7 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
         dependencies: tp.List["Stage"],
     ):
 
+        # TODO: move this logic to build, defer the creation of queues
         input_queue: IterableQueue[T] = IterableQueue(
             maxsize=maxsize, total_sources=total_sources,
         )

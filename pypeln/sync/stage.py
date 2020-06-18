@@ -12,6 +12,10 @@ from pypeln import utils as pypeln_utils
 from . import utils
 
 
+class WorkerInfo(tp.NamedTuple):
+    index: int
+
+
 class Stage(pypeln_utils.BaseStage):
     def __init__(self, f, on_start, on_done, dependencies, timeout):
 
@@ -52,7 +56,7 @@ class Stage(pypeln_utils.BaseStage):
                 yield from self.apply(x, **kwargs)
 
     def run(self):
-        worker_info = pypeln_utils.WorkerInfo(index=0)
+        worker_info = WorkerInfo(index=0)
 
         if self.on_start is not None:
             on_start_kwargs = dict(worker_info=worker_info)

@@ -1034,6 +1034,7 @@ class TestToIterable(unittest.TestCase):
         nums_pl = pl.thread.from_iterable(nums_pl)
         nums_pl = cz.partition_all(10, nums_pl)
         nums_pl = pl.thread.map(sum, nums_pl)
+        nums_pl = pl.thread.to_iterable(nums_pl)
         nums_pl = list(nums_pl)
 
         nums_py = nums

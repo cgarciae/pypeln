@@ -5,20 +5,20 @@ from .api import (
     filter,
     flat_map,
     from_iterable,
-    to_iterable,
-    to_async_iterable,
     map,
-    run,
     ordered,
+    run,
+    to_async_iterable,
+    to_iterable,
 )
 from .queue import IterableQueue, OutputQueues
+from .supervisor import Supervisor
+from .utils import Namespace, run_coroutine_in_loop, run_function_in_loop
 from .worker import (
-    start_workers,
+    StageParams,
+    TaskPool,
     Worker,
     WorkerApply,
     WorkerInfo,
-    StageParams,
-    TaskPool,
+    start_workers,
 )
-from .supervisor import Supervisor
-from .utils import Namespace, run_coroutine_in_loop, run_function_in_loop

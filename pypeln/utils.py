@@ -1,6 +1,3 @@
-import functools
-import traceback
-from collections import namedtuple
 import inspect
 import typing as tp
 from abc import ABC, abstractmethod
@@ -11,7 +8,10 @@ TIMEOUT = 0.0001
 MAXSIZE = 100
 
 
+Kwargs = tp.Dict[str, tp.Any]
 T = tp.TypeVar("T")
+A = tp.TypeVar("A")
+B = tp.TypeVar("B")
 
 
 class Element(tp.NamedTuple):
@@ -101,7 +101,7 @@ def is_undefined(x):
 
 
 def function_args(f) -> tp.List[str]:
-    return inspect.getfullargspec(f).args
+    return list(inspect.signature(f).parameters.keys())
 
 
 def concat(iterables: tp.Iterable[tp.Iterable[T]]) -> tp.Iterable[T]:

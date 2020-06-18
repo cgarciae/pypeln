@@ -1,6 +1,4 @@
 import asyncio
-import functools as ft
-import time
 
 import cytoolz as cz
 import hypothesis as hp

@@ -4,6 +4,7 @@ import traceback
 from collections import namedtuple
 from queue import Queue
 from threading import Lock, Thread
+import typing as tp
 
 import stopit
 

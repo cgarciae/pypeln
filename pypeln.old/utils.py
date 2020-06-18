@@ -1,5 +1,3 @@
-import functools
-import traceback
 from collections import namedtuple
 import inspect
 

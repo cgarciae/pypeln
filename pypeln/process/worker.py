@@ -1,6 +1,7 @@
 import abc
 from copy import copy
 from dataclasses import dataclass, field
+import functools
 import multiprocessing
 from multiprocessing import synchronize
 import threading
@@ -18,6 +19,16 @@ from .queue import IterableQueue, OutputQueues
 WorkerConstructor = tp.Callable[[int, "StageParams", IterableQueue], "Worker"]
 Kwargs = tp.Dict[str, tp.Any]
 T = tp.TypeVar("T")
+
+
+class ProcessFn(tp.Protocol):
+    def __call__(self, worker: "Worker", **kwargs):
+        ...
+
+
+class ApplyFn(tp.Protocol):
+    def __call__(self, worker: "Worker", elem: tp.Any, **kwargs):
+        ...
 
 
 class StageParams(tp.NamedTuple):
@@ -48,30 +59,24 @@ class WorkerInfo(tp.NamedTuple):
 
 @dataclass
 class Worker(tp.Generic[T]):
-    f: tp.Callable
+    process_fn: ProcessFn
     index: int
+    timeout: float
     stage_params: StageParams
     main_queue: IterableQueue
-    timeout: float = 0
-    on_start: tp.Optional[tp.Callable[..., Kwargs]] = None
-    on_done: tp.Optional[tp.Callable[..., Kwargs]] = None
+    on_start: tp.Optional[tp.Callable[..., Kwargs]]
+    on_done: tp.Optional[tp.Callable[..., Kwargs]]
+    use_threads: bool
+    f_args: tp.List[str]
     namespace: utils.Namespace = field(
         default_factory=lambda: utils.Namespace(done=False, task_start_time=None)
     )
     process: tp.Optional[tp.Union[multiprocessing.Process, threading.Thread]] = None
-    use_threads: bool = False
-
-    @abc.abstractmethod
-    def process_fn(self, f_args: tp.List[str], **kwargs):
-        ...
 
     def __call__(self):
 
         worker_info = WorkerInfo(index=self.index)
 
-        f_args: tp.List[str] = (
-            pypeln_utils.function_args(self.f) if self.on_start else []
-        )
         on_start_args: tp.List[str] = (
             pypeln_utils.function_args(self.on_start) if self.on_start else []
         )
@@ -98,8 +103,8 @@ class Worker(tp.Generic[T]):
             kwargs.setdefault("worker_info", worker_info)
 
             self.process_fn(
-                f_args,
-                **{key: value for key, value in kwargs.items() if key in f_args},
+                self,
+                **{key: value for key, value in kwargs.items() if key in self.f_args},
             )
 
             self.stage_params.worker_done()
@@ -132,9 +137,6 @@ class Worker(tp.Generic[T]):
             self.stage_params.output_queues.done()
 
     def start(self):
-        # create a copy to avoid referece to self on thread
-        # target_worker = copy(self)
-
         [self.process] = start_workers(self, use_threads=self.use_threads)
 
     def stop(self):
@@ -170,7 +172,6 @@ class Worker(tp.Generic[T]):
 
         def __enter__(self):
             self.worker.namespace.task_start_time = time.time()
-            1
 
         def __exit__(self, *args):
             self.worker.namespace.task_start_time = None
@@ -179,15 +180,16 @@ class Worker(tp.Generic[T]):
         return self.MeasureTaskTime(self)
 
 
-class WorkerApply(Worker[T], tp.Generic[T]):
-    @abc.abstractmethod
-    def apply(self, elem: T, f_args: tp.List[str], **kwargs):
+class Applicable(tp.Protocol):
+    def apply(self, worker: "Worker", elem: tp.Any, **kwargs):
         ...
 
-    def process_fn(self, f_args: tp.List[str], **kwargs):
-        for elem in self.stage_params.input_queue:
-            with self.measure_task_time():
-                self.apply(elem, f_args, **kwargs)
+
+class ApplyProcess(ProcessFn, Applicable):
+    def __call__(self, worker: Worker, **kwargs):
+        for elem in worker.stage_params.input_queue:
+            with worker.measure_task_time():
+                self.apply(worker, elem, **kwargs)
 
 
 class StageStatus:

@@ -71,7 +71,7 @@ class FromIterable(Worker[T]):
 
     @classmethod
     def get_worker_constructor(
-        cls, iterable: tp.Union[typing.Iterable[T], tp.AsyncIterable[T]], maxsize: int
+        cls, iterable: tp.Union[tp.Iterable[T], tp.AsyncIterable[T]], maxsize: int
     ) -> WorkerConstructor:
         def worker_constructor(
             stage_params: StageParams, main_queue: IterableQueue
@@ -145,7 +145,7 @@ class FromIterable(Worker[T]):
 
 @tp.overload
 def from_iterable(
-    iterable: tp.Union[typing.Iterable[T], tp.AsyncIterable[T]],
+    iterable: tp.Union[tp.Iterable[T], tp.AsyncIterable[T]],
     maxsize: int = 0,
     use_thread: bool = True,
 ) -> Stage[T]:
@@ -154,14 +154,14 @@ def from_iterable(
 
 @tp.overload
 def from_iterable(
-    maxsize: int = 0, worker_constructor: typing.Type = Thread, use_thread: bool = True
+    maxsize: int = 0, worker_constructor: tp.Type = Thread, use_thread: bool = True
 ) -> pypeln_utils.Partial[Stage[T]]:
     ...
 
 
 def from_iterable(
     iterable: tp.Union[
-        typing.Iterable[T], tp.AsyncIterable[T], pypeln_utils.Undefined
+        tp.Iterable[T], tp.AsyncIterable[T], pypeln_utils.Undefined
     ] = pypeln_utils.UNDEFINED,
     maxsize: int = 0,
     use_thread: bool = True,
@@ -232,39 +232,39 @@ class Map(ApplyWorkerConstructor[T]):
 
 @tp.overload
 def map(
-    f: typing.Callable[..., B],
+    f: tp.Callable[..., B],
     stage: tp.Union[Stage[A], tp.Iterable[A], tp.AsyncIterable[A]],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
-    on_start: typing.Callable = None,
-    on_done: typing.Callable = None,
+    on_start: tp.Callable = None,
+    on_done: tp.Callable = None,
 ) -> Stage[B]:
     ...
 
 
 @tp.overload
 def map(
-    f: typing.Callable[..., B],
+    f: tp.Callable[..., B],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
-    on_start: typing.Callable = None,
-    on_done: typing.Callable = None,
+    on_start: tp.Callable = None,
+    on_done: tp.Callable = None,
 ) -> pypeln_utils.Partial[Stage[B]]:
     ...
 
 
 def map(
-    f: typing.Callable,
+    f: tp.Callable,
     stage: tp.Union[
         Stage[A], tp.Iterable[A], tp.AsyncIterable[A], pypeln_utils.Undefined
     ] = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
-    on_start: typing.Callable = None,
-    on_done: typing.Callable = None,
+    on_start: tp.Callable = None,
+    on_done: tp.Callable = None,
 ) -> tp.Union[Stage[B], pypeln_utils.Partial[Stage[B]]]:
     """
     Creates a stage that maps a function `f` over the data. Its intended to behave like python's built-in `map` function but with the added concurrency.
@@ -354,39 +354,39 @@ class FlatMap(ApplyWorkerConstructor[T]):
 
 @tp.overload
 def flat_map(
-    f: typing.Callable[..., tp.Union[tp.Iterable[B], tp.AsyncIterable[B]]],
+    f: tp.Callable[..., tp.Union[tp.Iterable[B], tp.AsyncIterable[B]]],
     stage: tp.Union[Stage[A], tp.Iterable[A], tp.AsyncIterable[A]],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
-    on_start: typing.Callable = None,
-    on_done: typing.Callable = None,
+    on_start: tp.Callable = None,
+    on_done: tp.Callable = None,
 ) -> Stage[B]:
     ...
 
 
 @tp.overload
 def flat_map(
-    f: typing.Callable[..., tp.Union[tp.Iterable[B], tp.AsyncIterable[B]]],
+    f: tp.Callable[..., tp.Union[tp.Iterable[B], tp.AsyncIterable[B]]],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
-    on_start: typing.Callable = None,
-    on_done: typing.Callable = None,
+    on_start: tp.Callable = None,
+    on_done: tp.Callable = None,
 ) -> pypeln_utils.Partial[Stage[B]]:
     ...
 
 
 def flat_map(
-    f: typing.Callable[..., tp.Union[tp.Iterable[B], tp.AsyncIterable[B]]],
+    f: tp.Callable[..., tp.Union[tp.Iterable[B], tp.AsyncIterable[B]]],
     stage: tp.Union[
         Stage[A], tp.Iterable[A], tp.AsyncIterable[A], pypeln_utils.Undefined
     ] = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
-    on_start: typing.Callable = None,
-    on_done: typing.Callable = None,
+    on_start: tp.Callable = None,
+    on_done: tp.Callable = None,
 ) -> tp.Union[Stage[B], pypeln_utils.Partial[Stage[B]]]:
     """
     Creates a stage that maps a function `f` over the data, however unlike `pypeln.process.map` in this case `f` returns an iterable. As its name implies, `flat_map` will flatten out these iterables so the resulting stage just contains their elements.
@@ -485,39 +485,39 @@ class Filter(ApplyWorkerConstructor[T]):
 
 @tp.overload
 def filter(
-    f: typing.Callable[..., tp.Union[bool, tp.Awaitable[bool]]],
+    f: tp.Callable[..., tp.Union[bool, tp.Awaitable[bool]]],
     stage: tp.Union[Stage[A], tp.Iterable[A], tp.AsyncIterable[A]],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
-    on_start: typing.Callable = None,
-    on_done: typing.Callable = None,
+    on_start: tp.Callable = None,
+    on_done: tp.Callable = None,
 ) -> Stage[B]:
     ...
 
 
 @tp.overload
 def filter(
-    f: typing.Callable[..., tp.Union[bool, tp.Awaitable[bool]]],
+    f: tp.Callable[..., tp.Union[bool, tp.Awaitable[bool]]],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
-    on_start: typing.Callable = None,
-    on_done: typing.Callable = None,
+    on_start: tp.Callable = None,
+    on_done: tp.Callable = None,
 ) -> pypeln_utils.Partial[Stage[B]]:
     ...
 
 
 def filter(
-    f: typing.Callable[..., tp.Union[bool, tp.Awaitable[bool]]],
+    f: tp.Callable[..., tp.Union[bool, tp.Awaitable[bool]]],
     stage: tp.Union[
         Stage[A], tp.Iterable[A], tp.AsyncIterable[A], pypeln_utils.Undefined
     ] = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
-    on_start: typing.Callable = None,
-    on_done: typing.Callable = None,
+    on_start: tp.Callable = None,
+    on_done: tp.Callable = None,
 ) -> tp.Union[Stage[A], pypeln_utils.Partial[Stage[A]]]:
     """
     Creates a stage that filter the data given a predicate function `f`. It is intended to behave like python's built-in `filter` function but with the added concurrency.
@@ -596,13 +596,13 @@ class Each(ApplyWorkerConstructor[T]):
 
 @tp.overload
 def each(
-    f: typing.Callable[..., B],
+    f: tp.Callable[..., B],
     stage: tp.Union[Stage[A], tp.Iterable[A], tp.AsyncIterable[A]],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
-    on_start: typing.Callable = None,
-    on_done: typing.Callable = None,
+    on_start: tp.Callable = None,
+    on_done: tp.Callable = None,
     run: bool = False,
 ) -> tp.Optional[Stage[B]]:
     ...
@@ -610,27 +610,27 @@ def each(
 
 @tp.overload
 def each(
-    f: typing.Callable[..., None],
+    f: tp.Callable[..., None],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
-    on_start: typing.Callable = None,
-    on_done: typing.Callable = None,
+    on_start: tp.Callable = None,
+    on_done: tp.Callable = None,
     run: bool = False,
 ) -> pypeln_utils.Partial[tp.Optional[Stage[B]]]:
     ...
 
 
 def each(
-    f: typing.Callable,
+    f: tp.Callable,
     stage: tp.Union[
         Stage[A], tp.Iterable[A], tp.AsyncIterable[A], pypeln_utils.Undefined
     ] = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
-    on_start: typing.Callable = None,
-    on_done: typing.Callable = None,
+    on_start: tp.Callable = None,
+    on_done: tp.Callable = None,
     run: bool = False,
 ) -> tp.Union[tp.Optional[Stage[B]], pypeln_utils.Partial[tp.Optional[Stage[B]]]]:
     """
@@ -715,7 +715,7 @@ class Concat(ApplyWorkerConstructor[T]):
 
 
 def concat(
-    stages: typing.List[tp.Union[Stage[A], tp.Iterable[A]]], maxsize: int = 0
+    stages: tp.List[tp.Union[Stage[A], tp.Iterable[A]]], maxsize: int = 0
 ) -> Stage:
     """
     Concatenates / merges many stages into a single one by appending elements from each stage as they come, order is not preserved.

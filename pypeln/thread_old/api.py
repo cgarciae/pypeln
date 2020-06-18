@@ -41,9 +41,9 @@ class FromIterable(Stage):
 
 
 def from_iterable(
-    iterable: typing.Iterable = pypeln_utils.UNDEFINED,
+    iterable: tp.Iterable = pypeln_utils.UNDEFINED,
     maxsize: int = None,
-    worker_constructor: typing.Type = Thread,
+    worker_constructor: tp.Type = Thread,
 ) -> Stage:
     """
     Creates a stage from an iterable. This function gives you more control of how a stage is created through the `worker_constructor` parameter which can be either:
@@ -114,13 +114,13 @@ class Map(Stage):
 
 
 def map(
-    f: typing.Callable,
+    f: tp.Callable,
     stage: Stage = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
-    on_start: typing.Callable = None,
-    on_done: typing.Callable = None,
+    on_start: tp.Callable = None,
+    on_done: tp.Callable = None,
 ) -> Stage:
     """
     Creates a stage that maps a function `f` over the data. Its intended to behave like python's built-in `map` function but with the added concurrency.
@@ -201,13 +201,13 @@ class FlatMap(Stage):
 
 
 def flat_map(
-    f: typing.Callable,
+    f: tp.Callable,
     stage: Stage = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
-    on_start: typing.Callable = None,
-    on_done: typing.Callable = None,
+    on_start: tp.Callable = None,
+    on_done: tp.Callable = None,
 ) -> Stage:
     """
     Creates a stage that maps a function `f` over the data, however unlike `pypeln.thread.map` in this case `f` returns an iterable. As its name implies, `flat_map` will flatten out these iterables so the resulting stage just contains their elements.
@@ -304,13 +304,13 @@ class Filter(Stage):
 
 
 def filter(
-    f: typing.Callable,
+    f: tp.Callable,
     stage: Stage = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
-    on_start: typing.Callable = None,
-    on_done: typing.Callable = None,
+    on_start: tp.Callable = None,
+    on_done: tp.Callable = None,
 ) -> Stage:
     """
     Creates a stage that filter the data given a predicate function `f`. It is intended to behave like python's built-in `filter` function but with the added concurrency.
@@ -389,13 +389,13 @@ class Each(Stage):
 
 
 def each(
-    f: typing.Callable,
+    f: tp.Callable,
     stage: Stage = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
-    on_start: typing.Callable = None,
-    on_done: typing.Callable = None,
+    on_start: tp.Callable = None,
+    on_done: tp.Callable = None,
     run: bool = False,
 ) -> Stage:
     """
@@ -483,7 +483,7 @@ class Concat(Stage):
         self.output_queues.put(x)
 
 
-def concat(stages: typing.List[Stage], maxsize: int = 0) -> Stage:
+def concat(stages: tp.List[Stage], maxsize: int = 0) -> Stage:
     """
     Concatenates / merges many stages into a single one by appending elements from each stage as they come, order is not preserved.
 
@@ -602,7 +602,7 @@ def ordered(stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0) -> Stage:
 #############################################################
 
 
-def run(stages: typing.List[Stage], maxsize: int = 0) -> None:
+def run(stages: tp.List[Stage], maxsize: int = 0) -> None:
     """
     Iterates over one or more stages until their iterators run out of elements.
 
@@ -644,7 +644,7 @@ def run(stages: typing.List[Stage], maxsize: int = 0) -> None:
 
 def to_iterable(
     stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0, return_index: bool = False
-) -> typing.Iterable:
+) -> tp.Iterable:
     """
     Creates an iterable from a stage.
 

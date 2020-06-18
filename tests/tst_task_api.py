@@ -9,7 +9,7 @@ from hypothesis import strategies as st
 
 from pypeln import utils as pypeln_utils
 import pypeln as pl
-from utils_io import run_async
+from utils_io import run_test_async
 import asyncio
 
 MAX_EXAMPLES = 10
@@ -19,70 +19,6 @@ T = tp.TypeVar("T")
 # ----------------------------------------------------------------
 # from iterable
 # ----------------------------------------------------------------
-
-
-class TestFromIterable(TestCase):
-    @hp.given(nums=st.lists(st.integers()))
-    @hp.settings(max_examples=MAX_EXAMPLES)
-    def test_from_to_iterable(self, nums: tp.List[int]):
-
-        nums_py = nums
-
-        nums_pl = pl.task.from_iterable(nums)
-        nums_pl = list(nums_pl)
-
-        assert nums_pl == nums_py
-
-    @hp.given(nums=st.lists(st.integers()))
-    @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
-    async def test_from_to_iterable_async(self, nums: tp.List[int]):
-
-        nums_py = nums
-
-        nums_pl = pl.task.from_iterable(nums)
-        nums_pl = [x async for x in nums_pl]
-
-        assert nums_pl == nums_py
-
-    @hp.given(nums=st.lists(st.integers()))
-    @hp.settings(max_examples=MAX_EXAMPLES)
-    def test_from_to_iterable_async_iterable(self, nums: tp.List[int]):
-
-        nums_py = nums
-
-        async def iterable():
-            for x in nums:
-                yield x
-
-        nums_pl = pl.task.from_iterable(iterable())
-        nums_pl = list(nums_pl)
-
-        assert nums_pl == nums_py
-
-    @hp.given(nums=st.lists(st.integers()))
-    @hp.settings(max_examples=MAX_EXAMPLES)
-    def test_from_to_iterable_pipe(self, nums):
-
-        nums_py = nums
-
-        nums_pl = nums | pl.task.from_iterable() | list
-
-        assert nums_pl == nums_py
-
-    @hp.given(nums=st.lists(st.integers()))
-    @hp.settings(max_examples=MAX_EXAMPLES)
-    def test_from_to_iterable_pipe_async_iterable(self, nums):
-
-        nums_py = nums
-
-        async def iterable():
-            for x in nums:
-                yield x
-
-        nums_pl = iterable() | pl.task.from_iterable() | list
-
-        assert nums_pl == nums_py
 
 
 # # ----------------------------------------------------------------
@@ -104,7 +40,7 @@ class TestMap(TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_map_id_async(self, nums: tp.List[int]):
 
         nums_py = nums
@@ -116,7 +52,7 @@ class TestMap(TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_map_id_async_iterable(self, nums: tp.List[int]):
 
         nums_py = nums
@@ -186,7 +122,7 @@ class TestMap(TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_map_square_event_start_async_2(self, nums: tp.List[int]):
 
         nums_py = map(lambda x: x ** 2, nums)
@@ -206,7 +142,7 @@ class TestMap(TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_map_square_event_start_async_2(self, nums: tp.List[int]):
 
         nums_py = map(lambda x: x ** 2, nums)
@@ -227,7 +163,7 @@ class TestMap(TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_map_square_event_start_async(self, nums: tp.List[int]):
 
         nums_py = map(lambda x: x ** 2, nums)
@@ -261,7 +197,7 @@ class TestMap(TestCase):
 
         assert len(nums_pl) == 9
 
-    @run_async
+    @run_test_async
     async def test_timeout_async(self):
 
         nums = list(range(10))
@@ -296,7 +232,7 @@ class TestMap(TestCase):
 
         assert nums_pl.issubset(set(range(n_workers)))
 
-    @run_async
+    @run_test_async
     async def test_worker_info_async(self):
 
         nums = range(100)
@@ -337,7 +273,7 @@ class TestMap(TestCase):
         assert namespace.on_done == letters
         assert nums_pl == [letters] * len(nums)
 
-    @run_async
+    @run_test_async
     async def test_kwargs_async(self):
 
         nums = range(100)
@@ -388,7 +324,7 @@ class TestMap(TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_map_square_event_end_async(self, nums: tp.List[int]):
 
         namespace = pl.task.Namespace()
@@ -415,7 +351,7 @@ class TestMap(TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_map_square_workers_async(self, nums: tp.List[int]):
 
         nums_py = map(lambda x: x ** 2, nums)
@@ -488,7 +424,7 @@ class TestEach(TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_each_list_2(self, nums: tp.List[int]):
 
         nums_pl = pl.task.each(lambda x: x, nums)
@@ -508,7 +444,7 @@ class TestEach(TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_each_list_3(self, nums: tp.List[int]):
 
         nums_pl = await pl.task.each(lambda x: x, nums)
@@ -517,7 +453,7 @@ class TestEach(TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_each_list_4(self, nums: tp.List[int]):
 
         nums_pl = await (pl.task.each(lambda x: x, nums))
@@ -574,7 +510,7 @@ class TestFlatMap(unittest.TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_flat_map_square_async_2(self, nums: tp.List[int]):
         def _generator(x):
             yield x
@@ -598,7 +534,7 @@ class TestFlatMap(unittest.TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_flat_map_square_async_3(self, nums: tp.List[int]):
         def _generator(x):
             yield x
@@ -667,7 +603,7 @@ class TestFlatMap(unittest.TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_flat_map_square_workers_async_2(self, nums: tp.List[int]):
         def _generator(x):
             yield x
@@ -691,7 +627,7 @@ class TestFlatMap(unittest.TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_flat_map_square_workers_async_3(self, nums: tp.List[int]):
         def _generator(x):
             yield x
@@ -719,7 +655,7 @@ class TestFlatMap(unittest.TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_flat_map_square_workers_async_3(self, nums: tp.List[int]):
         def _generator(x):
             yield x
@@ -748,7 +684,7 @@ class TestFlatMap(unittest.TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_flat_map_square_workers_async_4(self, nums: tp.List[int]):
         def _generator(x):
             yield x
@@ -779,7 +715,7 @@ class TestFlatMap(unittest.TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_flat_map_square_workers_async_5(self, nums: tp.List[int]):
         def _generator(x):
             yield x
@@ -886,7 +822,7 @@ class TestFilter(unittest.TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_flat_map_square_filter_workers_pipe_3(self, nums: tp.List[int]):
         def _generator(x):
             yield x
@@ -935,7 +871,7 @@ class TestConcat(unittest.TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_concat_basic_2(self, nums: tp.List[int]):
 
         nums_py = list(map(lambda x: x + 1, nums))
@@ -965,7 +901,7 @@ class TestConcat(unittest.TestCase):
         # assert sorted(nums_py1) == sorted(list(nums_pl1))
         assert sorted(nums_py2) == sorted(list(nums_pl2))
 
-    @run_async
+    @run_test_async
     async def test_concat_multiple_2(self, nums: tp.List[int] = [1, 2, 3]):
 
         nums_py = [x + 1 for x in nums]
@@ -1007,7 +943,7 @@ class TestErrorHandling(unittest.TestCase):
 
         assert isinstance(error, MyError)
 
-    @run_async
+    @run_test_async
     async def test_error_handling_async(self):
 
         error = None
@@ -1052,7 +988,7 @@ class TestToIterable(unittest.TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_from_to_iterable_2(self, nums: tp.List[int]):
 
         nums_pl = nums

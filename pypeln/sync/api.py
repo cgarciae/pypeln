@@ -4,7 +4,7 @@ The `sync` module follows same API as the rest of the modules but runs the code 
 Common arguments such as `workers` and `maxsize` are accepted by this module's 
 functions for API compatibility purposes but are ignored.
 """
-import typing
+import typing as tp
 from threading import Thread
 
 from pypeln import utils as pypeln_utils
@@ -36,9 +36,9 @@ class FromIterable(Stage):
 
 
 def from_iterable(
-    iterable: typing.Iterable = pypeln_utils.UNDEFINED,
+    iterable: tp.Iterable = pypeln_utils.UNDEFINED,
     maxsize: int = None,
-    worker_constructor: typing.Type = None,
+    worker_constructor: tp.Type = None,
 ) -> Stage:
     """
     Creates a stage from an iterable.
@@ -102,13 +102,13 @@ class Map(Stage):
 
 
 def map(
-    f: typing.Callable,
+    f: tp.Callable,
     stage: Stage = pypeln_utils.UNDEFINED,
     workers: int = None,
     maxsize: int = None,
     timeout: float = 0,
-    on_start: typing.Callable = None,
-    on_done: typing.Callable = None,
+    on_start: tp.Callable = None,
+    on_done: tp.Callable = None,
 ) -> Stage:
     """
     Creates a stage that maps a function `f` over the data. Its should behave exactly like python's built-in `map` function.
@@ -179,13 +179,13 @@ class FlatMap(Stage):
 
 
 def flat_map(
-    f: typing.Callable,
+    f: tp.Callable,
     stage: Stage = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
-    on_start: typing.Callable = None,
-    on_done: typing.Callable = None,
+    on_start: tp.Callable = None,
+    on_done: tp.Callable = None,
 ) -> Stage:
     """
     Creates a stage that maps a function `f` over the data, however unlike `pypeln.sync.map` in this case `f` returns an iterable. As its name implies, `flat_map` will flatten out these iterables so the resulting stage just contains their elements.
@@ -273,13 +273,13 @@ class Filter(Stage):
 
 
 def filter(
-    f: typing.Callable,
+    f: tp.Callable,
     stage: Stage = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
-    on_start: typing.Callable = None,
-    on_done: typing.Callable = None,
+    on_start: tp.Callable = None,
+    on_done: tp.Callable = None,
 ) -> Stage:
     """
     Creates a stage that filter the data given a predicate function `f`. exactly like python's built-in `filter` function.
@@ -351,13 +351,13 @@ class Each(Stage):
 
 
 def each(
-    f: typing.Callable,
+    f: tp.Callable,
     stage: Stage = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
-    on_start: typing.Callable = None,
-    on_done: typing.Callable = None,
+    on_start: tp.Callable = None,
+    on_done: tp.Callable = None,
     run: bool = False,
 ) -> Stage:
     """
@@ -439,7 +439,7 @@ class Concat(Stage):
         yield x
 
 
-def concat(stages: typing.List[Stage], maxsize: int = 0) -> Stage:
+def concat(stages: tp.List[Stage], maxsize: int = 0) -> Stage:
     """
     Concatenates / merges many stages into a single one by appending elements from each stage in order, that is, it yields an element from the frist stage, then an element from the second stage and so on until it reaches the last stage and starts again. When a stage has no more elements its taken out of the process.
 
@@ -544,7 +544,7 @@ def ordered(stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0) -> Stage:
 #############################################################
 
 
-def run(stages: typing.List[Stage], maxsize: int = 0) -> None:
+def run(stages: tp.List[Stage], maxsize: int = 0) -> None:
     """
     Iterates over one or more stages until their iterators run out of elements.
 
@@ -586,7 +586,7 @@ def run(stages: typing.List[Stage], maxsize: int = 0) -> None:
 
 def to_iterable(
     stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0, return_index=False,
-) -> typing.Iterable:
+) -> tp.Iterable:
     """
     Creates an iterable from a stage.
 

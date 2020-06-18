@@ -5,7 +5,7 @@ import hypothesis as hp
 from hypothesis import strategies as st
 
 import pypeln as pl
-from utils_io import run_async
+from pypeln.task.utils import run_test_async
 
 MAX_EXAMPLES = 10
 
@@ -112,7 +112,7 @@ def test_timeout():
     assert len(nums_pl) == 9
 
 
-@run_async
+@run_test_async
 async def test_timeout_async():
 
     nums = list(range(10))
@@ -247,7 +247,7 @@ def test_each_list(nums):
 
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-@run_async
+@run_test_async
 async def test_each_async(nums):
 
     res = await pl.task.each(lambda x: x, nums)
@@ -487,7 +487,7 @@ def test_iterable_and_map(nums):
 
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-@run_async
+@run_test_async
 async def test_await(nums):
     async def impure_add1(x):
 
@@ -503,7 +503,7 @@ async def test_await(nums):
 
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-@run_async
+@run_test_async
 async def test_aiter(nums):
     async def impure_add1(x):
 

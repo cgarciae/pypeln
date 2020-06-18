@@ -12,7 +12,7 @@ import pytest
 
 from pypeln import utils as pypeln_utils
 import pypeln as pl
-from utils_io import run_async
+from utils_io import run_test_async
 import asyncio
 
 MAX_EXAMPLES = 10
@@ -48,7 +48,7 @@ class TestQueue(TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_done_async(self, nums):
 
         queue = pl.task.IterableQueue()
@@ -68,7 +68,7 @@ class TestQueue(TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_get(self, nums):
 
         queue = pl.task.IterableQueue()
@@ -87,7 +87,7 @@ class TestQueue(TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_get_2(self, nums):
 
         queue = pl.task.IterableQueue()
@@ -147,7 +147,7 @@ class TestQueue(TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_done_many_async(self, nums):
         n_workers = 3
 
@@ -187,7 +187,7 @@ class TestQueue(TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_stop_async(self, nums):
 
         queue = pl.task.IterableQueue()
@@ -245,7 +245,7 @@ class TestQueue(TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_kill_async(self, nums):
 
         queue = pl.task.IterableQueue()
@@ -303,7 +303,7 @@ class TestQueue(TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_raise_async(self, nums):
 
         queue = pl.task.IterableQueue()
@@ -360,7 +360,7 @@ class TestOutputQueues(TestCase):
         assert isinstance(queues, list)
         assert x == 3
 
-    @run_async
+    @run_test_async
     async def test_basic(self):
         queues: pl.task.OutputQueues[int] = pl.task.OutputQueues()
         queue: pl.task.IterableQueue[int] = pl.task.IterableQueue()
@@ -374,7 +374,7 @@ class TestOutputQueues(TestCase):
         assert isinstance(queues, list)
         assert x == 3
 
-    @run_async
+    @run_test_async
     async def test_done(self):
         queues: pl.task.OutputQueues[int] = pl.task.OutputQueues()
         queue = pl.task.IterableQueue()
@@ -399,7 +399,7 @@ class TestOutputQueues(TestCase):
 
         assert isinstance(x, pypeln_utils.Done)
 
-    @run_async
+    @run_test_async
     async def test_stop(self):
         queues: pl.task.OutputQueues[int] = pl.task.OutputQueues()
         queue = pl.task.IterableQueue()
@@ -424,7 +424,7 @@ class TestOutputQueues(TestCase):
 
         assert queue.namespace.remaining == 0
 
-    @run_async
+    @run_test_async
     async def test_kill(self):
         queues: pl.task.OutputQueues[int] = pl.task.OutputQueues()
         queue = pl.task.IterableQueue()
@@ -451,7 +451,7 @@ class TestOutputQueues(TestCase):
 
 
 class TestTaskPool(unittest.TestCase):
-    @run_async
+    @run_test_async
     async def test_basic(self):
 
         namespace = pl.task.Namespace(x=0)
@@ -470,7 +470,7 @@ class TestTaskPool(unittest.TestCase):
 
         assert namespace.x == 1
 
-    @run_async
+    @run_test_async
     async def test_context(self):
 
         namespace = pl.task.Namespace(x=0)
@@ -484,7 +484,7 @@ class TestTaskPool(unittest.TestCase):
 
         assert namespace.x == 1
 
-    @run_async
+    @run_test_async
     async def test_put_wait(self):
 
         timeout = 0.1
@@ -508,7 +508,7 @@ class TestTaskPool(unittest.TestCase):
 
         assert namespace.x == 1
 
-    @run_async
+    @run_test_async
     async def test_put_no_wait(self):
 
         timeout = 0.1
@@ -577,7 +577,7 @@ class TestWorker(TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_async
+    @run_test_async
     async def test_basic_async(self, nums):
         input_queue = pl.task.IterableQueue()
         output_queue = pl.task.IterableQueue()
@@ -628,7 +628,7 @@ class TestWorker(TestCase):
         time.sleep(0.01)
         assert worker.is_done
 
-    @run_async
+    @run_test_async
     async def test_raises_async(self):
         input_queue = pl.task.IterableQueue()
         output_queue = pl.task.IterableQueue()
@@ -687,7 +687,7 @@ class TestWorker(TestCase):
 
         assert worker.is_done
 
-    @run_async
+    @run_test_async
     async def test_timeout_async(self):
         input_queue = pl.task.IterableQueue()
         output_queue = pl.task.IterableQueue()
@@ -756,7 +756,7 @@ class TestWorker(TestCase):
 
         assert worker.is_done
 
-    @run_async
+    @run_test_async
     async def test_no_timeout_async(self):
         input_queue = pl.task.IterableQueue()
         output_queue = pl.task.IterableQueue()
@@ -819,7 +819,7 @@ class TestWorker(TestCase):
         assert task.cancelled()
         assert worker.is_done
 
-    @run_async
+    @run_test_async
     async def test_del1_async(self):
         input_queue = pl.task.IterableQueue()
         output_queue = pl.task.IterableQueue()
@@ -882,7 +882,7 @@ class TestWorker(TestCase):
         assert not task.cancelled()
         assert not worker.is_done
 
-    @run_async
+    @run_test_async
     async def test_del3_async(self):
         async def start_worker():
             input_queue = pl.task.IterableQueue()
@@ -949,7 +949,7 @@ class TestSupervisor(TestCase):
 
         worker.stop.assert_called_once()
 
-    @run_async
+    @run_test_async
     async def test_stop(self):
 
         queue = pl.task.IterableQueue()
@@ -980,7 +980,7 @@ class TestSupervisor(TestCase):
 
         worker.stop.assert_called_once()
 
-    @run_async
+    @run_test_async
     async def test_context_async(self):
 
         queue: pl.task.IterableQueue = mock.Mock()

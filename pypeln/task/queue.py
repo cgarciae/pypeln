@@ -68,6 +68,7 @@ class IterableQueue(asyncio.Queue, tp.Generic[T], tp.Iterable[T]):
 
         while not self.is_done():
 
+            print(5)
             if self.namespace.exception:
                 exception, trace = await self.exception_queue.get()
 
@@ -78,7 +79,10 @@ class IterableQueue(asyncio.Queue, tp.Generic[T], tp.Iterable[T]):
 
                 raise exception
 
+            print(6)
             x = await self.get()
+
+            print(x)
 
             if isinstance(x, pypeln_utils.Continue):
                 continue

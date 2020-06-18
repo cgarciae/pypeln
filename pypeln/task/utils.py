@@ -1,7 +1,8 @@
 import asyncio
+from concurrent.futures import Future
+import functools
 import threading
 import typing as tp
-from concurrent.futures import Future
 
 from pypeln import utils as pypeln_utils
 
@@ -53,3 +54,12 @@ def run_function_in_loop(
     loop = loop if loop else get_running_loop()
 
     return loop.call_soon_threadsafe(f)
+
+
+def run_test_async(f):
+    @functools.wraps(f)
+    def wrapped(*args, **kwargs):
+
+        return run_coroutine_in_loop(lambda: f(*args, **kwargs)).result()
+
+    return wrapped

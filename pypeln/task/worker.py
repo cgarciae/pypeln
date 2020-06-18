@@ -19,6 +19,18 @@ Kwargs = tp.Dict[str, tp.Any]
 T = tp.TypeVar("T")
 
 
+@tp.runtime_checkable
+class ProcessFn(tp.Protocol):
+    async def __call__(self, worker: "Worker", **kwargs):
+        ...
+
+
+@tp.runtime_checkable
+class ApplyFn(tp.Protocol):
+    async def __call__(self, worker: "Worker", elem: tp.Any, **kwargs):
+        ...
+
+
 class StageParams(tp.NamedTuple):
     input_queue: IterableQueue
     output_queues: OutputQueues
@@ -44,55 +56,59 @@ class WorkerInfo(tp.NamedTuple):
 
 @dataclass
 class Worker(tp.Generic[T]):
-    f: tp.Callable
+    # f: tp.Callable
+    # stage_params: StageParams
+    # main_queue: IterableQueue
+    # tasks: "TaskPool"
+    # on_start: tp.Optional[
+    #     tp.Callable[..., tp.Union[Kwargs, tp.Awaitable[Kwargs]]]
+    # ] = None
+    # on_done: tp.Optional[
+    #     tp.Callable[..., tp.Union[tp.Any, tp.Awaitable[tp.Any]]]
+    # ] = None
+    # process: tp.Optional[Future] = None
+    # # is_done: bool = False
+
+    process_fn: ProcessFn
+    timeout: float
     stage_params: StageParams
     main_queue: IterableQueue
+    on_start: tp.Optional[tp.Callable[..., tp.Union[Kwargs, tp.Awaitable[Kwargs]]]]
+    on_done: tp.Optional[tp.Callable[..., tp.Union[Kwargs, tp.Awaitable[Kwargs]]]]
+    f_args: tp.List[str]
     tasks: "TaskPool"
-    on_start: tp.Optional[
-        tp.Callable[..., tp.Union[Kwargs, tp.Awaitable[Kwargs]]]
-    ] = None
-    on_done: tp.Optional[
-        tp.Callable[..., tp.Union[tp.Any, tp.Awaitable[tp.Any]]]
-    ] = None
     process: tp.Optional[Future] = None
     is_done: bool = False
 
-    @classmethod
-    def create(
-        cls,
-        f: tp.Callable,
-        stage_params: StageParams,
-        main_queue: IterableQueue,
-        timeout: float = 0,
-        max_tasks: int = 0,
-        on_start: tp.Optional[
-            tp.Callable[..., tp.Union[Kwargs, tp.Awaitable[Kwargs]]]
-        ] = None,
-        on_done: tp.Optional[
-            tp.Callable[..., tp.Union[tp.Any, tp.Awaitable[tp.Any]]]
-        ] = None,
-    ):
+    # @classmethod
+    # def create(
+    #     cls,
+    #     f: tp.Callable,
+    #     stage_params: StageParams,
+    #     main_queue: IterableQueue,
+    #     timeout: float = 0,
+    #     max_tasks: int = 0,
+    #     on_start: tp.Optional[
+    #         tp.Callable[..., tp.Union[Kwargs, tp.Awaitable[Kwargs]]]
+    #     ] = None,
+    #     on_done: tp.Optional[
+    #         tp.Callable[..., tp.Union[tp.Any, tp.Awaitable[tp.Any]]]
+    #     ] = None,
+    # ):
 
-        return cls(
-            f=f,
-            stage_params=stage_params,
-            main_queue=main_queue,
-            tasks=TaskPool.create(workers=max_tasks, timeout=timeout),
-            on_start=on_start,
-            on_done=on_done,
-        )
-
-    @abc.abstractmethod
-    async def process_fn(self, f_args: tp.List[str], **kwargs):
-        ...
+    #     return cls(
+    #         f=f,
+    #         stage_params=stage_params,
+    #         main_queue=main_queue,
+    #         tasks=TaskPool.create(workers=max_tasks, timeout=timeout),
+    #         on_start=on_start,
+    #         on_done=on_done,
+    #     )
 
     async def __call__(self):
 
         worker_info = WorkerInfo(index=0)
 
-        f_args: tp.List[str] = (
-            pypeln_utils.function_args(self.f) if self.on_start else []
-        )
         on_start_args: tp.List[str] = (
             pypeln_utils.function_args(self.on_start) if self.on_start else []
         )
@@ -122,8 +138,12 @@ class Worker(tp.Generic[T]):
 
             async with self.tasks:
                 await self.process_fn(
-                    f_args,
-                    **{key: value for key, value in kwargs.items() if key in f_args},
+                    self,
+                    **{
+                        key: value
+                        for key, value in kwargs.items()
+                        if key in self.f_args
+                    },
                 )
 
             self.stage_params.worker_done()
@@ -134,7 +154,7 @@ class Worker(tp.Generic[T]):
                     "stage_status", StageStatus(),
                 )
 
-                on_done = self.on_done(
+                coro = self.on_done(
                     **{
                         key: value
                         for key, value in kwargs.items()
@@ -142,8 +162,8 @@ class Worker(tp.Generic[T]):
                     }
                 )
 
-                if isinstance(on_done, tp.Awaitable):
-                    await on_done
+                if isinstance(coro, tp.Awaitable):
+                    await coro
 
         except asyncio.CancelledError:
             pass
@@ -166,17 +186,18 @@ class Worker(tp.Generic[T]):
         utils.run_function_in_loop(self.process.cancel)
 
 
-class WorkerApply(Worker[T], tp.Generic[T]):
-    @abc.abstractmethod
-    async def apply(self, elem: T, f_args: tp.List[str], **kwargs):
+class Applicable(tp.Protocol):
+    def apply(self, worker: "Worker", elem: tp.Any, **kwargs):
         ...
 
-    async def process_fn(self, f_args: tp.List[str], **kwargs):
 
-        async for elem in self.stage_params.input_queue:
+class ApplyProcess(ProcessFn, Applicable):
+    async def __call__(self, worker: Worker, **kwargs):
 
-            await self.tasks.put(
-                pypeln_utils.get_callable(self.apply, elem, f_args, **kwargs)
+        async for elem in worker.stage_params.input_queue:
+
+            await worker.tasks.put(
+                pypeln_utils.get_callable(self.apply, elem, **kwargs)
             )
 
 

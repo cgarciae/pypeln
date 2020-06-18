@@ -41,7 +41,7 @@ def concat(
 
     dependencies = [to_stage(stage) for stage in stages]
 
-    return Stage.create(
+    return Stage(
         process_fn=Concat(),
         workers=1,
         maxsize=maxsize,

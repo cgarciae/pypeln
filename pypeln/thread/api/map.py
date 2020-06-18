@@ -113,7 +113,7 @@ def map(
 
     stage = to_stage(stage)
 
-    return Stage.create(
+    return Stage(
         process_fn=Map(f),
         workers=workers,
         maxsize=maxsize,

@@ -63,7 +63,7 @@ def from_iterable(
             )
         )
 
-    return Stage.create(
+    return Stage(
         process_fn=FromIterable(iterable),
         workers=1,
         maxsize=maxsize,

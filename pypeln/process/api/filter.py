@@ -113,7 +113,7 @@ def filter(
 
     stage = to_stage(stage)
 
-    return Stage.create(
+    return Stage(
         process_fn=Filter(f),
         workers=workers,
         maxsize=maxsize,

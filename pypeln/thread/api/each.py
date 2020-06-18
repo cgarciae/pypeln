@@ -121,7 +121,7 @@ def each(
 
     stage = to_stage(stage)
 
-    stage = Stage.create(
+    stage = Stage(
         process_fn=Each(f),
         workers=workers,
         maxsize=maxsize,

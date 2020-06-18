@@ -85,7 +85,7 @@ def ordered(
 
     stage = to_stage(stage)
 
-    return Stage.create(
+    return Stage(
         process_fn=Ordered(),
         workers=1,
         maxsize=maxsize,

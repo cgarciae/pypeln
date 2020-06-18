@@ -30,7 +30,7 @@ def test_basic():
 
     worker.did_timeout.assert_called()
     worker.stop.assert_not_called()
-    worker.start.assert_not_called()
+    worker.start.assert_called_once()
 
 
 def test_timeout():
@@ -56,7 +56,7 @@ def test_timeout():
 
     worker.did_timeout.assert_called()
     worker.stop.assert_called_once()
-    worker.start.assert_called_once()
+    worker.start.assert_called()
 
 
 def test_error():
@@ -84,7 +84,7 @@ def test_error():
 
     worker.did_timeout.assert_called()
     worker.stop.assert_called_once()
-    worker.start.assert_called_once()
+    worker.start.assert_called()
 
     queue.raise_exception.assert_called_once()
 
@@ -104,7 +104,7 @@ def test_no_timeout():
 
     worker.did_timeout.assert_not_called()
     worker.stop.assert_not_called()
-    worker.start.assert_not_called()
+    worker.start.assert_called_once()
 
     queue.raise_exception.assert_not_called()
 

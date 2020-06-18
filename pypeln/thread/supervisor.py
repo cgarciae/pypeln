@@ -50,6 +50,9 @@ class Supervisor:
 
     def start(self):
 
+        for worker in self.workers:
+            worker.start()
+
         t = threading.Thread(target=self)
         t.daemon = True
         t.start()

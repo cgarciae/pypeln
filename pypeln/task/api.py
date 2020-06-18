@@ -12,8 +12,8 @@ from pypeln import utils as pypeln_utils
 
 from . import utils
 from .queue import IterableQueue
-from .stage import Stage, WorkerConstructor
-from .worker import Kwargs, StageParams, Worker, WorkerApply, TaskPool
+from .stage import Stage
+from .worker import Kwargs, StageParams, Worker, TaskPool
 
 T = tp.TypeVar("T")
 A = tp.TypeVar("A")

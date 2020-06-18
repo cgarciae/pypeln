@@ -130,7 +130,7 @@ def flat_map(
 
     stage = to_stage(stage)
 
-    return Stage.create(
+    return Stage(
         process_fn=FlatMap(f),
         workers=workers,
         maxsize=maxsize,

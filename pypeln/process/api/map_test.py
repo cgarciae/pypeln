@@ -162,3 +162,24 @@ def test_map_square_workers(nums: tp.List[int]):
 
     assert sorted(nums_pl) == sorted(nums_py)
 
+
+class MyError(Exception):
+    pass
+
+
+def test_error_handling():
+
+    error = None
+
+    def raise_error(x):
+        raise MyError()
+
+    stage = pl.process.map(raise_error, range(10))
+
+    try:
+        list(stage)
+
+    except MyError as e:
+        error = e
+
+    assert isinstance(error, MyError)

@@ -1,12 +1,15 @@
+from collections import namedtuple
+from dataclasses import dataclass
+from multiprocessing import get_context
+import multiprocessing
+from multiprocessing.queues import Empty, Full
 import typing as tp
 
+from pypeln import utils as pypeln_utils
 
-class _Namespace:
-    def __init__(self, **kwargs):
-
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+# multiprocessing = get_context("fork")
+MANAGER = multiprocessing.Manager()
 
 
 def Namespace(**kwargs) -> tp.Any:
-    return _Namespace(**kwargs)
+    return MANAGER.Namespace(**kwargs)

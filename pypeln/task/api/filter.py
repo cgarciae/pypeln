@@ -11,7 +11,7 @@ from ..worker import ProcessFn, Worker, ApplyProcess
 
 
 class FilterFn(tp.Protocol):
-    def __call__(self, A, **kwargs) -> bool:
+    def __call__(self, A, **kwargs) -> tp.Union[bool, tp.Awaitable[bool]]:
         ...
 
 
@@ -19,19 +19,24 @@ class FilterFn(tp.Protocol):
 class Filter(ApplyProcess):
     f: FilterFn
 
-    def apply(self, worker: Worker, elem: tp.Any, **kwargs):
+    async def apply(self, worker: Worker, elem: tp.Any, **kwargs):
 
         if "element_index" in worker.f_args:
             kwargs["element_index"] = elem.index
 
-        if self.f(elem.value, **kwargs):
-            worker.stage_params.output_queues.put(elem)
+        y = self.f(elem.value, **kwargs)
+
+        if isinstance(y, tp.Awaitable):
+            y = await y
+
+        if y:
+            await worker.stage_params.output_queues.put(elem)
 
 
 @tp.overload
 def filter(
     f: FilterFn,
-    stage: tp.Union[Stage[A], tp.Iterable[A]],
+    stage: tp.Union[Stage[A], tp.Iterable[A], tp.AsyncIterable[A]],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
@@ -56,14 +61,14 @@ def filter(
 def filter(
     f: FilterFn,
     stage: tp.Union[
-        Stage[A], tp.Iterable[A], tp.Iterable[A], pypeln_utils.Undefined
+        Stage[A], tp.Iterable[A], tp.AsyncIterable[A], pypeln_utils.Undefined
     ] = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
     on_start: tp.Callable = None,
     on_done: tp.Callable = None,
-) -> tp.Union[Stage[B], pypeln_utils.Partial[Stage[B]]]:
+) -> tp.Union[Stage[A], pypeln_utils.Partial[Stage[A]]]:
     """
     Creates a stage that filter the data given a predicate function `f`. It is intended to behave like python's built-in `filter` function but with the added concurrency.
 
@@ -118,11 +123,10 @@ def filter(
         workers=workers,
         maxsize=maxsize,
         timeout=timeout,
-        total_sources=stage.workers,
+        total_sources=1,
         dependencies=[stage],
         on_start=on_start,
         on_done=on_done,
-        use_threads=False,
         f_args=pypeln_utils.function_args(f),
     )
 

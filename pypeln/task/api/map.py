@@ -11,7 +11,7 @@ from ..worker import ProcessFn, Worker, ApplyProcess
 
 
 class MapFn(tp.Protocol):
-    def __call__(self, A, **kwargs) -> B:
+    def __call__(self, A, **kwargs) -> tp.Union[B, tp.Awaitable[B]]:
         ...
 
 
@@ -19,19 +19,23 @@ class MapFn(tp.Protocol):
 class Map(ApplyProcess):
     f: MapFn
 
-    def apply(self, worker: Worker, elem: tp.Any, **kwargs):
+    async def apply(self, worker: Worker, elem: tp.Any, **kwargs):
 
         if "element_index" in worker.f_args:
             kwargs["element_index"] = elem.index
 
         y = self.f(elem.value, **kwargs)
-        worker.stage_params.output_queues.put(elem.set(y))
+
+        if isinstance(y, tp.Awaitable):
+            y = await y
+
+        await worker.stage_params.output_queues.put(elem.set(y))
 
 
 @tp.overload
 def map(
     f: MapFn,
-    stage: tp.Union[Stage[A], tp.Iterable[A]],
+    stage: tp.Union[Stage[A], tp.Iterable[A], tp.AsyncIterable[A]],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
@@ -56,7 +60,7 @@ def map(
 def map(
     f: MapFn,
     stage: tp.Union[
-        Stage[A], tp.Iterable[A], pypeln_utils.Undefined
+        Stage[A], tp.Iterable[A], tp.AsyncIterable[A], pypeln_utils.Undefined
     ] = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
@@ -118,11 +122,10 @@ def map(
         workers=workers,
         maxsize=maxsize,
         timeout=timeout,
-        total_sources=stage.workers,
+        total_sources=1,
         dependencies=[stage],
         on_start=on_start,
         on_done=on_done,
-        use_threads=False,
         f_args=pypeln_utils.function_args(f),
     )
 

@@ -12,7 +12,9 @@ from ..stage import Stage
 from ..worker import ProcessFn, Worker, ApplyProcess
 
 
-def run(*stages: tp.Union[Stage[A], tp.Iterable[A]], maxsize: int = 0) -> None:
+def run(
+    *stages: tp.Union[Stage[A], tp.Iterable[A], tp.AsyncIterable[A]], maxsize: int = 0
+) -> None:
     """
     Iterates over one or more stages until their iterators run out of elements.
 
@@ -42,4 +44,3 @@ def run(*stages: tp.Union[Stage[A], tp.Iterable[A]], maxsize: int = 0) -> None:
 
     for _ in stage:
         pass
-

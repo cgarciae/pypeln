@@ -45,7 +45,7 @@ class Supervisor:
         self.stop_nowait()
 
     async def __aenter__(self):
-        pass
+        self.start()
 
     async def __aexit__(self, *args):
         await self.stop()

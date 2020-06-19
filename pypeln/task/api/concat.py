@@ -12,8 +12,8 @@ from ..worker import ProcessFn, Worker, ApplyProcess
 
 @dataclass
 class Concat(ApplyProcess):
-    def apply(self, worker: Worker, elem: tp.Any, **kwargs):
-        worker.stage_params.output_queues.put(elem)
+    async def apply(self, worker: Worker, elem: tp.Any, **kwargs):
+        await worker.stage_params.output_queues.put(elem)
 
 
 def concat(
@@ -39,18 +39,17 @@ def concat(
         A stage object.
     """
 
-    dependencies = [to_stage(stage) for stage in stages]
+    dependencies: tp.List[Stage[A]] = [to_stage(stage) for stage in stages]
 
     return Stage(
         process_fn=Concat(),
         workers=1,
         maxsize=maxsize,
         timeout=0,
-        total_sources=sum(stage.workers for stage in dependencies),
+        total_sources=len(dependencies),
         dependencies=dependencies,
         on_start=None,
         on_done=None,
-        use_threads=False,
         f_args=[],
     )
 

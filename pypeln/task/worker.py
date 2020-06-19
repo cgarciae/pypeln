@@ -56,18 +56,6 @@ class WorkerInfo(tp.NamedTuple):
 
 @dataclass
 class Worker(tp.Generic[T]):
-    # f: tp.Callable
-    # stage_params: StageParams
-    # main_queue: IterableQueue
-    # tasks: "TaskPool"
-    # on_start: tp.Optional[
-    #     tp.Callable[..., tp.Union[Kwargs, tp.Awaitable[Kwargs]]]
-    # ] = None
-    # on_done: tp.Optional[
-    #     tp.Callable[..., tp.Union[tp.Any, tp.Awaitable[tp.Any]]]
-    # ] = None
-    # process: tp.Optional[Future] = None
-    # # is_done: bool = False
 
     process_fn: ProcessFn
     timeout: float
@@ -79,31 +67,6 @@ class Worker(tp.Generic[T]):
     tasks: "TaskPool"
     process: tp.Optional[Future] = None
     is_done: bool = False
-
-    # @classmethod
-    # def create(
-    #     cls,
-    #     f: tp.Callable,
-    #     stage_params: StageParams,
-    #     main_queue: IterableQueue,
-    #     timeout: float = 0,
-    #     max_tasks: int = 0,
-    #     on_start: tp.Optional[
-    #         tp.Callable[..., tp.Union[Kwargs, tp.Awaitable[Kwargs]]]
-    #     ] = None,
-    #     on_done: tp.Optional[
-    #         tp.Callable[..., tp.Union[tp.Any, tp.Awaitable[tp.Any]]]
-    #     ] = None,
-    # ):
-
-    #     return cls(
-    #         f=f,
-    #         stage_params=stage_params,
-    #         main_queue=main_queue,
-    #         tasks=TaskPool.create(workers=max_tasks, timeout=timeout),
-    #         on_start=on_start,
-    #         on_done=on_done,
-    #     )
 
     async def __call__(self):
 
@@ -197,7 +160,7 @@ class ApplyProcess(ProcessFn, Applicable):
         async for elem in worker.stage_params.input_queue:
 
             await worker.tasks.put(
-                pypeln_utils.get_callable(self.apply, elem, **kwargs)
+                pypeln_utils.get_callable(self.apply, worker, elem, **kwargs)
             )
 
 

@@ -17,8 +17,6 @@ class FromIterable(tp.NamedTuple):
     async def __call__(self, worker: Worker, **kwargs):
         iterable: tp.AsyncIterable
 
-        print("FromIterable")
-
         if isinstance(self.iterable, tp.AsyncIterable):
             iterable = self.iterable
         else:
@@ -31,8 +29,6 @@ class FromIterable(tp.NamedTuple):
 
             queue = IterableQueue()
             loop = utils.get_running_loop()
-
-            print("before executor")
 
             loop.run_in_executor(
                 None,
@@ -59,10 +55,8 @@ class FromIterable(tp.NamedTuple):
         queue: IterableQueue,
         loop: asyncio.AbstractEventLoop,
     ):
-        print("consume_iterable")
         try:
             for x in iterable:
-                print("x", x)
                 if worker.is_done:
                     return
 

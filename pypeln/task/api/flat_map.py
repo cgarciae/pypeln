@@ -11,7 +11,7 @@ from ..worker import ProcessFn, Worker, ApplyProcess
 
 
 class FlatMapFn(tp.Protocol):
-    def __call__(self, A, **kwargs) -> tp.Iterable[B]:
+    def __call__(self, A, **kwargs) -> tp.Union[tp.Iterable[B], tp.AsyncIterable[B]]:
         ...
 
 
@@ -19,20 +19,31 @@ class FlatMapFn(tp.Protocol):
 class FlatMap(ApplyProcess):
     f: FlatMapFn
 
-    def apply(self, worker: Worker, elem: tp.Any, **kwargs):
+    async def apply(self, worker: Worker, elem: tp.Any, **kwargs):
 
         if "element_index" in worker.f_args:
             kwargs["element_index"] = elem.index
 
-        for i, y in enumerate(self.f(elem.value, **kwargs)):
-            elem_y = pypeln_utils.Element(index=elem.index + (i,), value=y)
-            worker.stage_params.output_queues.put(elem_y)
+        ys: tp.Union[
+            tp.Iterable[pypeln_utils.Element], tp.AsyncIterable[pypeln_utils.Element]
+        ] = self.f(elem.value, **kwargs)
+
+        if isinstance(ys, tp.AsyncIterable):
+            i = 0
+            async for y in ys:
+                elem_y = pypeln_utils.Element(index=elem.index + (i,), value=y)
+                await worker.stage_params.output_queues.put(elem_y)
+                i += 1
+        else:
+            for i, y in enumerate(ys):
+                elem_y = pypeln_utils.Element(index=elem.index + (i,), value=y)
+                await worker.stage_params.output_queues.put(elem_y)
 
 
 @tp.overload
 def flat_map(
     f: FlatMapFn,
-    stage: Stage[A],
+    stage: tp.Union[Stage[A], tp.Iterable[A], tp.AsyncIterable[A]],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
@@ -57,7 +68,7 @@ def flat_map(
 def flat_map(
     f: FlatMapFn,
     stage: tp.Union[
-        Stage[A], tp.Iterable[A], pypeln_utils.Undefined
+        Stage[A], tp.Iterable[A], tp.AsyncIterable[A], pypeln_utils.Undefined
     ] = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
@@ -135,11 +146,10 @@ def flat_map(
         workers=workers,
         maxsize=maxsize,
         timeout=timeout,
-        total_sources=stage.workers,
+        total_sources=1,
         dependencies=[stage],
         on_start=on_start,
         on_done=on_done,
-        use_threads=False,
         f_args=pypeln_utils.function_args(f),
     )
 

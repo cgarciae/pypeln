@@ -86,8 +86,6 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
         self, maxsize: int, return_index: bool
     ) -> tp.AsyncIterable[T]:
 
-        print(2)
-
         # build stages first to verify reuse
         main_queue: IterableQueue[pypeln_utils.Element] = IterableQueue(
             maxsize=maxsize, total_sources=1,
@@ -99,9 +97,7 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
         supervisor = Supervisor(workers=workers, main_queue=main_queue)
 
         async with supervisor:
-            print(3)
             async for elem in main_queue:
-                print(4)
                 if return_index:
                     yield elem
                 else:

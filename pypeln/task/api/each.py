@@ -11,7 +11,7 @@ from ..worker import ProcessFn, Worker, ApplyProcess
 
 
 class EachFn(tp.Protocol):
-    def __call__(self, A, **kwargs):
+    def __call__(self, A, **kwargs) -> tp.Union[None, tp.Awaitable[None]]:
         ...
 
 
@@ -19,18 +19,21 @@ class EachFn(tp.Protocol):
 class Each(ApplyProcess):
     f: EachFn
 
-    def apply(self, worker: Worker, elem: tp.Any, **kwargs):
+    async def apply(self, worker: Worker, elem: tp.Any, **kwargs):
 
         if "element_index" in worker.f_args:
             kwargs["element_index"] = elem.index
 
-        self.f(elem.value, **kwargs)
+        output = self.f(elem.value, **kwargs)
+
+        if isinstance(output, tp.Awaitable):
+            await output
 
 
 @tp.overload
 def each(
     f: EachFn,
-    stage: tp.Union[Stage[A], tp.Iterable[A]],
+    stage: tp.Union[Stage[A], tp.Iterable[A], tp.AsyncIterable[A]],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
@@ -57,7 +60,7 @@ def each(
 def each(
     f: EachFn,
     stage: tp.Union[
-        Stage[A], tp.Iterable[A], pypeln_utils.Undefined
+        Stage[A], tp.Iterable[A], tp.AsyncIterable[A], pypeln_utils.Undefined
     ] = pypeln_utils.UNDEFINED,
     workers: int = 1,
     maxsize: int = 0,
@@ -100,7 +103,7 @@ def each(
         timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. 
         on_start: A function with signature `on_start(worker_info?) -> kwargs?`, where `kwargs` can be a `dict` of keyword arguments that can be consumed by `f` and `on_done`. `on_start` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
         on_done: A function with signature `on_done(stage_status?)`. This function is executed once per worker when the worker finishes. `on_done` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
-        run: Whether or not to execute the stage immediately.
+        run: Whether or not to execute the stage immediately. If each is running inside another coroutine / task then avoid using `run=True` since it will block the event loop, use `await pl.task.each(...)` instead.
 
     Returns:
         If the `stage` parameters is not given then this function returns a `Partial`, else if `run=False` (default) it return a new stage, if `run=True` then it runs the stage and returns `None`.
@@ -126,11 +129,10 @@ def each(
         workers=workers,
         maxsize=maxsize,
         timeout=timeout,
-        total_sources=stage.workers,
+        total_sources=1,
         dependencies=[stage],
         on_start=on_start,
         on_done=on_done,
-        use_threads=False,
         f_args=pypeln_utils.function_args(f),
     )
 

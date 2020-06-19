@@ -9,11 +9,11 @@ from .to_stage import to_stage
 
 
 class Ordered(tp.NamedTuple):
-    def __call__(self, worker: Worker, **kwargs):
+    async def __call__(self, worker: Worker, **kwargs):
 
         elems = []
 
-        for elem in worker.stage_params.input_queue:
+        async for elem in worker.stage_params.input_queue:
 
             if len(elems) == 0:
                 elems.append(elem)
@@ -27,11 +27,13 @@ class Ordered(tp.NamedTuple):
                         elems.insert(0, elem)
 
         for _ in range(len(elems)):
-            worker.stage_params.output_queues.put(elems.pop(0))
+            await worker.stage_params.output_queues.put(elems.pop(0))
 
 
 @tp.overload
-def ordered(stage: Stage[A], maxsize: int = 0) -> Stage[A]:
+def ordered(
+    stage: tp.Union[Stage[A], tp.Iterable[A], tp.AsyncIterable[A]], maxsize: int = 0
+) -> Stage[A]:
     ...
 
 
@@ -42,7 +44,7 @@ def ordered(maxsize: int = 0) -> pypeln_utils.Partial[Stage[A]]:
 
 def ordered(
     stage: tp.Union[
-        Stage[A], tp.Iterable[A], pypeln_utils.Undefined
+        Stage[A], tp.Iterable[A], tp.AsyncIterable[A], pypeln_utils.Undefined
     ] = pypeln_utils.UNDEFINED,
     maxsize: int = 0,
 ) -> tp.Union[Stage[A], pypeln_utils.Partial[Stage[A]]]:
@@ -90,11 +92,10 @@ def ordered(
         workers=1,
         maxsize=maxsize,
         timeout=0,
-        total_sources=stage.workers,
+        total_sources=1,
         dependencies=[stage],
         on_start=None,
         on_done=None,
-        use_threads=False,
         f_args=[],
     )
 

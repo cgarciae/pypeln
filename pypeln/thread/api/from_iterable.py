@@ -74,4 +74,3 @@ def from_iterable(
         on_done=None,
         f_args=[],
     )
-

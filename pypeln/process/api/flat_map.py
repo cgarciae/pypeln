@@ -142,4 +142,3 @@ def flat_map(
         use_threads=False,
         f_args=pypeln_utils.function_args(f),
     )
-

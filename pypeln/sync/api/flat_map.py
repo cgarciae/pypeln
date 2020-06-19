@@ -1,37 +1,32 @@
-import typing as tp
-import functools
-from dataclasses import dataclass
-
 from pypeln import utils as pypeln_utils
-from pypeln.utils import A, B, T
-
+from pypeln.utils import A, B, function_args
+from ..stage import Stage, ApplyProcess
+import typing as tp
+from dataclasses import dataclass
 from .to_stage import to_stage
-from ..stage import Stage
-from ..worker import ProcessFn, Worker, ApplyProcess
 
 
-class MapFn(tp.Protocol):
-    def __call__(self, A, **kwargs) -> B:
+class FlatMapFn(tp.Protocol):
+    def __call__(self, A, **kwargs) -> tp.Iterable[B]:
         ...
 
 
 @dataclass
-class Map(ApplyProcess):
-    f: MapFn
+class FlatMap(ApplyProcess):
+    f: FlatMapFn
 
-    def apply(self, worker: Worker, elem: tp.Any, **kwargs):
-
+    def apply(self, worker: Stage, elem: tp.Any, **kwargs) -> tp.Iterable:
         if "element_index" in worker.f_args:
             kwargs["element_index"] = elem.index
 
-        y = self.f(elem.value, **kwargs)
-        worker.stage_params.output_queues.put(elem.set(y))
+        for i, y in enumerate(self.f(elem.value, **kwargs)):
+            yield pypeln_utils.Element(index=elem.index + (i,), value=y)
 
 
 @tp.overload
-def map(
-    f: MapFn,
-    stage: tp.Union[Stage[A], tp.Iterable[A]],
+def flat_map(
+    f: FlatMapFn,
+    stage: Stage[A],
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
@@ -42,8 +37,8 @@ def map(
 
 
 @tp.overload
-def map(
-    f: MapFn,
+def flat_map(
+    f: FlatMapFn,
     workers: int = 1,
     maxsize: int = 0,
     timeout: float = 0,
@@ -53,8 +48,8 @@ def map(
     ...
 
 
-def map(
-    f: MapFn,
+def flat_map(
+    f: FlatMapFn,
     stage: tp.Union[
         Stage[A], tp.Iterable[A], pypeln_utils.Undefined
     ] = pypeln_utils.UNDEFINED,
@@ -65,34 +60,51 @@ def map(
     on_done: tp.Callable = None,
 ) -> tp.Union[Stage[B], pypeln_utils.Partial[Stage[B]]]:
     """
-    Creates a stage that maps a function `f` over the data. Its intended to behave like python's built-in `map` function but with the added concurrency.
+    Creates a stage that maps a function `f` over the data, however unlike `pypeln.sync.map` in this case `f` returns an iterable. As its name implies, `flat_map` will flatten out these iterables so the resulting stage just contains their elements.
 
     ```python
     import pypeln as pl
     import time
     from random import random
 
-    def slow_add1(x):
+    def slow_integer_pair(x):
         time.sleep(random()) # <= some slow computation
-        return x + 1
+
+        if x == 0:
+            yield x
+        else:
+            yield x
+            yield -x
 
     data = range(10) # [0, 1, 2, ..., 9]
-    stage = pl.process.map(slow_add1, data, workers=3, maxsize=4)
+    stage = pl.sync.flat_map(slow_integer_pair, data, workers=3, maxsize=4)
 
-    data = list(stage) # e.g. [2, 1, 5, 6, 3, 4, 7, 8, 9, 10]
+    list(stage) # [0, 1, -1, 2, -2, ..., 9, -9]
     ```
 
-    !!! note
-        Because of concurrency order is not guaranteed. 
+        
+    `flat_map` is a more general operation, you can actually implement `pypeln.sync.map` and `pypeln.sync.filter` with it, for example:
+
+    ```python
+    import pypeln as pl
+
+    pl.sync.map(f, stage) = pl.sync.flat_map(lambda x: [f(x)], stage)
+    pl.sync.filter(f, stage) = pl.sync.flat_map(lambda x: [x] if f(x) else [], stage)
+    ```
+
+    Using `flat_map` with a generator function is very useful as e.g. you are able to filter out unwanted elements when there are exceptions, missing data, etc.
 
     Arguments:
-        f: A function with the signature `f(x) -> y`. `f` can accept special additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
+        f: A function with signature `f(x) -> iterable`. `f` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
         stage: A stage or iterable.
-        workers: The number of workers the stage should contain.
-        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+        workers: This parameter is not used and only kept for API compatibility with the other modules.
+        maxsize: This parameter is not used and only kept for API compatibility with the other modules.
         timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. 
         on_start: A function with signature `on_start(worker_info?) -> kwargs?`, where `kwargs` can be a `dict` of keyword arguments that can be consumed by `f` and `on_done`. `on_start` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
         on_done: A function with signature `on_done(stage_status?)`. This function is executed once per worker when the worker finishes. `on_done` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
+
+    !!! warning
+        To implement `timeout` we use `stopit.async_raise` which has some limitations for stoping threads.
 
     Returns:
         If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.
@@ -100,7 +112,7 @@ def map(
 
     if isinstance(stage, pypeln_utils.Undefined):
         return pypeln_utils.Partial(
-            lambda stage: map(
+            lambda stage: flat_map(
                 f,
                 stage=stage,
                 workers=workers,
@@ -111,17 +123,13 @@ def map(
             )
         )
 
-    stage = to_stage(stage)
+    stage_ = to_stage(stage)
 
     return Stage(
-        process_fn=Map(f),
-        workers=workers,
-        maxsize=maxsize,
+        process_fn=FlatMap(f),
         timeout=timeout,
-        total_sources=stage.workers,
-        dependencies=[stage],
+        dependencies=[stage_],
         on_start=on_start,
         on_done=on_done,
-        use_threads=False,
         f_args=pypeln_utils.function_args(f),
     )

@@ -41,4 +41,3 @@ def test_concat_multiple(nums: tp.List[int] = [1, 2, 3]):
 
     # assert sorted(nums_py1) == sorted(list(nums_pl1))
     assert sorted(nums_py2) == sorted(list(nums_pl2))
-

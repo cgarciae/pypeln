@@ -40,4 +40,3 @@ def test_each_list(nums: tp.List[int]):
             assert nums_pl == nums
 
         assert nums_pl == []
-

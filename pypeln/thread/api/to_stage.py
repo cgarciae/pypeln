@@ -12,4 +12,3 @@ def to_stage(obj: tp.Union[Stage[A], tp.Iterable[A]]) -> Stage[A]:
         return obj
     else:
         return from_iterable(obj)
-

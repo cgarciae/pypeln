@@ -9,7 +9,6 @@ MAX_EXAMPLES = 10
 T = tp.TypeVar("T")
 
 
-
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_square_workers_sorted(nums: tp.List[int]):

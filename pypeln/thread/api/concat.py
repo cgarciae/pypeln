@@ -52,4 +52,3 @@ def concat(
         on_done=None,
         f_args=[],
     )
-

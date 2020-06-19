@@ -16,4 +16,3 @@ def to_stage(obj: tp.Union[Stage[A], tp.Iterable[A], tp.AsyncIterable[A]]) -> St
 
     else:
         raise ValueError(f"Object {obj} is not a Stage or iterable")
-

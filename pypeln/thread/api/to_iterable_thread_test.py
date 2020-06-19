@@ -27,4 +27,3 @@ def test_from_to_iterable(nums: tp.List[int]):
     nums_py = list(nums_py)
 
     assert nums_py == nums_pl
-

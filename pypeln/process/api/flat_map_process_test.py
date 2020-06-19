@@ -47,4 +47,3 @@ def test_flat_map_square_workers(nums: tp.List[int]):
     nums_pl = list(nums_pl)
 
     assert sorted(nums_pl) == sorted(nums_py)
-

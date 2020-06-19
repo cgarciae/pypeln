@@ -20,8 +20,6 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
     on_start: tp.Optional[tp.Callable[..., tp.Union[Kwargs, tp.Awaitable[Kwargs]]]]
     on_done: tp.Optional[tp.Callable[..., tp.Union[Kwargs, tp.Awaitable[Kwargs]]]]
     f_args: tp.List[str]
-    built: bool = False
-    started: bool = False
 
     def __hash__(self):
         return id(self)

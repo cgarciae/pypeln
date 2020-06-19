@@ -5,11 +5,9 @@ Common arguments such as `workers` and `maxsize` are accepted by this module's
 functions for API compatibility purposes but are ignored.
 """
 import typing as tp
-from threading import Thread
 
 from pypeln import utils as pypeln_utils
 
-from . import utils
 from .stage import Stage
 
 
@@ -18,72 +16,10 @@ from .stage import Stage
 #############################################################
 
 
-class FromIterable(Stage):
-    def __init__(self, iterable, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.iterable = iterable
-
-    def process(self):
-        if isinstance(self.iterable, pypeln_utils.BaseStage):
-            yield from self.iterable.to_iterable(maxsize=0, return_index=True)
-        else:
-            for i, x in enumerate(self.iterable):
-                if isinstance(x, pypeln_utils.Element):
-                    yield x
-                else:
-                    yield pypeln_utils.Element(index=(i,), value=x)
-
-
-def from_iterable(
-    iterable: tp.Iterable = pypeln_utils.UNDEFINED,
-    maxsize: int = None,
-    worker_constructor: tp.Type = None,
-) -> Stage:
-    """
-    Creates a stage from an iterable.
-
-    Arguments:
-        iterable: a source iterable.
-        maxsize: this parameter is not used and only kept for API compatibility with the other modules.
-        worker_constructor: this parameter is not used and only kept for API compatibility with the other modules.
-
-    Returns:
-        If the `iterable` parameters is given then this function returns a new stage, else it returns a `Partial`.
-    """
-
-    if pypeln_utils.is_undefined(iterable):
-        return pypeln_utils.Partial(
-            lambda iterable: from_iterable(
-                iterable, maxsize=None, worker_constructor=worker_constructor
-            )
-        )
-
-    return FromIterable(
-        iterable=iterable,
-        f=None,
-        timeout=0,
-        on_start=None,
-        on_done=None,
-        dependencies=[],
-    )
-
-
 #############################################################
 # to_stage
 #############################################################
 
-
-def to_stage(obj):
-
-    if isinstance(obj, Stage):
-        return obj
-
-    elif hasattr(obj, "__iter__"):
-        return from_iterable(obj)
-
-    else:
-        raise ValueError(f"Object {obj} is not a Stage or iterable")
 
 
 #############################################################
@@ -91,171 +27,12 @@ def to_stage(obj):
 #############################################################
 
 
-class Map(Stage):
-    def apply(self, elem, **kwargs):
-
-        if "element_index" in self.f_args:
-            kwargs["element_index"] = elem.index
-
-        y = self.f(elem.value, **kwargs)
-        yield elem.set(y)
-
-
-def map(
-    f: tp.Callable,
-    stage: Stage = pypeln_utils.UNDEFINED,
-    workers: int = None,
-    maxsize: int = None,
-    timeout: float = 0,
-    on_start: tp.Callable = None,
-    on_done: tp.Callable = None,
-) -> Stage:
-    """
-    Creates a stage that maps a function `f` over the data. Its should behave exactly like python's built-in `map` function.
-
-    ```python
-    import pypeln as pl
-    import time
-    from random import random
-
-    def slow_add1(x):
-        time.sleep(random()) # <= some slow computation
-        return x + 1
-
-    data = range(10) # [0, 1, 2, ..., 9]
-    stage = pl.sync.map(slow_add1, data, workers=3, maxsize=4)
-
-    data = list(stage) # [1, 2, 3, ..., 10]
-    ```
-
-    Arguments:
-        f: A function with the signature `f(x) -> y`. `f` can accept special additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
-        stage: A stage or iterable.
-        workers: This parameter is not used and only kept for API compatibility with the other modules.
-        maxsize: This parameter is not used and only kept for API compatibility with the other modules.
-        timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. 
-        on_start: A function with signature `on_start(worker_info?) -> kwargs?`, where `kwargs` can be a `dict` of keyword arguments that can be consumed by `f` and `on_done`. `on_start` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
-        on_done: A function with signature `on_done(stage_status?)`. This function is executed once per worker when the worker finishes. `on_done` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
-
-    !!! warning
-        To implement `timeout` we use `stopit.async_raise` which has some limitations for stoping threads.
-
-    Returns:
-        If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.
-    """
-
-    if pypeln_utils.is_undefined(stage):
-        return pypeln_utils.Partial(
-            lambda stage: map(
-                f,
-                stage=stage,
-                workers=workers,
-                maxsize=maxsize,
-                timeout=timeout,
-                on_start=on_start,
-                on_done=on_done,
-            )
-        )
-
-    stage = to_stage(stage)
-
-    return Map(
-        f=f, on_start=on_start, on_done=on_done, timeout=timeout, dependencies=[stage],
-    )
 
 
 #############################################################
 # flat_map
 #############################################################
 
-
-class FlatMap(Stage):
-    def apply(self, elem, **kwargs):
-        if "element_index" in self.f_args:
-            kwargs["element_index"] = elem.index
-
-        for i, y in enumerate(self.f(elem.value, **kwargs)):
-            yield pypeln_utils.Element(index=elem.index + (i,), value=y)
-
-
-def flat_map(
-    f: tp.Callable,
-    stage: Stage = pypeln_utils.UNDEFINED,
-    workers: int = 1,
-    maxsize: int = 0,
-    timeout: float = 0,
-    on_start: tp.Callable = None,
-    on_done: tp.Callable = None,
-) -> Stage:
-    """
-    Creates a stage that maps a function `f` over the data, however unlike `pypeln.sync.map` in this case `f` returns an iterable. As its name implies, `flat_map` will flatten out these iterables so the resulting stage just contains their elements.
-
-    ```python
-    import pypeln as pl
-    import time
-    from random import random
-
-    def slow_integer_pair(x):
-        time.sleep(random()) # <= some slow computation
-
-        if x == 0:
-            yield x
-        else:
-            yield x
-            yield -x
-
-    data = range(10) # [0, 1, 2, ..., 9]
-    stage = pl.sync.flat_map(slow_integer_pair, data, workers=3, maxsize=4)
-
-    list(stage) # [0, 1, -1, 2, -2, ..., 9, -9]
-    ```
-
-        
-    `flat_map` is a more general operation, you can actually implement `pypeln.sync.map` and `pypeln.sync.filter` with it, for example:
-
-    ```python
-    import pypeln as pl
-
-    pl.sync.map(f, stage) = pl.sync.flat_map(lambda x: [f(x)], stage)
-    pl.sync.filter(f, stage) = pl.sync.flat_map(lambda x: [x] if f(x) else [], stage)
-    ```
-
-    Using `flat_map` with a generator function is very useful as e.g. you are able to filter out unwanted elements when there are exceptions, missing data, etc.
-
-    Arguments:
-        f: A function with signature `f(x) -> iterable`. `f` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
-        stage: A stage or iterable.
-        workers: This parameter is not used and only kept for API compatibility with the other modules.
-        maxsize: This parameter is not used and only kept for API compatibility with the other modules.
-        timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. 
-        on_start: A function with signature `on_start(worker_info?) -> kwargs?`, where `kwargs` can be a `dict` of keyword arguments that can be consumed by `f` and `on_done`. `on_start` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
-        on_done: A function with signature `on_done(stage_status?)`. This function is executed once per worker when the worker finishes. `on_done` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
-
-    !!! warning
-        To implement `timeout` we use `stopit.async_raise` which has some limitations for stoping threads.
-
-    Returns:
-        If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.
-    """
-
-    if pypeln_utils.is_undefined(stage):
-        return pypeln_utils.Partial(
-            lambda stage: flat_map(
-                f,
-                stage=stage,
-                workers=workers,
-                maxsize=maxsize,
-                timeout=timeout,
-                on_start=on_start,
-                on_done=on_done,
-            )
-        )
-
-    stage = to_stage(stage)
-
-    return FlatMap(
-        f=f, on_start=on_start, on_done=on_done, timeout=timeout, dependencies=[stage],
-    )
 
 
 #############################################################
@@ -315,7 +92,7 @@ def filter(
         If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.
     """
 
-    if pypeln_utils.is_undefined(stage):
+    if isinstance(stage, pypeln_utils.Undefined):
         return pypeln_utils.Partial(
             lambda stage: filter(
                 f,
@@ -403,7 +180,7 @@ def each(
         If the `stage` parameters is not given then this function returns a `Partial`, else if `run=False` (default) it return a new stage, if `run=True` then it runs the stage and returns `None`.
     """
 
-    if pypeln_utils.is_undefined(stage):
+    if isinstance(stage, pypeln_utils.Undefined):
         return pypeln_utils.Partial(
             lambda stage: each(
                 f,
@@ -529,7 +306,7 @@ def ordered(stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0) -> Stage:
         If the `stage` parameters is given then this function returns an iterable, else it returns a `Partial`.
     """
 
-    if pypeln_utils.is_undefined(stage):
+    if isinstance(stage, pypeln_utils.Undefined):
         return pypeln_utils.Partial(lambda stage: ordered(stage, maxsize=maxsize))
 
     stage = to_stage(stage)
@@ -598,7 +375,7 @@ def to_iterable(
         If the `stage` parameters is given then this function returns an iterable, else it returns a `Partial`.
     """
 
-    if pypeln_utils.is_undefined(stage):
+    if isinstance(stage, pypeln_utils.Undefined):
         return pypeln_utils.Partial(
             lambda stage: to_iterable(stage, maxsize=maxsize, return_index=return_index)
         )

@@ -138,4 +138,3 @@ def each(
 
     for _ in stage:
         pass
-

@@ -42,4 +42,3 @@ def run(*stages: tp.Union[Stage[A], tp.Iterable[A]], maxsize: int = 0) -> None:
 
     for _ in stage:
         pass
-

@@ -53,4 +53,3 @@ def concat(
         use_threads=False,
         f_args=[],
     )
-

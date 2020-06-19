@@ -80,4 +80,3 @@ def test_from_to_iterable_pipe_async_iterable(nums):
     nums_pl = iterable() | pl.task.from_iterable() | list
 
     assert nums_pl == nums_py
-

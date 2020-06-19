@@ -168,4 +168,3 @@ class TestOutputQueues(TestCase):
         queues.kill()
 
         assert queue.namespace.remaining == True
-

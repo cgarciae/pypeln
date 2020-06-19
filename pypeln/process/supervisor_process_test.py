@@ -154,4 +154,3 @@ def test_context_gc():
 
     assert supervisor.done
     worker.stop.assert_called_once()
-

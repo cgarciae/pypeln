@@ -1,13 +1,11 @@
 import typing as tp
-import functools
-from dataclasses import dataclass
 
 from pypeln import utils as pypeln_utils
-from pypeln.utils import A, B, T
-
+from pypeln.utils import A, B, function_args
+from ..stage import Stage, ApplyProcess
+import typing as tp
+from dataclasses import dataclass
 from .to_stage import to_stage
-from ..stage import Stage
-from ..worker import ProcessFn, Worker, ApplyProcess
 
 
 class MapFn(tp.Protocol):
@@ -19,13 +17,13 @@ class MapFn(tp.Protocol):
 class Map(ApplyProcess):
     f: MapFn
 
-    def apply(self, worker: Worker, elem: tp.Any, **kwargs):
+    def apply(self, worker: Stage, elem: tp.Any, **kwargs) -> tp.Iterable:
 
         if "element_index" in worker.f_args:
             kwargs["element_index"] = elem.index
 
         y = self.f(elem.value, **kwargs)
-        worker.stage_params.output_queues.put(elem.set(y))
+        yield elem.set(y)
 
 
 @tp.overload
@@ -65,7 +63,7 @@ def map(
     on_done: tp.Callable = None,
 ) -> tp.Union[Stage[B], pypeln_utils.Partial[Stage[B]]]:
     """
-    Creates a stage that maps a function `f` over the data. Its intended to behave like python's built-in `map` function but with the added concurrency.
+    Creates a stage that maps a function `f` over the data. Its should behave exactly like python's built-in `map` function.
 
     ```python
     import pypeln as pl
@@ -77,22 +75,22 @@ def map(
         return x + 1
 
     data = range(10) # [0, 1, 2, ..., 9]
-    stage = pl.process.map(slow_add1, data, workers=3, maxsize=4)
+    stage = pl.sync.map(slow_add1, data, workers=3, maxsize=4)
 
-    data = list(stage) # e.g. [2, 1, 5, 6, 3, 4, 7, 8, 9, 10]
+    data = list(stage) # [1, 2, 3, ..., 10]
     ```
-
-    !!! note
-        Because of concurrency order is not guaranteed. 
 
     Arguments:
         f: A function with the signature `f(x) -> y`. `f` can accept special additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
         stage: A stage or iterable.
-        workers: The number of workers the stage should contain.
-        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+        workers: This parameter is not used and only kept for API compatibility with the other modules.
+        maxsize: This parameter is not used and only kept for API compatibility with the other modules.
         timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. 
         on_start: A function with signature `on_start(worker_info?) -> kwargs?`, where `kwargs` can be a `dict` of keyword arguments that can be consumed by `f` and `on_done`. `on_start` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
         on_done: A function with signature `on_done(stage_status?)`. This function is executed once per worker when the worker finishes. `on_done` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
+
+    !!! warning
+        To implement `timeout` we use `stopit.async_raise` which has some limitations for stoping threads.
 
     Returns:
         If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.
@@ -111,17 +109,14 @@ def map(
             )
         )
 
-    stage = to_stage(stage)
+    stage_ = to_stage(stage)
 
     return Stage(
         process_fn=Map(f),
-        workers=workers,
-        maxsize=maxsize,
         timeout=timeout,
-        total_sources=stage.workers,
-        dependencies=[stage],
+        dependencies=[stage_],
         on_start=on_start,
         on_done=on_done,
-        use_threads=False,
         f_args=pypeln_utils.function_args(f),
     )
+

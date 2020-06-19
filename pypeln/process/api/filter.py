@@ -125,4 +125,3 @@ def filter(
         use_threads=False,
         f_args=pypeln_utils.function_args(f),
     )
-

@@ -178,4 +178,3 @@ class TestWorker(TestCase):
         worker, process = start_worker()
 
         assert process.is_alive()
-

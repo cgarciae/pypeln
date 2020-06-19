@@ -22,8 +22,6 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
     on_done: tp.Optional[tp.Callable[..., Kwargs]]
     use_threads: bool
     f_args: tp.List[str]
-    built: bool = False
-    started: bool = False
 
     def __hash__(self):
         return id(self)
@@ -90,4 +88,3 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
 
     def __iter__(self):
         return self.to_iterable(maxsize=0, return_index=False)
-

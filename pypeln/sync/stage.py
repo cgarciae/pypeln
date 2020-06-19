@@ -38,7 +38,7 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
     on_done: tp.Optional[tp.Callable[..., Kwargs]]
     f_args: tp.List[str]
 
-    def iter_dependencies(self):
+    def iter_dependencies(self) -> tp.Iterable[pypeln_utils.Element]:
 
         iterators = [
             iter(dependency.to_iterable(maxsize=0, return_index=True))

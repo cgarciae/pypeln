@@ -10,24 +10,7 @@ from dataclasses import dataclass
 @dataclass
 class Ordered(ProcessFn):
     def __call__(self, worker: Stage, **kwargs) -> tp.Iterable:
-
-        elems = []
-
-        for elem in worker.iter_dependencies():
-
-            if len(elems) == 0:
-                elems.append(elem)
-            else:
-                for i in reversed(range(len(elems))):
-                    if elem.index >= elems[i].index:
-                        elems.insert(i + 1, elem)
-                        break
-
-                    if i == 0:
-                        elems.insert(0, elem)
-
-        for _ in range(len(elems)):
-            yield elems.pop(0)
+        return sorted(worker.iter_dependencies(), key=lambda elem: elem.index)
 
 
 @tp.overload

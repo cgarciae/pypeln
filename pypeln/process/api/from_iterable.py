@@ -5,6 +5,13 @@ from pypeln.utils import A, B, T
 
 from ..stage import Stage
 from ..worker import ProcessFn, Worker
+from copy import copy
+
+
+@tp.runtime_checkable
+class GeneratorFn(tp.Protocol):
+    def __call__(self) -> tp.Union[tp.Iterable]:
+        ...
 
 
 class FromIterable(tp.NamedTuple):
@@ -12,12 +19,20 @@ class FromIterable(tp.NamedTuple):
 
     def __call__(self, worker: Worker, **kwargs):
 
-        if isinstance(self.iterable, pypeln_utils.BaseStage):
+        iterable = self.iterable
 
-            for x in self.iterable.to_iterable(maxsize=0, return_index=True):
+        if isinstance(iterable, GeneratorFn):
+            print("yes")
+            iterable = iterable()
+        else:
+            print("no")
+
+        if isinstance(iterable, pypeln_utils.BaseStage):
+
+            for x in iterable.to_iterable(maxsize=0, return_index=True):
                 worker.stage_params.output_queues.put(x)
         else:
-            for i, x in enumerate(self.iterable):
+            for i, x in enumerate(iterable):
                 if isinstance(x, pypeln_utils.Element):
                     worker.stage_params.output_queues.put(x)
                 else:

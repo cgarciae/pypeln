@@ -109,3 +109,4 @@ XDG_CACHE_HOME
 # custom
 .vscode
 /scratch.py
+/test*.*

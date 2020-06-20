@@ -1,13 +1,15 @@
-import typing as tp
-import aiohttp
-import httpx
+import pypeln as pl
+from copy import copy, deepcopy
 
 
-async def abc():
-    pass
+def generator():
+    yield from [1, 2, 3]
 
 
-client = httpx.AsyncClient()
-a = client.get("http://google.com")
+# stage = lambda: generator()
+stage = [1, 2, 3]
+stage = pl.process.map(lambda x: x + 1, stage)
 
-print(isinstance(a, tp.Awaitable))
+# stage0 = deepcopy(stage)
+print(list(stage))
+print(list(stage))

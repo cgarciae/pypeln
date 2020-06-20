@@ -1,3 +1,7 @@
+"""
+The `thread` module lets you create pipelines using objects from python's [threading](https://docs.python.org/3/library/threading.html) module according to Pypeln's general [architecture](https://cgarciae.github.io/pypeln/advanced/#architecture). Use this module when you are in need to perform some synchronous IO operations and DONT need to perform heavy CPU operations.
+"""
+
 from .api.concat import concat
 from .api.each import each
 from .api.filter import filter

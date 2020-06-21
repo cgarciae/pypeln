@@ -120,6 +120,28 @@ def main():
 
 asyncio.run(main())
 ```
+### Sync
+The `sync` module implements all operations using synchronous generators. This module is useful for debugging or when you don't need to perform heavy CPU or IO tasks but still want to retain element order information that certain functions like `pl.*.ordered` rely on.
+
+```python
+import pypeln as pl
+import time
+from random import random
+
+def slow_add1(x):
+    return x + 1
+
+def slow_gt3(x):
+    return x > 3
+
+data = range(10) # [0, 1, 2, ..., 9] 
+
+stage = pl.sync.map(slow_add1, data, workers=3, maxsize=4)
+stage = pl.sync.filter(slow_gt3, stage, workers=2)
+
+data = list(stage) # [4, 5, 6, 7, 8, 9, 10]
+```
+Common arguments such as `workers` and `maxsize` are accepted by this module's functions for API compatibility purposes but are ignored.
 
 ## Mixed Pipelines
 You can create pipelines using different worker types such that each type is the best for its given task so you can get the maximum performance out of your code:

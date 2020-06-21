@@ -33,8 +33,8 @@ def concat(
     ```
 
     Arguments:
-        stages: a list of stages or iterables.
-        maxsize: the maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+        stages: A list of Stage, Iterable or AsyncIterable.
+        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
 
     Returns:
         A stage object.

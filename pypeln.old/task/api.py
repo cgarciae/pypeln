@@ -120,7 +120,7 @@ def from_iterable(
     * `multiprocessing.Process`: is efficient for iterables who's data is not in memory like arbitrary generators and benefit from escaping the GIL. This is inefficient for iterables which have data in memory because they have to be serialized when sent to the background process.
 
     Arguments:
-        iterable: A source iterable.
+        iterable: A source Iterable.
         maxsize: this parameter is not used and only kept for API compatibility with the other modules.
         worker_constructor: defines the worker type for the producer stage.
 
@@ -577,8 +577,8 @@ def concat(stages: typing.List[Stage], maxsize: int = 0) -> Stage:
     ```
 
     Arguments:
-        stages: a list of stages or iterables.
-        maxsize: the maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+        stages: A list of Stage or Iterable.
+        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
 
     Returns:
         A stage object.
@@ -652,7 +652,7 @@ def ordered(stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0) -> Stage:
         This stage will not yield util it accumulates all of the elements from the previous stage, use this only if all elements fit in memory.
 
     Arguments:
-        stage: A stage object.
+        stage: A Stage or Iterable.
         maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
 
     Returns:
@@ -727,7 +727,7 @@ def to_iterable(
     Creates an iterable from a stage.
 
     Arguments:
-        stage: A stage object.
+        stage: A Stage or Iterable.
         maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
 
     Returns:

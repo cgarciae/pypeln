@@ -126,7 +126,7 @@ def from_iterable(
     """
     Creates a stage from an iterable. This function gives you more control of the iterable is consumed.
     Arguments:
-        iterable: A source iterable.
+        iterable: A source Iterable.
         maxsize: this parameter is not used and only kept for API compatibility with the other modules.
         use_thread: If set to `True` (default) it will use a thread instead of a process to consume the iterable. Threads start faster and use thread memory to the iterable is not serialized, however, if the iterable is going to perform slow computations it better to use a process.
 
@@ -669,8 +669,8 @@ def concat(
     ```
 
     Arguments:
-        stages: a list of stages or iterables.
-        maxsize: the maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+        stages: A list of Stage or Iterable.
+        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
 
     Returns:
         A stage object.
@@ -780,7 +780,7 @@ def ordered(
         This stage will not yield util it accumulates all of the elements from the previous stage, use this only if all elements fit in memory.
 
     Arguments:
-        stage: A stage object.
+        stage: A Stage or Iterable.
         maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
 
     Returns:
@@ -870,7 +870,7 @@ def to_iterable(
     Creates an iterable from a stage.
 
     Arguments:
-        stage: A stage object.
+        stage: A Stage or Iterable.
         maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
 
     Returns:

@@ -40,7 +40,7 @@ def from_iterable(
     Creates a stage from an iterable.
 
     Arguments:
-        iterable: A source iterable.
+        iterable: A source Iterable.
         use_thread: This parameter is not used and only kept for API compatibility with the other modules.
 
     Returns:

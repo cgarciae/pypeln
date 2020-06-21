@@ -98,7 +98,7 @@ def from_iterable(
     """
     Creates a stage from an iterable. This function gives you more control of the iterable is consumed.
     Arguments:
-        iterable: A source iterable.
+        iterable: A source Iterable or AsyncIterable.
         use_thread: This parameter is not used and only kept for API compatibility with the other modules.
 
     Returns:

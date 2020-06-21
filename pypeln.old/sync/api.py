@@ -44,7 +44,7 @@ def from_iterable(
     Creates a stage from an iterable.
 
     Arguments:
-        iterable: A source iterable.
+        iterable: A source Iterable.
         maxsize: this parameter is not used and only kept for API compatibility with the other modules.
         worker_constructor: this parameter is not used and only kept for API compatibility with the other modules.
 
@@ -453,7 +453,7 @@ def concat(stages: typing.List[Stage], maxsize: int = 0) -> Stage:
     ```
 
     Arguments:
-        stages: a list of stages or iterables.
+        stages: A list of Stage or Iterable.
         maxsize: This parameter is not used and only kept for API compatibility with the other modules.
 
     Returns:
@@ -522,7 +522,7 @@ def ordered(stage: Stage = pypeln_utils.UNDEFINED, maxsize: int = 0) -> Stage:
         This stage will not yield util it accumulates all of the elements from the previous stage, use this only if all elements fit in memory.
 
     Arguments:
-        stage: A stage object.
+        stage: A Stage or Iterable.
         maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
 
     Returns:
@@ -591,7 +591,7 @@ def to_iterable(
     Creates an iterable from a stage.
 
     Arguments:
-        stage: A stage object.
+        stage: A Stage or Iterable.
         maxsize: This parameter is not used and only kept for API compatibility with the other modules.
 
     Returns:

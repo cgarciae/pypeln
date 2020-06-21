@@ -74,7 +74,7 @@ def ordered(
         This stage will not yield util it accumulates all of the elements from the previous stage, use this only if all elements fit in memory.
 
     Arguments:
-        stage: A stage object.
+        stage: A Stage, Iterable, or AsyncIterable.
 
     Returns:
         If the `stage` parameters is given then this function returns an iterable, else it returns a `Partial`.

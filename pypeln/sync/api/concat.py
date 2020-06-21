@@ -28,7 +28,7 @@ def concat(
     ```
 
     Arguments:
-        stages: a list of stages or iterables.
+        stages: A list of Stage or Iterable.
         maxsize: This parameter is not used and only kept for API compatibility with the other modules.
 
     Returns:

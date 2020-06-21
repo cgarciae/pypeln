@@ -53,7 +53,7 @@ def from_iterable(
     Creates a stage from an iterable.
 
     Arguments:
-        iterable: A source iterable.
+        iterable: A source Iterable.
         use_thread: If set to `True` (default) it will use a thread instead of a process to consume the iterable. Threads start faster and use thread memory to the iterable is not serialized, however, if the iterable is going to perform slow computations it better to use a process.
 
     Returns:

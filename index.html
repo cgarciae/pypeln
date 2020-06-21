@@ -171,6 +171,11 @@
     Tasks
   </a>
 </li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#sync">
+    Sync
+  </a>
+</li>
 </ul>
 </nav>
 </li>
@@ -514,6 +519,11 @@
     Tasks
   </a>
 </li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#sync">
+    Sync
+  </a>
+</li>
 </ul>
 </nav>
 </li>
@@ -656,6 +666,26 @@
 
 <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
 </code></pre></div>
+<h3 id="sync">Sync</h3>
+<p>The <code>sync</code> module implements all operations using synchronous generators. This module is useful for debugging or when you don't need to perform heavy CPU or IO tasks but still want to retain element order information that certain functions like <code>pl.*.ordered</code> rely on.</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">import</span> <span class="nn">pypeln</span> <span class="k">as</span> <span class="nn">pl</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">random</span>
+
+<span class="k">def</span> <span class="nf">slow_add1</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+
+<span class="k">def</span> <span class="nf">slow_gt3</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">3</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="c1"># [0, 1, 2, ..., 9] </span>
+
+<span class="n">stage</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">sync</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">slow_add1</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">stage</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">sync</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">slow_gt3</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span> <span class="c1"># [4, 5, 6, 7, 8, 9, 10]</span>
+</code></pre></div>
+<p>Common arguments such as <code>workers</code> and <code>maxsize</code> are accepted by this module's functions for API compatibility purposes but are ignored.</p>
 <h2 id="mixed-pipelines">Mixed Pipelines</h2>
 <p>You can create pipelines using different worker types such that each type is the best for its given task so you can get the maximum performance out of your code:</p>
 <div class="codehilite"><pre><span></span><code><span class="n">data</span> <span class="o">=</span> <span class="n">get_iterable</span><span class="p">()</span>

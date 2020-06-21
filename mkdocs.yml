@@ -1,6 +1,7 @@
 site_name: Pypeln
 repo_name: cgarciae/pypeln
 repo_url: https://github.com/cgarciae/pypeln
+site_url: https://cgarciae.github.io/pypeln
 
 theme:
   name: material
@@ -8,11 +9,52 @@ theme:
 nav:
   - Introduction: index.md
   - Advanced Usage: advanced.md
-  - API Reference:
-      - process: api/process.md
-      - thread: api/thread.md
-      - task: api/task.md
-      - sync: api/sync.md
+  - API Reference:   
+      - process:
+          Overview: api/process/Overview.md
+          concat: api/process/concat.md
+          each: api/process/each.md
+          filter: api/process/filter.md
+          flat_map: api/process/flat_map.md
+          from_iterable: api/process/from_iterable.md
+          map: api/process/map.md
+          ordered: api/process/ordered.md
+          run: api/process/run.md
+          to_iterable: api/process/to_iterable.md
+      - thread:
+          Overview: api/thread/Overview.md
+          concat: api/thread/concat.md
+          each: api/thread/each.md
+          filter: api/thread/filter.md
+          flat_map: api/thread/flat_map.md
+          from_iterable: api/thread/from_iterable.md
+          map: api/thread/map.md
+          ordered: api/thread/ordered.md
+          run: api/thread/run.md
+          to_iterable: api/thread/to_iterable.md
+      - task:
+          Overview: api/task/Overview.md
+          concat: api/task/concat.md
+          each: api/task/each.md
+          filter: api/task/filter.md
+          flat_map: api/task/flat_map.md
+          from_iterable: api/task/from_iterable.md
+          map: api/task/map.md
+          ordered: api/task/ordered.md
+          run: api/task/run.md
+          to_iterable: api/task/to_iterable.md
+      - sync:
+          Overview: api/sync/Overview.md
+          concat: api/sync/concat.md
+          each: api/sync/each.md
+          filter: api/sync/filter.md
+          flat_map: api/sync/flat_map.md
+          from_iterable: api/sync/from_iterable.md
+          map: api/sync/map.md
+          ordered: api/sync/ordered.md
+          run: api/sync/run.md
+          to_iterable: api/sync/to_iterable.md
+
 
 extra:
   search:
@@ -28,6 +70,7 @@ extra:
 markdown_extensions:
   - admonition
   - codehilite
+  # - mkautodoc
 
 plugins:
   - search

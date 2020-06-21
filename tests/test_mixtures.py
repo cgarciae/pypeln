@@ -1,7 +1,5 @@
 import hypothesis as hp
 from hypothesis import strategies as st
-import cytoolz as cz
-import functools as ft
 import time
 import random
 import pypeln as pl

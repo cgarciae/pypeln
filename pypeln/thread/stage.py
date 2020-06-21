@@ -1,276 +1,88 @@
-import inspect
-import sys
-import time
-import traceback
-from collections import namedtuple
-from queue import Queue
-from threading import Lock, Thread
-
-import stopit
+import typing as tp
 
 from pypeln import utils as pypeln_utils
+from pypeln.utils import T, Kwargs
+from dataclasses import dataclass
 
 from . import utils
+from .queue import IterableQueue, OutputQueues
+from .worker import Worker, StageParams, ProcessFn
+from .supervisor import Supervisor
 
 
-class Stage(pypeln_utils.BaseStage):
-    def __init__(
-        self,
-        f,
-        workers,
-        maxsize,
-        on_start,
-        on_done,
-        dependencies,
-        timeout,
-        worker_constructor=None,
-    ):
+@dataclass
+class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
+    process_fn: ProcessFn
+    workers: int
+    maxsize: int
+    total_sources: int
+    timeout: float
+    dependencies: tp.List["Stage"]
+    on_start: tp.Optional[tp.Callable[..., Kwargs]]
+    on_done: tp.Optional[tp.Callable[..., Kwargs]]
+    f_args: tp.List[str]
 
-        if worker_constructor is None:
-            worker_constructor = Thread
-
-        self.f = f
-        self.workers = workers
-        self.maxsize = maxsize
-        self.on_start = on_start
-        self.on_done = on_done
-        self.timeout = timeout
-        self.dependencies = dependencies
-        self.output_queues = utils.MultiQueue()
-        self.worker_constructor = worker_constructor
-        self.f_args = pypeln_utils.function_args(self.f) if self.f else set()
-        self.on_start_args = (
-            pypeln_utils.function_args(self.on_start) if self.on_start else set()
-        )
-        self.on_done_args = (
-            pypeln_utils.function_args(self.on_done) if self.on_done else set()
-        )
-        ######################################
-        # build fields
-        ######################################
-        self.input_queue = None
-        self.stage_namespace = None
-        self.stage_lock = None
-        self.pipeline_namespace = None
-        self.pipeline_error_queue = None
-
-    def process(self, worker_namespace, **kwargs) -> None:
-        for x in self.input_queue:
-            worker_namespace.task_start_time = time.time()
-            self.apply(x, **kwargs)
-            worker_namespace.task_start_time = None
-
-    def run(self, index, worker_namespace):
-        worker_info = pypeln_utils.WorkerInfo(index=index)
-
-        try:
-            if self.on_start is not None:
-                on_start_kwargs = dict(worker_info=worker_info)
-                kwargs = self.on_start(
-                    **{
-                        key: value
-                        for key, value in on_start_kwargs.items()
-                        if key in self.on_start_args
-                    }
-                )
-            else:
-                kwargs = {}
-
-            if kwargs is None:
-                kwargs = {}
-
-            kwargs.setdefault("worker_info", worker_info)
-
-            self.process(
-                worker_namespace,
-                **{key: value for key, value in kwargs.items() if key in self.f_args},
-            )
-
-            if self.on_done is not None:
-                with self.stage_lock:
-                    self.stage_namespace.active_workers -= 1
-
-                kwargs.setdefault(
-                    "stage_status",
-                    utils.StageStatus(
-                        namespace=self.stage_namespace, lock=self.stage_lock
-                    ),
-                )
-
-                self.on_done(
-                    **{
-                        key: value
-                        for key, value in kwargs.items()
-                        if key in self.on_done_args
-                    }
-                )
-
-            self.output_queues.done()
-
-        except pypeln_utils.StopThreadException:
-            pass
-        except BaseException as e:
-            self.signal_error(e)
-        finally:
-            worker_namespace.done = True
-
-    def __iter__(self):
-        return self.to_iterable(maxsize=0, return_index=False)
+    def __hash__(self):
+        return id(self)
 
     def build(
         self,
-        pipeline_stages: set,
-        output_queue: utils.IterableQueue,
-        pipeline_namespace,
-        pipeline_error_queue,
-    ):
+        built: tp.Dict["Stage", OutputQueues],
+        output_queue: IterableQueue,
+        main_queue: IterableQueue,
+    ) -> tp.Iterable[Worker]:
 
-        if (
-            self.pipeline_namespace is not None
-            and self.pipeline_namespace != pipeline_namespace
-        ):
-            raise pypeln_utils.StageReuseError(
-                f"Traying to reuse stage {self} in two different pipelines. This behavior is not supported."
-            )
-
-        self.output_queues.append(output_queue)
-
-        if self in pipeline_stages:
+        if self in built:
+            built[self].append(output_queue)
             return
+        else:
+            built[self] = OutputQueues([output_queue])
 
-        pipeline_stages.add(self)
-
-        total_done = sum([stage.workers for stage in self.dependencies])
-
-        self.pipeline_namespace = pipeline_namespace
-        self.pipeline_error_queue = pipeline_error_queue
-        self.stage_lock = Lock()
-        self.stage_namespace = utils.get_namespace(active_workers=self.workers)
-        self.input_queue = utils.IterableQueue(
-            self.maxsize, total_done, pipeline_namespace
+        input_queue = IterableQueue(
+            maxsize=self.maxsize, total_sources=self.total_sources
         )
 
-        for stage in self.dependencies:
-            stage: Stage
+        stage_params = StageParams.create(
+            input_queue=input_queue,
+            output_queues=built[self],
+            total_workers=self.workers,
+        )
 
-            stage.build(
-                pipeline_stages,
-                self.input_queue,
-                pipeline_namespace,
-                pipeline_error_queue,
+        for i in range(self.workers):
+            worker = Worker(
+                process_fn=self.process_fn,
+                index=i,
+                timeout=self.timeout,
+                stage_params=stage_params,
+                main_queue=main_queue,
+                on_start=self.on_start,
+                on_done=self.on_done,
+                f_args=self.f_args,
             )
 
-    def to_iterable(self, maxsize, return_index):
+            yield worker
 
-        self._iter_done = False
+        for dependency in self.dependencies:
+            yield from dependency.build(built, input_queue, main_queue)
 
-        pipeline_namespace = utils.get_namespace(error=False)
-        pipeline_error_queue = Queue()
+    def to_iterable(self, maxsize: int, return_index: bool) -> tp.Iterable[T]:
 
-        output_queue = utils.IterableQueue(maxsize, self.workers, pipeline_namespace)
-        pipeline_stages = set()
-
-        self.build(
-            pipeline_stages=pipeline_stages,
-            output_queue=output_queue,
-            pipeline_namespace=pipeline_namespace,
-            pipeline_error_queue=pipeline_error_queue,
+        # build stages first to verify reuse
+        main_queue: IterableQueue[pypeln_utils.Element] = IterableQueue(
+            maxsize=maxsize, total_sources=self.workers,
         )
 
-        workers = []
+        built = {}
 
-        for stage in pipeline_stages:
-            for index in range(stage.workers):
-                worker_namespace = utils.get_namespace(task_start_time=None, done=False)
+        workers: tp.List[Worker] = list(self.build(built, main_queue, main_queue))
+        supervisor = Supervisor(workers=workers, main_queue=main_queue)
 
-                workers.append(
-                    dict(
-                        process=stage.worker_constructor(
-                            target=stage.run, args=(index, worker_namespace)
-                        ),
-                        index=index,
-                        stage=stage,
-                        worker_namespace=worker_namespace,
-                    )
-                )
-
-        for worker in workers:
-            worker["process"].daemon = True
-            worker["process"].start()
-
-        supervisor = Thread(target=self.worker_supervisor, args=(workers,))
-        supervisor.daemon = True
-        supervisor.start()
-
-        try:
-            for elem in output_queue:
+        with supervisor:
+            for elem in main_queue:
                 if return_index:
                     yield elem
                 else:
                     yield elem.value
 
-            if pipeline_namespace.error:
-                error_class, _, trace = pipeline_error_queue.get()
-
-                try:
-                    error = error_class(f"\n\nOriginal {trace}")
-                except:
-                    raise Exception(f"\n\nError: {trace}")
-
-                raise error
-
-            for worker in workers:
-                worker["process"].join()
-
-        except:
-            for stage in pipeline_stages:
-                stage.input_queue.done()
-
-            raise
-
-        finally:
-            self._iter_done = True
-
-    def worker_supervisor(self, workers):
-        try:
-            workers = [worker for worker in workers if worker["stage"].timeout > 0]
-
-            if not workers:
-                return
-
-            while not self._iter_done:
-
-                for worker in workers:
-                    if (
-                        not worker["worker_namespace"].done
-                        and worker["worker_namespace"].task_start_time is not None
-                    ):
-                        if (
-                            time.time() - worker["worker_namespace"].task_start_time
-                            > worker["stage"].timeout
-                        ):
-                            worker["worker_namespace"].task_start_time = None
-                            stopit.async_raise(
-                                worker["process"].ident,
-                                pypeln_utils.StopThreadException,
-                            )
-                            worker["process"] = worker["stage"].worker_constructor(
-                                target=worker["stage"].run,
-                                args=(worker["index"], worker["worker_namespace"]),
-                            )
-                            worker["process"].daemon = True
-                            worker["process"].start()
-
-                time.sleep(0.05)
-
-        except BaseException as e:
-            self.signal_error(e)
-
-    def signal_error(self, e):
-        try:
-            self.pipeline_error_queue.put(
-                (type(e), e, "".join(traceback.format_exception(*sys.exc_info())))
-            )
-            self.pipeline_namespace.error = True
-        except BaseException as e:
-            print(e)
+    def __iter__(self):
+        return self.to_iterable(maxsize=0, return_index=False)

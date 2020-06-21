@@ -1,258 +1,114 @@
-import asyncio
-import inspect
-import sys
-import traceback
-from collections import namedtuple
-from queue import Queue
-from threading import Lock, Thread
-from abc import ABC, abstractmethod
-
+import typing as tp
+from dataclasses import dataclass
 from pypeln import utils as pypeln_utils
+from pypeln.utils import T, Kwargs
 
+from .queue import IterableQueue, OutputQueues
+from .worker import Worker, StageParams, TaskPool, ProcessFn
+from .supervisor import Supervisor
 from . import utils
 
 
-class Stage(pypeln_utils.BaseStage):
-    def __init__(
-        self, f, workers, maxsize, on_start, on_done, dependencies, timeout,
-    ):
-        self.f = f
-        self.workers = workers
-        self.maxsize = maxsize
-        self.on_start = on_start
-        self.on_done = on_done
-        self.timeout = timeout
-        self.dependencies = dependencies
-        self.output_queues = utils.MultiQueue()
-        self.f_args = pypeln_utils.function_args(self.f) if self.f else set()
-        self.on_start_args = (
-            pypeln_utils.function_args(self.on_start) if self.on_start else set()
+@dataclass
+class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
+    process_fn: ProcessFn
+    workers: int
+    maxsize: int
+    total_sources: int
+    timeout: float
+    dependencies: tp.List["Stage"]
+    on_start: tp.Optional[tp.Callable[..., tp.Union[Kwargs, tp.Awaitable[Kwargs]]]]
+    on_done: tp.Optional[tp.Callable[..., tp.Union[Kwargs, tp.Awaitable[Kwargs]]]]
+    f_args: tp.List[str]
+
+    def __hash__(self):
+        return id(self)
+
+    def build(
+        self,
+        built: tp.Dict["Stage", OutputQueues],
+        output_queue: IterableQueue,
+        main_queue: IterableQueue,
+    ) -> tp.Iterable[Worker]:
+
+        if self in built:
+            built[self].append(output_queue)
+            return
+        else:
+            built[self] = OutputQueues([output_queue])
+
+        input_queue = IterableQueue(
+            maxsize=self.maxsize, total_sources=self.total_sources
         )
-        self.on_done_args = (
-            pypeln_utils.function_args(self.on_done) if self.on_done else set()
+
+        stage_params = StageParams.create(
+            input_queue=input_queue, output_queues=built[self],
         )
-        ######################################
-        # build fields
-        ######################################
-        self.input_queue = None
-        self.stage_namespace = None
-        self.stage_lock = None
-        self.pipeline_namespace = None
-        self.pipeline_error_queue = None
-        self.pipeline_stages = None
-        self.loop = None
 
-    async def process(self, **kwargs) -> None:
-        async with utils.TaskPool(self.workers) as tasks:
-            async for x in self.input_queue:
-                task = self.apply(x, **kwargs)
+        yield Worker(
+            process_fn=self.process_fn,
+            timeout=self.timeout,
+            stage_params=stage_params,
+            main_queue=main_queue,
+            on_start=self.on_start,
+            on_done=self.on_done,
+            f_args=self.f_args,
+            tasks=TaskPool.create(workers=self.workers, timeout=self.timeout),
+        )
 
-                if self.timeout:
-                    task = asyncio.wait_for(task, timeout=self.timeout)
+        for dependency in self.dependencies:
+            yield from dependency.build(built, input_queue, main_queue)
 
-                await tasks.put(task)
+    def to_iterable(self, maxsize: int, return_index: bool) -> tp.Iterable[T]:
 
-    async def run(self):
-        worker_info = pypeln_utils.WorkerInfo(index=0)
+        # create a running event loop in case it doesn't exist
+        utils.get_running_loop()
 
-        try:
-            if self.on_start is not None:
-                on_start_kwargs = dict(worker_info=worker_info)
-                kwargs = self.on_start(
-                    **{
-                        key: value
-                        for key, value in on_start_kwargs.items()
-                        if key in self.on_start_args
-                    }
-                )
-            else:
-                kwargs = {}
+        main_queue: IterableQueue[pypeln_utils.Element] = IterableQueue(
+            maxsize=maxsize, total_sources=1,
+        )
 
-            if kwargs is None:
-                kwargs = {}
+        built = {}
 
-            if hasattr(kwargs, "__await__"):
-                kwargs = await kwargs
+        workers: tp.List[Worker] = list(self.build(built, main_queue, main_queue))
+        supervisor = Supervisor(workers=workers, main_queue=main_queue)
 
-            kwargs.setdefault("worker_info", worker_info)
+        with supervisor:
+            for elem in main_queue:
+                if return_index:
+                    yield elem
+                else:
+                    yield elem.value
 
-            await self.process(
-                **{key: value for key, value in kwargs.items() if key in self.f_args}
-            )
+    async def to_async_iterable(
+        self, maxsize: int, return_index: bool
+    ) -> tp.AsyncIterable[T]:
 
-            if self.on_done is not None:
+        # build stages first to verify reuse
+        main_queue: IterableQueue[pypeln_utils.Element] = IterableQueue(
+            maxsize=maxsize, total_sources=1,
+        )
 
-                kwargs.setdefault(
-                    "stage_status", utils.StageStatus(),
-                )
+        built = {}
 
-                done_resp = self.on_done(
-                    **{
-                        key: value
-                        for key, value in kwargs.items()
-                        if key in self.on_done_args
-                    }
-                )
+        workers: tp.List[Worker] = list(self.build(built, main_queue, main_queue))
+        supervisor = Supervisor(workers=workers, main_queue=main_queue)
 
-                if hasattr(done_resp, "__await__"):
-                    await done_resp
-
-            await self.output_queues.done()
-
-        except BaseException as e:
-            self.pipeline_namespace.error = True
-            await self.output_queues.done()
-            # for stage in self.pipeline_stages:
-            #     await stage.input_queue.done()
-
-            try:
-                self.pipeline_error_queue.put_nowait(
-                    (type(e), e, "".join(traceback.format_exception(*sys.exc_info())))
-                )
-
-            except BaseException as e:
-                print(e)
+        async with supervisor:
+            async for elem in main_queue:
+                if return_index:
+                    yield elem
+                else:
+                    yield elem.value
 
     def __iter__(self):
         return self.to_iterable(maxsize=0, return_index=False)
 
     def __aiter__(self):
-        return self.to_async_iterable(maxsize=0, return_index=False).__aiter__()
+        return self.to_async_iterable(maxsize=0, return_index=False)
 
-    async def to_async_iterable(self, maxsize, return_index):
+    async def _await(self):
+        return [x async for x in self]
 
-        pipeline_namespace = utils.get_namespace()
-        pipeline_namespace.error = False
-        pipeline_error_queue = Queue()
-
-        f_coro, output_queue = self.to_coroutine(
-            maxsize=maxsize,
-            pipeline_namespace=pipeline_namespace,
-            pipeline_error_queue=pipeline_error_queue,
-            loop=asyncio.get_event_loop(),
-        )
-
-        self.loop.create_task(f_coro())
-
-        async for elem in output_queue:
-            if return_index:
-                yield elem
-            else:
-                yield elem.value
-
-
-        if pipeline_namespace.error:
-            error_class, _, trace = pipeline_error_queue.get()
-
-            try:
-                error = error_class(f"\n\nOriginal {trace}")
-            except:
-                raise Exception(f"\n\nError: {trace}")
-
-            raise error
-
-    async def await_(self):
-        return [x async for x in self.to_async_iterable(maxsize=0, return_index=False)]
-
-    def __await__(self):
-        return self.await_().__await__()
-
-    def build(
-        self,
-        pipeline_stages: set,
-        output_queue: utils.IterableQueue,
-        pipeline_namespace,
-        pipeline_error_queue,
-        loop,
-    ):
-
-        if (
-            self.pipeline_namespace is not None
-            and self.pipeline_namespace != pipeline_namespace
-        ):
-            raise pypeln_utils.StageReuseError(
-                f"Traying to reuse stage {self} in two different pipelines. This behavior is not supported."
-            )
-
-        self.output_queues.append(output_queue)
-
-        if self in pipeline_stages:
-            return
-
-        pipeline_stages.add(self)
-
-        total_done = len(self.dependencies)
-
-        self.pipeline_namespace = pipeline_namespace
-        self.pipeline_error_queue = pipeline_error_queue
-        self.pipeline_stages = pipeline_stages
-        self.loop = loop
-        self.input_queue = utils.IterableQueue(
-            self.maxsize, total_done, pipeline_namespace, loop=loop
-        )
-
-        for stage in self.dependencies:
-            stage: Stage
-
-            stage.build(
-                pipeline_stages,
-                self.input_queue,
-                pipeline_namespace,
-                pipeline_error_queue,
-                loop,
-            )
-
-    def to_iterable(self, maxsize, return_index):
-
-        pipeline_namespace = utils.get_namespace()
-        pipeline_namespace.error = False
-        pipeline_error_queue = Queue()
-
-        f_coro, output_queue = self.to_coroutine(
-            maxsize=maxsize,
-            pipeline_namespace=pipeline_namespace,
-            pipeline_error_queue=pipeline_error_queue,
-            loop=utils.LOOP,
-        )
-
-        utils.run_on_loop(f_coro)
-
-        for elem in output_queue:
-            if return_index:
-                yield elem
-            else:
-                yield elem.value
-
-        if pipeline_namespace.error:
-            error_class, _, trace = pipeline_error_queue.get()
-
-            try:
-                error = error_class(f"\n\nOriginal {trace}")
-            except:
-                raise Exception(f"\n\nError: {trace}")
-
-            raise error
-
-    def to_coroutine(self, maxsize, pipeline_namespace, pipeline_error_queue, loop):
-
-        total_done = 1
-        output_queue = utils.IterableQueue(
-            maxsize=maxsize,
-            total_done=total_done,
-            pipeline_namespace=pipeline_namespace,
-            loop=loop,
-        )
-        pipeline_stages = set()
-
-        self.build(
-            pipeline_stages=pipeline_stages,
-            output_queue=output_queue,
-            pipeline_namespace=pipeline_namespace,
-            pipeline_error_queue=pipeline_error_queue,
-            loop=loop,
-        )
-
-        async def f_coro():
-            await asyncio.gather(*[stage.run() for stage in pipeline_stages])
-
-        return f_coro, output_queue
+    def __await__(self) -> tp.Generator[tp.Any, None, tp.List[T]]:
+        return self._await().__await__()

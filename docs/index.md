@@ -94,7 +94,32 @@ stage = pl.task.filter(slow_gt3, stage, workers=2)
 
 data = list(stage) # e.g. [5, 6, 9, 4, 8, 10, 7]
 ```
-Conceptually similar but everything is running in a single thread and Task workers are created dynamically.
+Conceptually similar but everything is running in a single thread and Task workers are created dynamically. If the code is running inside an async task can use `await` on the stage instead to avoid blocking:
+
+```python
+import pypeln as pl
+import asyncio
+from random import random
+
+async def slow_add1(x):
+    await asyncio.sleep(random()) # <= some slow computation
+    return x + 1
+
+async def slow_gt3(x):
+    await asyncio.sleep(random()) # <= some slow computation
+    return x > 3
+
+
+def main():
+    data = range(10) # [0, 1, 2, ..., 9] 
+
+    stage = pl.task.map(slow_add1, data, workers=3, maxsize=4)
+    stage = pl.task.filter(slow_gt3, stage, workers=2)
+
+    data = await stage # e.g. [5, 6, 9, 4, 8, 10, 7]
+
+asyncio.run(main())
+```
 
 ## Mixed Pipelines
 You can create pipelines using different worker types such that each type is the best for its given task so you can get the maximum performance out of your code:

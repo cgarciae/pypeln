@@ -30,11 +30,12 @@ def to_iterable(
     return_index: bool = False,
 ) -> tp.Union[tp.Iterable[A], pypeln_utils.Partial[tp.Iterable[A]]]:
     """
-    Creates an iterable from a stage.
+    Creates an iterable from a stage. Use this function to when you want to have more control over how the output stage is consumed, especifically, setting the `maxsize` argument can help you avoid OOM error if the consumer is slow.
 
     Arguments:
         stage: A stage object.
-        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+        maxsize: The maximum number of objects the output queue can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+        return_index: When set to `True` the resulting iterable will yield the `Elemen(index: Tuple[int, ...], value: Any)` which contains both the resulting value and the index parameter which holds information about the order of creation of the elements at the source.
 
     Returns:
         If the `stage` parameters is given then this function returns an iterable, else it returns a `Partial`.

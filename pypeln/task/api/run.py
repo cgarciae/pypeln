@@ -34,13 +34,12 @@ def run(
 
     """
 
-    if len(stages) > 0:
-        stage = concat(list(stages), maxsize=maxsize)
-
+    if len(stages) == 0:
+        return
+    elif len(stages) == 1:
+        stage = to_iterable(stages[0], maxsize=maxsize)
     else:
-        stage = stages[0]
-
-    stage = to_iterable(stage, maxsize=maxsize)
+        stage = concat(list(stages), maxsize=maxsize)
 
     for _ in stage:
         pass

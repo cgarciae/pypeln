@@ -83,7 +83,6 @@ def each(
     pl.sync.run(stage)
 
     ```
-
     or alternatively
 
     ```python
@@ -96,6 +95,7 @@ def each(
 
     Arguments:
         f: A function with signature `f(x) -> None`. `f` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
+        stage: A Stage or Iterable.
         workers: This parameter is not used and only kept for API compatibility with the other modules.
         maxsize: This parameter is not used and only kept for API compatibility with the other modules.
         timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. 
@@ -104,7 +104,7 @@ def each(
         run: Whether or not to execute the stage immediately.
 
     !!! warning
-        To implement `timeout` we use `stopit.async_raise` which has some limitations for stoping threads. 
+        To implement `timeout` we use `stopit.ThreadingTimeout` which has some limitations. 
 
     Returns:
         If the `stage` parameters is not given then this function returns a `Partial`, else if `run=False` (default) it return a new stage, if `run=True` then it runs the stage and returns `None`.

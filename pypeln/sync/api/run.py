@@ -1,10 +1,13 @@
 import typing as tp
 
+from pypeln.utils import A
+
 from ..stage import Stage
+from .concat import concat
 from .to_iterable import to_iterable
 
 
-def run(stages: tp.List[Stage], maxsize: int = 0) -> None:
+def run(*stages: tp.Union[Stage[A], tp.Iterable[A]], maxsize: int = 0) -> None:
     """
     Iterates over one or more stages until their iterators run out of elements.
 
@@ -24,16 +27,12 @@ def run(stages: tp.List[Stage], maxsize: int = 0) -> None:
 
     """
 
-    if isinstance(stages, list) and len(stages) == 0:
-        raise ValueError("Expected at least 1 stage to run")
-
-    elif isinstance(stages, list):
-        stage = concat(stages, maxsize=maxsize)
-
+    if len(stages) == 0:
+        return
+    elif len(stages) == 1:
+        stage = to_iterable(stages[0], maxsize=maxsize)
     else:
-        stage = stages
+        stage = concat(list(stages), maxsize=maxsize)
 
-    stage = to_iterable(stage, maxsize=maxsize)
-
-    for _ in stages:
+    for _ in stage:
         pass

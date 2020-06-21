@@ -80,7 +80,7 @@ def filter(
 
     Arguments:
         f: A function with signature `f(x) -> bool`. `f` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
-        stage: A stage or iterable.
+        stage: A Stage or Iterable.
         workers: This parameter is not used and only kept for API compatibility with the other modules.
         maxsize: This parameter is not used and only kept for API compatibility with the other modules.
         timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. 
@@ -88,7 +88,7 @@ def filter(
         on_done: A function with signature `on_done(stage_status?)`. This function is executed once per worker when the worker finishes. `on_done` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
 
     !!! warning
-        To implement `timeout` we use `stopit.async_raise` which has some limitations for stoping threads.
+        To implement `timeout` we use `stopit.ThreadingTimeout` which has some limitations.
 
     Returns:
         If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.

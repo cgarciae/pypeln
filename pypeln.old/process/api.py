@@ -53,7 +53,7 @@ def from_iterable(
     * `multiprocessing.Process`: is efficient for iterables who's data is not in memory like arbitrary generators and benefit from escaping the GIL. This is inefficient for iterables which have data in memory because they have to be serialized when sent to the background process.
 
     Arguments:
-        iterable: a source iterable.
+        iterable: A source iterable.
         maxsize: this parameter is not used and only kept for API compatibility with the other modules.
         worker_constructor: defines the worker type for the producer stage.
 
@@ -145,7 +145,7 @@ def map(
 
     Arguments:
         f: A function with the signature `f(x) -> y`. `f` can accept special additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
-        stage: A stage or iterable.
+        stage: A Stage or Iterable.
         workers: The number of workers the stage should contain.
         maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
         timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. 
@@ -245,7 +245,7 @@ def flat_map(
 
     Arguments:
         f: A function with signature `f(x) -> iterable`. `f` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
-        stage: A stage or iterable.
+        stage: A Stage or Iterable.
         workers: The number of workers the stage should contain.
         maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
         timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. 
@@ -329,7 +329,7 @@ def filter(
 
     Arguments:
         f: A function with signature `f(x) -> bool`. `f` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
-        stage: A stage or iterable.
+        stage: A Stage or Iterable.
         workers: The number of workers the stage should contain.
         maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
         timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. 
@@ -619,7 +619,7 @@ def run(stages: typing.List[Stage], maxsize: int = 0) -> None:
 
     stage = to_iterable(stage, maxsize=maxsize)
 
-    for _ in stages:
+    for _ in stage:
         pass
 
 

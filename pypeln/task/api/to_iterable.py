@@ -9,7 +9,7 @@ from pypeln import utils as pypeln_utils
 
 @tp.overload
 def to_iterable(
-    stage: tp.Union[Stage[A], tp.Iterable[A]],
+    stage: tp.Union[Stage[A], tp.Iterable[A], tp.AsyncIterable[A]],
     maxsize: int = 0,
     return_index: bool = False,
 ) -> tp.Iterable[A]:
@@ -31,11 +31,12 @@ def to_iterable(
     return_index: bool = False,
 ) -> tp.Union[tp.Iterable[A], pypeln_utils.Partial[tp.Iterable[A]]]:
     """
-    Creates an iterable from a stage.
+    Creates an iterable from a stage. Use this function to when you want to have more control over how the output stage is consumed, especifically, setting the `maxsize` argument can help you avoid OOM error if the consumer is slow.
 
     Arguments:
         stage: A stage object.
         maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
+        return_index: When set to `True` the resulting iterable will yield the `Elemen(index: Tuple[int, ...], value: Any)` which contains both the resulting value and the index parameter which holds information about the order of creation of the elements at the source.
 
     Returns:
         If the `stage` parameters is given then this function returns an iterable, else it returns a `Partial`.
@@ -49,7 +50,7 @@ def to_iterable(
     elif isinstance(stage, tp.Iterable[A]):
         return stage
     else:
-        iterable = from_iterable(stage, maxsize=maxsize).to_iterable(
+        iterable = from_iterable(stage).to_iterable(
             maxsize=maxsize, return_index=return_index
         )
 

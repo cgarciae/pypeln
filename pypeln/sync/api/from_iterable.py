@@ -23,31 +23,25 @@ class FromIterable(ProcessFn):
 
 
 @tp.overload
-def from_iterable(
-    iterable: tp.Iterable[T], maxsize: int = 0, use_thread: bool = True
-) -> Stage[T]:
+def from_iterable(iterable: tp.Iterable[T], use_thread: bool = True) -> Stage[T]:
     ...
 
 
 @tp.overload
-def from_iterable(
-    maxsize: int = 0, use_thread: bool = True
-) -> pypeln_utils.Partial[Stage[T]]:
+def from_iterable(use_thread: bool = True) -> pypeln_utils.Partial[Stage[T]]:
     ...
 
 
 def from_iterable(
     iterable: tp.Union[tp.Iterable[T], pypeln_utils.Undefined] = pypeln_utils.UNDEFINED,
-    maxsize: int = 0,
     use_thread: bool = True,
 ):
     """
     Creates a stage from an iterable.
 
     Arguments:
-        iterable: a source iterable.
-        maxsize: this parameter is not used and only kept for API compatibility with the other modules.
-        worker_constructor: this parameter is not used and only kept for API compatibility with the other modules.
+        iterable: A source iterable.
+        use_thread: This parameter is not used and only kept for API compatibility with the other modules.
 
     Returns:
         If the `iterable` parameters is given then this function returns a new stage, else it returns a `Partial`.

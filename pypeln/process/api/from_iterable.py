@@ -21,12 +21,6 @@ class FromIterable(tp.NamedTuple):
 
         iterable = self.iterable
 
-        if isinstance(iterable, GeneratorFn):
-            print("yes")
-            iterable = iterable()
-        else:
-            print("no")
-
         if isinstance(iterable, pypeln_utils.BaseStage):
 
             for x in iterable.to_iterable(maxsize=0, return_index=True):
@@ -42,29 +36,24 @@ class FromIterable(tp.NamedTuple):
 
 
 @tp.overload
-def from_iterable(
-    iterable: tp.Iterable[T], maxsize: int = 0, use_thread: bool = True
-) -> Stage[T]:
+def from_iterable(iterable: tp.Iterable[T], use_thread: bool = True) -> Stage[T]:
     ...
 
 
 @tp.overload
-def from_iterable(
-    maxsize: int = 0, use_thread: bool = True
-) -> pypeln_utils.Partial[Stage[T]]:
+def from_iterable(use_thread: bool = True) -> pypeln_utils.Partial[Stage[T]]:
     ...
 
 
 def from_iterable(
     iterable: tp.Union[tp.Iterable[T], pypeln_utils.Undefined] = pypeln_utils.UNDEFINED,
-    maxsize: int = 0,
     use_thread: bool = True,
 ):
     """
-    Creates a stage from an iterable. This function gives you more control of the iterable is consumed.
+    Creates a stage from an iterable.
+
     Arguments:
-        iterable: a source iterable.
-        maxsize: this parameter is not used and only kept for API compatibility with the other modules.
+        iterable: A source iterable.
         use_thread: If set to `True` (default) it will use a thread instead of a process to consume the iterable. Threads start faster and use thread memory to the iterable is not serialized, however, if the iterable is going to perform slow computations it better to use a process.
 
     Returns:
@@ -73,15 +62,13 @@ def from_iterable(
 
     if isinstance(iterable, pypeln_utils.Undefined):
         return pypeln_utils.Partial(
-            lambda iterable: from_iterable(
-                iterable, maxsize=maxsize, use_thread=use_thread
-            )
+            lambda iterable: from_iterable(iterable, use_thread=use_thread)
         )
 
     return Stage(
         process_fn=FromIterable(iterable),
         workers=1,
-        maxsize=maxsize,
+        maxsize=0,
         timeout=0,
         total_sources=1,
         dependencies=[],

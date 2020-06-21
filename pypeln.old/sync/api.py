@@ -44,7 +44,7 @@ def from_iterable(
     Creates a stage from an iterable.
 
     Arguments:
-        iterable: a source iterable.
+        iterable: A source iterable.
         maxsize: this parameter is not used and only kept for API compatibility with the other modules.
         worker_constructor: this parameter is not used and only kept for API compatibility with the other modules.
 
@@ -130,7 +130,7 @@ def map(
 
     Arguments:
         f: A function with the signature `f(x) -> y`. `f` can accept special additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
-        stage: A stage or iterable.
+        stage: A Stage or Iterable.
         workers: This parameter is not used and only kept for API compatibility with the other modules.
         maxsize: This parameter is not used and only kept for API compatibility with the other modules.
         timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. 
@@ -224,7 +224,7 @@ def flat_map(
 
     Arguments:
         f: A function with signature `f(x) -> iterable`. `f` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
-        stage: A stage or iterable.
+        stage: A Stage or Iterable.
         workers: This parameter is not used and only kept for API compatibility with the other modules.
         maxsize: This parameter is not used and only kept for API compatibility with the other modules.
         timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. 
@@ -301,7 +301,7 @@ def filter(
 
     Arguments:
         f: A function with signature `f(x) -> bool`. `f` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
-        stage: A stage or iterable.
+        stage: A Stage or Iterable.
         workers: This parameter is not used and only kept for API compatibility with the other modules.
         maxsize: This parameter is not used and only kept for API compatibility with the other modules.
         timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. 
@@ -575,7 +575,7 @@ def run(stages: typing.List[Stage], maxsize: int = 0) -> None:
 
     stage = to_iterable(stage, maxsize=maxsize)
 
-    for _ in stages:
+    for _ in stage:
         pass
 
 

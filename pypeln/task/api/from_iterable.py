@@ -27,7 +27,9 @@ class FromIterable(tp.NamedTuple):
             else:
                 sync_iterable = self.iterable
 
-            queue = IterableQueue()
+            queue = IterableQueue(
+                maxsize=max(q.maxsize for q in worker.stage_params.output_queues)
+            )
             loop = utils.get_running_loop()
 
             loop.run_in_executor(
@@ -77,17 +79,13 @@ class FromIterable(tp.NamedTuple):
 
 @tp.overload
 def from_iterable(
-    iterable: tp.Union[tp.Iterable[T], tp.AsyncIterable[T]],
-    maxsize: int = 0,
-    use_thread: bool = True,
+    iterable: tp.Union[tp.Iterable[T], tp.AsyncIterable[T]], use_thread: bool = True,
 ) -> Stage[T]:
     ...
 
 
 @tp.overload
-def from_iterable(
-    maxsize: int = 0, use_thread: bool = True
-) -> pypeln_utils.Partial[Stage[T]]:
+def from_iterable(use_thread: bool = True) -> pypeln_utils.Partial[Stage[T]]:
     ...
 
 
@@ -95,15 +93,13 @@ def from_iterable(
     iterable: tp.Union[
         tp.Iterable[T], tp.AsyncIterable[T], pypeln_utils.Undefined
     ] = pypeln_utils.UNDEFINED,
-    maxsize: int = 0,
     use_thread: bool = True,
 ):
     """
     Creates a stage from an iterable. This function gives you more control of the iterable is consumed.
     Arguments:
-        iterable: a source iterable.
-        maxsize: this parameter is not used and only kept for API compatibility with the other modules.
-        use_thread: If set to `True` (default) it will use a thread instead of a process to consume the iterable. Threads start faster and use thread memory to the iterable is not serialized, however, if the iterable is going to perform slow computations it better to use a process.
+        iterable: A source iterable.
+        use_thread: This parameter is not used and only kept for API compatibility with the other modules.
 
     Returns:
         If the `iterable` parameters is given then this function returns a new stage, else it returns a `Partial`.
@@ -111,15 +107,13 @@ def from_iterable(
 
     if isinstance(iterable, pypeln_utils.Undefined):
         return pypeln_utils.Partial(
-            lambda iterable: from_iterable(
-                iterable, maxsize=maxsize, use_thread=use_thread
-            )
+            lambda iterable: from_iterable(iterable, use_thread=use_thread)
         )
 
     return Stage(
         process_fn=FromIterable(iterable),
         workers=1,
-        maxsize=maxsize,
+        maxsize=0,
         total_sources=1,
         timeout=0,
         dependencies=[],

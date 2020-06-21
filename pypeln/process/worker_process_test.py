@@ -275,7 +275,7 @@ class TestWorkerProcess(TestCase):
         worker.start()
 
         assert not worker.did_timeout()
-        time.sleep(0.02)
+        time.sleep(0.1)
         assert worker.did_timeout()
 
     def test_del1(self,):

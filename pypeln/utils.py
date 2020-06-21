@@ -32,8 +32,7 @@ class BaseStage(tp.Generic[T], tp.Iterable[T], ABC):
 
 
 class StopThreadException(BaseException):
-    def __str__(self):
-        return "StopThreadException"
+    pass
 
 
 class StageReuseError(Exception):
@@ -62,56 +61,28 @@ class Namespace(object):
 
 
 class Done(object):
-    def __str__(self):
-        return "DONE"
+    pass
 
 
 DONE = Done()
 
 
-def is_done(x):
-    return isinstance(x, Done)
-
-
 class Continue(object):
-    def __str__(self):
-        return "Continue"
+    pass
 
 
 CONTINUE = Continue()
 
 
-def is_continue(x):
-    return isinstance(x, Continue)
-
-
 class Undefined(object):
-    def __str__(self):
-        return "Undefined"
-
-    def __repr__(self):
-        return "Undefined"
+    pass
 
 
 UNDEFINED = Undefined()
 
 
-def is_undefined(x):
-    return isinstance(x, Undefined)
-
-
 def function_args(f) -> tp.List[str]:
     return list(inspect.signature(f).parameters.keys())
-
-
-def concat(iterables: tp.Iterable[tp.Iterable[T]]) -> tp.Iterable[T]:
-    for iterable in iterables:
-        for item in iterable:
-            yield item
-
-
-def no_op():
-    pass
 
 
 def get_callable(f, *args, **kwargs) -> tp.Callable:

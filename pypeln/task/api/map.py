@@ -99,7 +99,7 @@ def map(
         on_done: A function with signature `on_done(stage_status?)`. This function is executed once per worker when the worker finishes. `on_done` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
 
     Returns:
-        If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.
+        Returns a `Stage` if the `stage` parameters is given, else it returns a `Partial`.
     """
 
     if isinstance(stage, pypeln_utils.Undefined):

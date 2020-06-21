@@ -93,7 +93,7 @@ def map(
         To implement `timeout` we use `stopit.ThreadingTimeout` which has some limitations.
 
     Returns:
-        If the `stage` parameters is given then this function returns a new stage, else it returns a `Partial`.
+        Returns a `Stage` if the `stage` parameters is given, else it returns a `Partial`.
     """
 
     if isinstance(stage, pypeln_utils.Undefined):

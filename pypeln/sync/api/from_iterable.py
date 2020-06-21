@@ -35,7 +35,7 @@ def from_iterable(use_thread: bool = True) -> pypeln_utils.Partial[Stage[T]]:
 def from_iterable(
     iterable: tp.Union[tp.Iterable[T], pypeln_utils.Undefined] = pypeln_utils.UNDEFINED,
     use_thread: bool = True,
-):
+) -> tp.Union[Stage[T], pypeln_utils.Partial[Stage[T]]]:
     """
     Creates a stage from an iterable.
 
@@ -44,7 +44,7 @@ def from_iterable(
         use_thread: This parameter is not used and only kept for API compatibility with the other modules.
 
     Returns:
-        If the `iterable` parameters is given then this function returns a new stage, else it returns a `Partial`.
+        Returns a `Stage` if the `iterable` parameters is given, else it returns a `Partial`.
     """
 
     if isinstance(iterable, pypeln_utils.Undefined):

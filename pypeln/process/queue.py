@@ -5,11 +5,9 @@ import traceback
 import typing as tp
 
 
-from pypeln import interfaces
 from pypeln import utils as pypeln_utils
 
 from . import utils
-import time
 
 
 T = tp.TypeVar("T")

@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.4.1] - 2020-06-21
+* Lower Python version requirement to `3.5`, however to use the `task` module will only be available for versions >= `3.7`.
+
 ## [0.4.0] - 2020-06-21
 * Big internal refactor:
   * Reduces the risk of potential zombie workers

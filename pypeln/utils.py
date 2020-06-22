@@ -4,9 +4,9 @@ import sys
 import typing as tp
 
 if sys.version_info >= (3, 8):
-    from typing import Protocol
+    from typing import Protocol, runtime_checkable
 else:
-    from typing_extensions import Protocol
+    from typing_extensions import Protocol, runtime_checkable
 
 TIMEOUT = 0.0001
 MAXSIZE = 100

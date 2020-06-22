@@ -24,11 +24,6 @@ class ProcessFn(pypeln_utils.Protocol):
         ...
 
 
-class ApplyFn(pypeln_utils.Protocol):
-    def __call__(self, worker: "Stage", elem: tp.Any, **kwargs) -> tp.Iterable:
-        ...
-
-
 @dataclass
 class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
     process_fn: ProcessFn

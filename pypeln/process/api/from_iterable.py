@@ -8,12 +8,6 @@ from ..worker import ProcessFn, Worker
 from copy import copy
 
 
-@tp.runtime_checkable
-class GeneratorFn(pypeln_utils.Protocol):
-    def __call__(self) -> tp.Union[tp.Iterable]:
-        ...
-
-
 class FromIterable(tp.NamedTuple):
     iterable: tp.Iterable
 

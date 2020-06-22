@@ -20,11 +20,6 @@ class ProcessFn(pypeln_utils.Protocol):
         ...
 
 
-class ApplyFn(pypeln_utils.Protocol):
-    def __call__(self, worker: "Worker", elem: tp.Any, **kwargs):
-        ...
-
-
 class StageParams(tp.NamedTuple):
     input_queue: IterableQueue
     output_queues: OutputQueues

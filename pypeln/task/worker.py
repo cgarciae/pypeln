@@ -19,15 +19,8 @@ Kwargs = tp.Dict[str, tp.Any]
 T = tp.TypeVar("T")
 
 
-@tp.runtime_checkable
 class ProcessFn(pypeln_utils.Protocol):
     async def __call__(self, worker: "Worker", **kwargs):
-        ...
-
-
-@tp.runtime_checkable
-class ApplyFn(pypeln_utils.Protocol):
-    async def __call__(self, worker: "Worker", elem: tp.Any, **kwargs):
         ...
 
 

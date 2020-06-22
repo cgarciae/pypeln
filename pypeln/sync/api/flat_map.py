@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from .to_stage import to_stage
 
 
-class FlatMapFn(tp.Protocol):
+class FlatMapFn(pypeln_utils.Protocol):
     def __call__(self, A, **kwargs) -> tp.Iterable[B]:
         ...
 

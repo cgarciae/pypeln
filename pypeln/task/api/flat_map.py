@@ -10,7 +10,7 @@ from ..stage import Stage
 from ..worker import ProcessFn, Worker, ApplyProcess
 
 
-class FlatMapFn(tp.Protocol):
+class FlatMapFn(pypeln_utils.Protocol):
     def __call__(self, A, **kwargs) -> tp.Union[tp.Iterable[B], tp.AsyncIterable[B]]:
         ...
 

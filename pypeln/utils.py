@@ -1,8 +1,12 @@
-import inspect
-import typing as tp
 from abc import ABC, abstractmethod
+import inspect
+import sys
+import typing as tp
 
-from typing import Protocol
+if sys.version_info >= (3, 8):
+    from typing import Protocol
+else:
+    from typing_extensions import Protocol
 
 TIMEOUT = 0.0001
 MAXSIZE = 100

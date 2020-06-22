@@ -19,12 +19,12 @@ class WorkerInfo(tp.NamedTuple):
     index: int
 
 
-class ProcessFn(tp.Protocol):
+class ProcessFn(pypeln_utils.Protocol):
     def __call__(self, worker: "Stage", **kwargs) -> tp.Iterable:
         ...
 
 
-class ApplyFn(tp.Protocol):
+class ApplyFn(pypeln_utils.Protocol):
     def __call__(self, worker: "Stage", elem: tp.Any, **kwargs) -> tp.Iterable:
         ...
 
@@ -105,7 +105,7 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
                 yield elem.value
 
 
-class Applicable(tp.Protocol):
+class Applicable(pypeln_utils.Protocol):
     def apply(self, worker: Stage, elem: tp.Any, **kwargs) -> tp.Iterable:
         ...
 

@@ -9,7 +9,7 @@ from copy import copy
 
 
 @tp.runtime_checkable
-class GeneratorFn(tp.Protocol):
+class GeneratorFn(pypeln_utils.Protocol):
     def __call__(self) -> tp.Union[tp.Iterable]:
         ...
 

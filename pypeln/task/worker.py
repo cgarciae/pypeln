@@ -20,13 +20,13 @@ T = tp.TypeVar("T")
 
 
 @tp.runtime_checkable
-class ProcessFn(tp.Protocol):
+class ProcessFn(pypeln_utils.Protocol):
     async def __call__(self, worker: "Worker", **kwargs):
         ...
 
 
 @tp.runtime_checkable
-class ApplyFn(tp.Protocol):
+class ApplyFn(pypeln_utils.Protocol):
     async def __call__(self, worker: "Worker", elem: tp.Any, **kwargs):
         ...
 
@@ -149,7 +149,7 @@ class Worker(tp.Generic[T]):
         utils.run_function_in_loop(self.process.cancel)
 
 
-class Applicable(tp.Protocol):
+class Applicable(pypeln_utils.Protocol):
     def apply(self, worker: "Worker", elem: tp.Any, **kwargs):
         ...
 

@@ -19,12 +19,12 @@ Kwargs = tp.Dict[str, tp.Any]
 T = tp.TypeVar("T")
 
 
-class ProcessFn(tp.Protocol):
+class ProcessFn(pypeln_utils.Protocol):
     def __call__(self, worker: "Worker", **kwargs):
         ...
 
 
-class ApplyFn(tp.Protocol):
+class ApplyFn(pypeln_utils.Protocol):
     def __call__(self, worker: "Worker", elem: tp.Any, **kwargs):
         ...
 
@@ -177,7 +177,7 @@ class Worker(tp.Generic[T]):
         return self.MeasureTaskTime(self)
 
 
-class Applicable(tp.Protocol):
+class Applicable(pypeln_utils.Protocol):
     def apply(self, worker: "Worker", elem: tp.Any, **kwargs):
         ...
 

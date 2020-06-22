@@ -1,4 +1,5 @@
 import asyncio
+import sys
 import typing as tp
 from unittest import TestCase
 import unittest
@@ -9,74 +10,71 @@ import hypothesis as hp
 from hypothesis import strategies as st
 
 import pypeln as pl
-from pypeln.task.utils import run_test_async
 
 MAX_EXAMPLES = 10
 T = tp.TypeVar("T")
 
 
-@hp.given(nums=st.lists(st.integers()))
-@hp.settings(max_examples=MAX_EXAMPLES)
-def test_from_to_iterable(nums: tp.List[int]):
+if sys.version_info >= (3, 7):
 
-    nums_py = nums
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_from_to_iterable(nums: tp.List[int]):
 
-    nums_pl = pl.task.from_iterable(nums)
-    nums_pl = list(nums_pl)
+        nums_py = nums
 
-    assert nums_pl == nums_py
+        nums_pl = pl.task.from_iterable(nums)
+        nums_pl = list(nums_pl)
 
+        assert nums_pl == nums_py
 
-@hp.given(nums=st.lists(st.integers()))
-@hp.settings(max_examples=MAX_EXAMPLES)
-@run_test_async
-async def test_from_to_iterable_async_1(nums: tp.List[int]):
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    @pl.task.utils.run_test_async
+    async def test_from_to_iterable_async_1(nums: tp.List[int]):
 
-    nums_py = nums
+        nums_py = nums
 
-    nums_pl = pl.task.from_iterable(nums)
-    nums_pl = [x async for x in nums_pl]
+        nums_pl = pl.task.from_iterable(nums)
+        nums_pl = [x async for x in nums_pl]
 
-    assert nums_pl == nums_py
+        assert nums_pl == nums_py
 
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_from_to_iterable_async_iterable(nums: tp.List[int]):
 
-@hp.given(nums=st.lists(st.integers()))
-@hp.settings(max_examples=MAX_EXAMPLES)
-def test_from_to_iterable_async_iterable(nums: tp.List[int]):
+        nums_py = nums
 
-    nums_py = nums
+        async def iterable():
+            for x in nums:
+                yield x
 
-    async def iterable():
-        for x in nums:
-            yield x
+        nums_pl = pl.task.from_iterable(iterable())
+        nums_pl = list(nums_pl)
 
-    nums_pl = pl.task.from_iterable(iterable())
-    nums_pl = list(nums_pl)
+        assert nums_pl == nums_py
 
-    assert nums_pl == nums_py
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_from_to_iterable_pipe(nums):
 
+        nums_py = nums
 
-@hp.given(nums=st.lists(st.integers()))
-@hp.settings(max_examples=MAX_EXAMPLES)
-def test_from_to_iterable_pipe(nums):
+        nums_pl = nums | pl.task.from_iterable() | list
 
-    nums_py = nums
+        assert nums_pl == nums_py
 
-    nums_pl = nums | pl.task.from_iterable() | list
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_from_to_iterable_pipe_async_iterable(nums):
 
-    assert nums_pl == nums_py
+        nums_py = nums
 
+        async def iterable():
+            for x in nums:
+                yield x
 
-@hp.given(nums=st.lists(st.integers()))
-@hp.settings(max_examples=MAX_EXAMPLES)
-def test_from_to_iterable_pipe_async_iterable(nums):
+        nums_pl = iterable() | pl.task.from_iterable() | list
 
-    nums_py = nums
-
-    async def iterable():
-        for x in nums:
-            yield x
-
-    nums_pl = iterable() | pl.task.from_iterable() | list
-
-    assert nums_pl == nums_py
+        assert nums_pl == nums_py

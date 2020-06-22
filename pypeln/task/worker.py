@@ -206,7 +206,7 @@ class TaskPool:
         if self.semaphore:
             await self.semaphore.acquire()
 
-        task = asyncio.create_task(self.get_task(coro_f))
+        task = asyncio.ensure_future(self.get_task(coro_f))
 
         self.tasks.add(task)
 

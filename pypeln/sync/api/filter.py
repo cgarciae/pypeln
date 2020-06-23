@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from .to_stage import to_stage
 
 
-class FilterFn(tp.Protocol):
+class FilterFn(pypeln_utils.Protocol):
     def __call__(self, A, **kwargs) -> bool:
         ...
 

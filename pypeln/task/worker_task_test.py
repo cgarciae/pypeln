@@ -5,6 +5,7 @@ import typing as tp
 from unittest import TestCase
 import unittest
 from unittest import mock
+import sys
 
 import cytoolz as cz
 import hypothesis as hp
@@ -13,8 +14,6 @@ import pytest
 
 from pypeln import utils as pypeln_utils
 import pypeln as pl
-from pypeln.task.utils import run_test_async
-from pypeln.task.worker import TaskPool
 
 MAX_EXAMPLES = 10
 T = tp.TypeVar("T")
@@ -55,7 +54,7 @@ def test_basic(nums):
         on_start=None,
         on_done=None,
         f_args=[],
-        tasks=TaskPool.create(workers=1),
+        tasks=pl.task.TaskPool.create(workers=1),
     )
 
     worker.start()
@@ -71,7 +70,7 @@ def test_basic(nums):
 
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-@run_test_async
+@pl.task.utils.run_test_async
 async def test_basic_async(nums):
     input_queue = pl.task.IterableQueue()
     output_queue = pl.task.IterableQueue()
@@ -93,7 +92,7 @@ async def test_basic_async(nums):
         on_start=None,
         on_done=None,
         f_args=[],
-        tasks=TaskPool.create(workers=1),
+        tasks=pl.task.TaskPool.create(workers=1),
     )
 
     worker.start()
@@ -126,7 +125,7 @@ def test_raises():
         on_start=None,
         on_done=None,
         f_args=[],
-        tasks=TaskPool.create(workers=1),
+        tasks=pl.task.TaskPool.create(workers=1),
     )
 
     worker.start()
@@ -138,7 +137,7 @@ def test_raises():
     assert worker.is_done
 
 
-@run_test_async
+@pl.task.utils.run_test_async
 async def test_raises_async():
     input_queue = pl.task.IterableQueue()
     output_queue = pl.task.IterableQueue()
@@ -159,7 +158,7 @@ async def test_raises_async():
         on_start=None,
         on_done=None,
         f_args=[],
-        tasks=TaskPool.create(workers=1),
+        tasks=pl.task.TaskPool.create(workers=1),
     )
 
     worker.start()
@@ -196,7 +195,7 @@ def test_timeout():
         on_start=None,
         on_done=None,
         f_args=[],
-        tasks=TaskPool.create(workers=1),
+        tasks=pl.task.TaskPool.create(workers=1),
     )
 
     # wait for worker to start
@@ -214,7 +213,7 @@ def test_timeout():
     assert worker.is_done
 
 
-@run_test_async
+@pl.task.utils.run_test_async
 async def test_timeout_async():
     input_queue = pl.task.IterableQueue()
     output_queue = pl.task.IterableQueue()
@@ -240,7 +239,7 @@ async def test_timeout_async():
         on_start=None,
         on_done=None,
         f_args=[],
-        tasks=TaskPool.create(workers=1),
+        tasks=pl.task.TaskPool.create(workers=1),
     )
 
     # wait for worker to start
@@ -282,7 +281,7 @@ def test_no_timeout():
         on_start=None,
         on_done=None,
         f_args=[],
-        tasks=TaskPool.create(workers=0),
+        tasks=pl.task.TaskPool.create(workers=0),
     )
     worker.start()
 
@@ -297,7 +296,7 @@ def test_no_timeout():
     assert worker.is_done
 
 
-@run_test_async
+@pl.task.utils.run_test_async
 async def test_no_timeout_async():
     input_queue = pl.task.IterableQueue()
     output_queue = pl.task.IterableQueue()
@@ -322,7 +321,7 @@ async def test_no_timeout_async():
         on_start=None,
         on_done=None,
         f_args=[],
-        tasks=TaskPool.create(workers=0),
+        tasks=pl.task.TaskPool.create(workers=0),
     )
     worker.start()
 
@@ -357,7 +356,7 @@ def test_del1():
         on_start=None,
         on_done=None,
         f_args=[],
-        tasks=TaskPool.create(workers=1),
+        tasks=pl.task.TaskPool.create(workers=1),
     )
 
     worker.start()
@@ -372,7 +371,7 @@ def test_del1():
     assert worker.is_done
 
 
-@run_test_async
+@pl.task.utils.run_test_async
 async def test_del1_async():
     input_queue = pl.task.IterableQueue()
     output_queue = pl.task.IterableQueue()
@@ -394,7 +393,7 @@ async def test_del1_async():
         on_start=None,
         on_done=None,
         f_args=[],
-        tasks=TaskPool.create(workers=0),
+        tasks=pl.task.TaskPool.create(workers=0),
     )
 
     worker.start()
@@ -435,7 +434,7 @@ def test_del3():
             on_start=None,
             on_done=None,
             f_args=[],
-            tasks=TaskPool.create(workers=1),
+            tasks=pl.task.TaskPool.create(workers=1),
         )
         worker.start()
 
@@ -451,7 +450,7 @@ def test_del3():
     assert not worker.is_done
 
 
-@run_test_async
+@pl.task.utils.run_test_async
 async def test_del3_async():
     async def start_worker():
         input_queue = pl.task.IterableQueue()
@@ -474,7 +473,7 @@ async def test_del3_async():
             on_start=None,
             on_done=None,
             f_args=[],
-            tasks=TaskPool.create(workers=1),
+            tasks=pl.task.TaskPool.create(workers=1),
         )
         worker.start()
 

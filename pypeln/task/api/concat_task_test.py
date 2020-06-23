@@ -1,3 +1,4 @@
+import sys
 import time
 import typing as tp
 from unittest import TestCase
@@ -6,10 +7,10 @@ import hypothesis as hp
 from hypothesis import strategies as st
 
 import pypeln as pl
-from pypeln.task.utils import run_test_async
 
 MAX_EXAMPLES = 10
 T = tp.TypeVar("T")
+
 
 
 @hp.given(nums=st.lists(st.integers()))
@@ -28,10 +29,9 @@ def test_concat_basic(nums: tp.List[int]):
 
     assert sorted(nums_pl) == sorted(nums_py)
 
-
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-@run_test_async
+@pl.task.utils.run_test_async
 async def test_concat_basic_2(nums: tp.List[int]):
 
     nums_py = list(map(lambda x: x + 1, nums))
@@ -45,7 +45,6 @@ async def test_concat_basic_2(nums: tp.List[int]):
     nums_pl = await pl.task.concat([nums_pl1, nums_pl2])
 
     assert sorted(nums_pl) == sorted(nums_py)
-
 
 # @hp.given(nums=st.lists(st.integers()))
 # @hp.settings(max_examples=MAX_EXAMPLES)
@@ -62,8 +61,7 @@ def test_concat_multiple(nums: tp.List[int] = [1, 2, 3]):
     # assert sorted(nums_py1) == sorted(list(nums_pl1))
     assert sorted(nums_py2) == sorted(list(nums_pl2))
 
-
-@run_test_async
+@pl.task.utils.run_test_async
 async def test_concat_multiple_2(nums: tp.List[int] = [1, 2, 3]):
 
     nums_py = [x + 1 for x in nums]

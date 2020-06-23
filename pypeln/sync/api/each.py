@@ -8,7 +8,7 @@ from ..stage import Stage, ApplyProcess
 from dataclasses import dataclass
 
 
-class EachFn(tp.Protocol):
+class EachFn(pypeln_utils.Protocol):
     def __call__(self, elem: A, **kwargs):
         ...
 

@@ -10,7 +10,7 @@ from ..stage import Stage
 from ..worker import ProcessFn, Worker, ApplyProcess
 
 
-class MapFn(tp.Protocol):
+class MapFn(pypeln_utils.Protocol):
     def __call__(self, A, **kwargs) -> tp.Union[B, tp.Awaitable[B]]:
         ...
 

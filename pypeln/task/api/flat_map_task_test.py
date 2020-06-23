@@ -1,4 +1,5 @@
 import asyncio
+import sys
 import time
 import typing as tp
 from unittest import TestCase
@@ -8,10 +9,10 @@ import hypothesis as hp
 from hypothesis import strategies as st
 
 import pypeln as pl
-from pypeln.task.utils import run_test_async
 
 MAX_EXAMPLES = 10
 T = tp.TypeVar("T")
+
 
 
 @hp.given(nums=st.lists(st.integers()))
@@ -31,7 +32,6 @@ def test_flat_map_square(nums: tp.List[int]):
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums_py
-
 
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
@@ -56,10 +56,9 @@ def test_flat_map_square_async_1(nums: tp.List[int]):
 
     assert nums_pl == nums_py
 
-
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-@run_test_async
+@pl.task.utils.run_test_async
 async def test_flat_map_square_async_2(nums: tp.List[int]):
     def _generator(x):
         yield x
@@ -81,10 +80,9 @@ async def test_flat_map_square_async_2(nums: tp.List[int]):
 
     assert nums_pl == nums_py
 
-
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-@run_test_async
+@pl.task.utils.run_test_async
 async def test_flat_map_square_async_3(nums: tp.List[int]):
     def _generator(x):
         yield x
@@ -110,7 +108,6 @@ async def test_flat_map_square_async_3(nums: tp.List[int]):
 
     assert nums_pl == nums_py
 
-
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_flat_map_square_workers(nums: tp.List[int]):
@@ -128,7 +125,6 @@ def test_flat_map_square_workers(nums: tp.List[int]):
     nums_pl = list(nums_pl)
 
     assert sorted(nums_pl) == sorted(nums_py)
-
 
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
@@ -153,10 +149,9 @@ def test_flat_map_square_workers_async_1(nums: tp.List[int]):
 
     assert sorted(nums_pl) == sorted(nums_py)
 
-
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-@run_test_async
+@pl.task.utils.run_test_async
 async def test_flat_map_square_workers_async_2(nums: tp.List[int]):
     def _generator(x):
         yield x
@@ -178,10 +173,9 @@ async def test_flat_map_square_workers_async_2(nums: tp.List[int]):
 
     assert sorted(nums_pl) == sorted(nums_py)
 
-
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-@run_test_async
+@pl.task.utils.run_test_async
 async def test_flat_map_square_workers_async_3(nums: tp.List[int]):
     def _generator(x):
         yield x
@@ -207,10 +201,9 @@ async def test_flat_map_square_workers_async_3(nums: tp.List[int]):
 
     assert sorted(nums_pl) == sorted(nums_py)
 
-
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-@run_test_async
+@pl.task.utils.run_test_async
 async def test_flat_map_square_workers_async_3(nums: tp.List[int]):
     def _generator(x):
         yield x
@@ -237,10 +230,9 @@ async def test_flat_map_square_workers_async_3(nums: tp.List[int]):
 
     assert nums_py == [] or sorted(nums_pl) != sorted(nums_py)
 
-
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-@run_test_async
+@pl.task.utils.run_test_async
 async def test_flat_map_square_workers_async_4(nums: tp.List[int]):
     def _generator(x):
         yield x
@@ -269,10 +261,9 @@ async def test_flat_map_square_workers_async_4(nums: tp.List[int]):
 
     assert nums_py == [] or sorted(nums_pl) == sorted(nums_py)
 
-
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-@run_test_async
+@pl.task.utils.run_test_async
 async def test_flat_map_square_workers_async_5(nums: tp.List[int]):
     def _generator(x):
         yield x

@@ -1,11 +1,14 @@
-import inspect
-import typing as tp
 from abc import ABC, abstractmethod
+import inspect
+import sys
+import typing as tp
 
-from typing import Protocol
+if sys.version_info >= (3, 8):
+    from typing import Protocol, runtime_checkable
+else:
+    from typing_extensions import Protocol, runtime_checkable
 
 TIMEOUT = 0.0001
-MAXSIZE = 100
 
 
 Kwargs = tp.Dict[str, tp.Any]

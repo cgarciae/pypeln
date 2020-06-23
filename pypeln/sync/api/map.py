@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from .to_stage import to_stage
 
 
-class MapFn(tp.Protocol):
+class MapFn(pypeln_utils.Protocol):
     def __call__(self, A, **kwargs) -> B:
         ...
 

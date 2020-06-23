@@ -10,7 +10,7 @@ from ..stage import Stage
 from ..worker import ProcessFn, Worker, ApplyProcess
 
 
-class FilterFn(tp.Protocol):
+class FilterFn(pypeln_utils.Protocol):
     def __call__(self, A, **kwargs) -> bool:
         ...
 

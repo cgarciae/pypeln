@@ -10,7 +10,7 @@ from ..stage import Stage
 from ..worker import ProcessFn, Worker, ApplyProcess
 
 
-class EachFn(tp.Protocol):
+class EachFn(pypeln_utils.Protocol):
     def __call__(self, A, **kwargs):
         ...
 

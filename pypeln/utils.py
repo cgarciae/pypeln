@@ -9,7 +9,6 @@ else:
     from typing_extensions import Protocol, runtime_checkable
 
 TIMEOUT = 0.0001
-MAXSIZE = 100
 
 
 Kwargs = tp.Dict[str, tp.Any]

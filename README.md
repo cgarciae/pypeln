@@ -167,6 +167,20 @@ data = (
 )
 ```
 
+## Run Tests
+A sample script is provided to run the tests in a container (either Docker or Podman is supported), to run tests:
+
+```bash
+$ bash scripts/run-tests.sh
+```
+
+This script can also receive a python version to check test against, i.e
+
+```bash
+$ bash scripts/run-tests.sh 3.7
+```
+
+
 ## Related Stuff
 * [Making an Unlimited Number of Requests with Python aiohttp + pypeln](https://medium.com/@cgarciae/making-an-infinite-number-of-requests-with-python-aiohttp-pypeln-3a552b97dc95)
 * [Process Pools](https://docs.python.org/3.4/library/multiprocessing.html?highlight=process#module-multiprocessing.pool)

@@ -137,7 +137,7 @@ Most functions can return a `Partial` instead of a `Stage` if the `stage` argume
 This allows `pypeln` to enable you to define your pipelines more fluently:
 
 ```python
-from pypenl import process as pr
+from pypeln import process as pr
 
 data = (
     range(10)

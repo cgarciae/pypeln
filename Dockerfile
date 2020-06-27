@@ -10,4 +10,4 @@ RUN pip install poetry && \
     poetry config virtualenvs.create false && \
     poetry install --no-interaction
 
-CMD ["pytest"]
+CMD ["pytest", "-s"]

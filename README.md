@@ -191,6 +191,7 @@ $ bash scripts/run-tests.sh 3.7
 
 ## Contributors
 * [cgarciae](https://github.com/cgarciae)
+* [Davidnet](https://github.com/Davidnet)
 
 ## License
 MIT

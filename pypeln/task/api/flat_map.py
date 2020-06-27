@@ -11,7 +11,9 @@ from ..worker import ProcessFn, Worker, ApplyProcess
 
 
 class FlatMapFn(pypeln_utils.Protocol):
-    def __call__(self, A, **kwargs) -> tp.Union[tp.Iterable[B], tp.AsyncIterable[B]]:
+    def __call__(
+        self, A, **kwargs
+    ) -> tp.Union[tp.Iterable[B], tp.AsyncIterable[B], tp.Awaitable[tp.Iterable]]:
         ...
 
 
@@ -25,7 +27,9 @@ class FlatMap(ApplyProcess):
             kwargs["element_index"] = elem.index
 
         ys: tp.Union[
-            tp.Iterable[pypeln_utils.Element], tp.AsyncIterable[pypeln_utils.Element]
+            tp.Iterable[pypeln_utils.Element],
+            tp.AsyncIterable[pypeln_utils.Element],
+            tp.Awaitable[tp.Iterable],
         ] = self.f(elem.value, **kwargs)
 
         if isinstance(ys, tp.AsyncIterable):
@@ -35,6 +39,9 @@ class FlatMap(ApplyProcess):
                 await worker.stage_params.output_queues.put(elem_y)
                 i += 1
         else:
+            if isinstance(ys, tp.Awaitable):
+                ys = await ys
+
             for i, y in enumerate(ys):
                 elem_y = pypeln_utils.Element(index=elem.index + (i,), value=y)
                 await worker.stage_params.output_queues.put(elem_y)

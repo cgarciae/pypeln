@@ -8,65 +8,41 @@ import uuid
 import numpy as np
 
 
-@dataclass
-class SharedArray:
+class ArrayInfo(tp.NamedTuple):
+    index: int
     shape: tp.Tuple[int, ...]
     dtype: tp.Any
     nbytes: int
     name: str
+
+
+class MapedArray(tp.NamedTuple):
     memory: tp.Optional[SharedMemory] = None
     array: tp.Optional[np.ndarray] = None
+
+    @property
+    def name(self) -> str:
+        return self.memory.name
 
     @classmethod
     def create(
         cls, shape: tp.Tuple[int, ...], dtype: tp.Any, nbytes: int,
-    ) -> "SharedArray":
+    ) -> "MapedArray":
         memory = SharedMemory(create=True, size=nbytes)
-        new_array = np.ndarray(shape, dtype=dtype, buffer=memory.buf)
+        array = np.ndarray(shape, dtype=dtype, buffer=memory.buf)
 
-        return cls(
-            shape=shape,
-            dtype=dtype,
-            nbytes=nbytes,
-            name=memory.name,
-            memory=memory,
-            array=new_array,
-        )
+        return cls(memory=memory, array=array)
 
     @classmethod
-    def from_array(cls, array: np.ndarray) -> "SharedArray":
-        memory = SharedMemory(create=True, size=array.nbytes)
-        new_array = np.ndarray(array.shape, dtype=array.dtype, buffer=memory.buf)
+    def from_info(cls, info: ArrayInfo) -> "MapedArray":
+        memory = SharedMemory(name=info.name)
+        array = np.ndarray(info.shape, info=info.dtype, buffer=memory.buf)
 
-        return cls(
-            shape=array.shape,
-            dtype=array.dtype,
-            nbytes=array.nbytes,
-            name=memory.name,
-            memory=memory,
-            array=new_array,
-        )
-
-    def load(self) -> "SharedArray":
-        self.memory = SharedMemory(name=self.name)
-        self.array = np.ndarray(self.shape, dtype=self.dtype, buffer=self.memory.buf)
-
-        return self
-
-    def clean(self) -> "SharedArray":
-        self.array = None
-        if self.memory:
-            self.memory.close()
-            self.memory = None
-
-        return self
+        return cls(memory=memory, array=array)
 
     def close(self):
-        self.array = None
-        if self.memory:
-            self.memory.close()
-            self.memory.unlink()
-            self.memory = None
+        self.memory.close()
+        self.memory.unlink()
 
     def __getitem__(self, *arg, **kwargs):
         return self.array.__getitem__(*arg, **kwargs)

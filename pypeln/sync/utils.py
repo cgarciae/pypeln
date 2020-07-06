@@ -1,12 +1,13 @@
 from collections import namedtuple
 from queue import Empty, Full, Queue
 from threading import Lock
+import typing as tp
 
 from pypeln import utils as pypeln_utils
 
 
-def get_namespace():
-    return pypeln_utils.Namespace()
+def Namespace(**kwargs) -> tp.Any:
+    return pypeln_utils.Namespace(**kwargs)
 
 
 class StageStatus(object):

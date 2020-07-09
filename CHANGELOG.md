@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.4.4] - 2020-07-09
+* Lazily creates `MANAGER` object in `pl.process` to _potentially_ avoid errors on Windows and OSX.
+
 ## [0.4.3] - 2020-06-27
 * `flat_map` now also allows the return argument to be an `Awaitable[Iterable]` consisten with pypeln `< 0.4` versions.
 

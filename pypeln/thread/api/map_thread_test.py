@@ -75,7 +75,7 @@ def test_timeout():
 
         return x
 
-    nums_pl = pl.thread.map(f, nums, timeout=0.2)
+    nums_pl = pl.thread.map(f, nums, timeout=0.5)
     nums_pl = list(nums_pl)
 
     assert len(nums_pl) == 9

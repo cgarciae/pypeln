@@ -41,4 +41,4 @@ from .api.run import run
 from .api.to_iterable import to_iterable
 from .api.ordered import ordered
 from .stage import Stage
-from .utils import get_namespace
+from .utils import Namespace

@@ -47,7 +47,7 @@ def test_map_square_event_start(nums):
     nums_py = map(lambda x: x ** 2, nums)
     nums_py = list(nums_py)
 
-    namespace = pl.sync.get_namespace()
+    namespace = pl.sync.Namespace()
     namespace.x = 0
 
     def on_start():
@@ -99,7 +99,7 @@ def test_kwargs():
     nums = range(100)
     n_workers = 4
     letters = "abc"
-    namespace = pl.sync.get_namespace()
+    namespace = pl.sync.Namespace()
     namespace.on_done = None
 
     def on_start():
@@ -121,7 +121,7 @@ def test_kwargs():
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_square_event_end(nums):
 
-    namespace = pl.sync.get_namespace()
+    namespace = pl.sync.Namespace()
     namespace.x = 0
     namespace.done = False
     namespace.active_workers = -1
@@ -155,7 +155,5 @@ def test_map_square_workers(nums):
     nums_pl = list(nums_pl)
 
     assert sorted(nums_pl) == sorted(nums_py)
-
-
 
     assert nums_pl == nums_py

@@ -39,8 +39,7 @@ def each(
     timeout: float = 0,
     on_start: tp.Callable = None,
     on_done: tp.Callable = None,
-    run: bool = False,
-) -> tp.Optional[Stage[B]]:
+) -> Stage[B]:
     ...
 
 
@@ -52,8 +51,21 @@ def each(
     timeout: float = 0,
     on_start: tp.Callable = None,
     on_done: tp.Callable = None,
+) -> pypeln_utils.Partial[Stage[B]]:
+    ...
+
+
+@tp.overload
+def each(
+    f: EachFn,
+    stage: tp.Union[Stage[A], tp.Iterable[A], tp.AsyncIterable[A]],
+    workers: int = 1,
+    maxsize: int = 0,
+    timeout: float = 0,
+    on_start: tp.Callable = None,
+    on_done: tp.Callable = None,
     run: bool = False,
-) -> pypeln_utils.Partial[tp.Optional[Stage[B]]]:
+) -> tp.Optional[Stage[B]]:
     ...
 
 

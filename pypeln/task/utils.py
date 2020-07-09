@@ -7,15 +7,8 @@ import typing as tp
 from pypeln import utils as pypeln_utils
 
 
-class _Namespace:
-    def __init__(self, **kwargs):
-
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-
-
 def Namespace(**kwargs) -> tp.Any:
-    return _Namespace(**kwargs)
+    return pypeln_utils.Namespace(**kwargs)
 
 
 def get_running_loop() -> asyncio.AbstractEventLoop:

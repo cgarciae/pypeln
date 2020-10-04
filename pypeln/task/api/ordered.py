@@ -1,3 +1,4 @@
+import bisect
 import typing as tp
 
 from pypeln import utils as pypeln_utils
@@ -14,17 +15,7 @@ class Ordered(tp.NamedTuple):
         elems = []
 
         async for elem in worker.stage_params.input_queue:
-
-            if len(elems) == 0:
-                elems.append(elem)
-            else:
-                for i in reversed(range(len(elems))):
-                    if elem.index >= elems[i].index:
-                        elems.insert(i + 1, elem)
-                        break
-
-                    if i == 0:
-                        elems.insert(0, elem)
+            bisect.insort(elems, elem)
 
         for _ in range(len(elems)):
             await worker.stage_params.output_queues.put(elems.pop(0))

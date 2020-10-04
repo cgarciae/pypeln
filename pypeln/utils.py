@@ -24,6 +24,21 @@ class Element(tp.NamedTuple):
     def set(self, value: T):
         return Element(self.index, value)
 
+    def __lt__(self, x: "Element") -> bool:
+        return self.index < x.index
+
+    def __le__(self, x: "Element") -> bool:
+        return self.index <= x.index
+
+    def __gt__(self, x: "Element") -> bool:
+        return self.index > x.index
+
+    def __ge__(self, x: "Element") -> bool:
+        return self.index >= x.index
+
+    def __eq__(self, x: "Element") -> bool:
+        return self.value == x.index
+
 
 class BaseStage(tp.Generic[T], tp.Iterable[T], ABC):
     @abstractmethod

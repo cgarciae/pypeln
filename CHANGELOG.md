@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.4.5] - 2020-10-04
+* Fixed `pl.task.from_iterable` to solve #56
+* `pl.*.ordered` implementations now based on `bisect.insort`.
+
 ## [0.4.4] - 2020-07-09
 * Lazily creates `MANAGER` object in `pl.process` to _potentially_ avoid errors on Windows and OSX.
 

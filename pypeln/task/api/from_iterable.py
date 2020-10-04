@@ -58,7 +58,10 @@ class FromIterable(tp.NamedTuple):
         loop: asyncio.AbstractEventLoop,
     ):
         try:
-            for x in iterable:
+            for i, x in enumerate(iterable):
+                if not isinstance(x, pypeln_utils.Element):
+                    x = pypeln_utils.Element(index=(i,), value=x)
+
                 if worker.is_done:
                     return
 

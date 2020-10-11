@@ -116,7 +116,7 @@ def filter(
             )
         )
 
-    stage = to_stage(stage)
+    stage = to_stage(stage, maxsize=maxsize)
 
     return Stage(
         process_fn=Filter(f),

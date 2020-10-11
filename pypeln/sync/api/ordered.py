@@ -27,6 +27,7 @@ def ordered(
     stage: tp.Union[
         Stage[A], tp.Iterable[A], pypeln_utils.Undefined
     ] = pypeln_utils.UNDEFINED,
+    maxsize: int = 0,
 ) -> tp.Union[Stage[A], pypeln_utils.Partial[Stage[A]]]:
     """
     Creates a stage that sorts its elements based on their order of creation on the source iterable(s) of the pipeline.
@@ -66,7 +67,7 @@ def ordered(
     if isinstance(stage, pypeln_utils.Undefined):
         return pypeln_utils.Partial(lambda stage: ordered(stage))
 
-    stage_ = to_stage(stage)
+    stage_ = to_stage(stage, maxsize=maxsize)
 
     return Stage(
         process_fn=Ordered(),

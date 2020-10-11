@@ -160,6 +160,14 @@ version = "0.7"
 
 [[package]]
 category = "dev"
+description = "An implementation of the Debug Adapter Protocol for Python"
+name = "debugpy"
+optional = false
+python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*"
+version = "1.0.0rc2"
+
+[[package]]
+category = "dev"
 description = "Clean single-source support for Python 3 and 2"
 name = "future"
 optional = false
@@ -668,7 +676,7 @@ multidict = ">=4.0"
 [[package]]
 category = "dev"
 description = "Backport of pathlib-compatible object wrapper for zip files"
-marker = "python_version >= \"3.6\" and python_version < \"3.8\" or python_version < \"3.8\""
+marker = "python_version >= \"3.6\" and python_version < \"3.8\" or python_version < \"3.8\" or python_version >= \"3.6\" and python_version < \"3.8\" and (python_version >= \"3.6\" and python_version < \"3.8\" or python_version < \"3.8\")"
 name = "zipp"
 optional = false
 python-versions = ">=3.6"
@@ -679,7 +687,8 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "7f8d916d91dacb4ee2a607ee0ef61f66940af6a49b473061940b4a5ade39cdc5"
+content-hash = "cf21caad63b02c389dca14b2401691258fa51bef0d9cd546412d45866ed85f0b"
+lock-version = "1.0"
 python-versions = "^3.6"
 
 [metadata.files]
@@ -773,6 +782,44 @@ cytoolz = [
 dataclasses = [
     {file = "dataclasses-0.7-py3-none-any.whl", hash = "sha256:3459118f7ede7c8bea0fe795bff7c6c2ce287d01dd226202f7c9ebc0610a7836"},
     {file = "dataclasses-0.7.tar.gz", hash = "sha256:494a6dcae3b8bcf80848eea2ef64c0cc5cd307ffc263e17cdf42f3e5420808e6"},
+]
+debugpy = [
+    {file = "debugpy-1.0.0rc2-cp27-cp27m-macosx_10_14_x86_64.whl", hash = "sha256:52aa7bda10af85ae79f840d9b7c52f2bcd01e7bba7cd7dd5909e17d6a9083f21"},
+    {file = "debugpy-1.0.0rc2-cp27-cp27m-manylinux1_i686.whl", hash = "sha256:658c8ad2f5e85df3f392cefcf374f1e87c9020916608c9352516f1dc348ecc7d"},
+    {file = "debugpy-1.0.0rc2-cp27-cp27m-manylinux1_x86_64.whl", hash = "sha256:724d8c6b94a3cabfc888dbbc3562bd64a623443c5ba718586a0a46c9759655e9"},
+    {file = "debugpy-1.0.0rc2-cp27-cp27m-manylinux2010_x86_64.whl", hash = "sha256:3465fa493c2c6ada09304d507b1df82a8f08cbb2d05af2f35e302346c9e5dd08"},
+    {file = "debugpy-1.0.0rc2-cp27-cp27mu-manylinux1_i686.whl", hash = "sha256:8720c5096efe9a9b2e69c66a492bcfbbbd2bcb0b7485e23f924e57d988e5b20e"},
+    {file = "debugpy-1.0.0rc2-cp27-cp27mu-manylinux1_x86_64.whl", hash = "sha256:cc821d02d6dd259fe7e41218862500b0da378fddfbf64c1725944f797e0adecd"},
+    {file = "debugpy-1.0.0rc2-cp27-cp27mu-manylinux2010_x86_64.whl", hash = "sha256:8f1543134941e4372f378cced8411f71132badc5171f566f6f42f03ec5a64239"},
+    {file = "debugpy-1.0.0rc2-cp34-cp34m-manylinux1_i686.whl", hash = "sha256:0578ee29235baf974468dc03354da87814b658c4771f060ade05aa1d2a4618d1"},
+    {file = "debugpy-1.0.0rc2-cp34-cp34m-manylinux1_x86_64.whl", hash = "sha256:97b2a58544fbf25e0ffd77d0c9b6a3fbf4872597740330a28b316e4e48164476"},
+    {file = "debugpy-1.0.0rc2-cp34-cp34m-manylinux2010_x86_64.whl", hash = "sha256:ee0a8c3190de72c887a8e4d1d6e5ae3b4e2c008aee3542aa14d4843d108121f5"},
+    {file = "debugpy-1.0.0rc2-cp35-cp35m-macosx_10_14_x86_64.whl", hash = "sha256:08b9c5bcab65bcb293df841fd3fcb56c1c76eb816e32ab2552440ad691da573e"},
+    {file = "debugpy-1.0.0rc2-cp35-cp35m-manylinux1_i686.whl", hash = "sha256:07d9e96e0ae23e5ae487a584dfecb46a35de3bf12cb2f03f09a871cb1457808d"},
+    {file = "debugpy-1.0.0rc2-cp35-cp35m-manylinux1_x86_64.whl", hash = "sha256:e1a4bd0ddac878f62d3d555023ed278e75b7fa623b26bc5363aa05b430776a3e"},
+    {file = "debugpy-1.0.0rc2-cp35-cp35m-manylinux2010_x86_64.whl", hash = "sha256:c7297b7bab410c5afdcbb2a17db67a6e22d5de6f9b80a07044bcad61813762b7"},
+    {file = "debugpy-1.0.0rc2-cp35-cp35m-win32.whl", hash = "sha256:463925af98a1b0e463c304640fa4b8843196e75a77170a105351274554fed2be"},
+    {file = "debugpy-1.0.0rc2-cp35-cp35m-win_amd64.whl", hash = "sha256:4ca61ebfd4aef2505cceb8970de060f3c4f1c5b9b3ef8ed9d5e37abbb3e9ee36"},
+    {file = "debugpy-1.0.0rc2-cp36-cp36m-macosx_10_14_x86_64.whl", hash = "sha256:10d3102ba51e35d2bd69350191d513b79e64c13e9dc55c1bd2340bf31cc4cf1c"},
+    {file = "debugpy-1.0.0rc2-cp36-cp36m-manylinux1_i686.whl", hash = "sha256:ed9e2f25115195ae01edec1141312e753cf2e3b44096070e5412e7603addfb21"},
+    {file = "debugpy-1.0.0rc2-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:7ff5971bd61e6ab1aba25f1d092339b73a81d29b7f9cd4009f96de0ceb9c9494"},
+    {file = "debugpy-1.0.0rc2-cp36-cp36m-manylinux2010_x86_64.whl", hash = "sha256:26bd29a44ee0203ae6000427e8dd5e01c46469751542fdcfedff0ca5d0be7dca"},
+    {file = "debugpy-1.0.0rc2-cp36-cp36m-win32.whl", hash = "sha256:1793d7f7b98cf816a0dca6f472afce3932c222747e23f24529ba3faccbb084f0"},
+    {file = "debugpy-1.0.0rc2-cp36-cp36m-win_amd64.whl", hash = "sha256:112ff94e02551ef929812aee3cd2e89a753d70e11da22c70e97aa1d13f583418"},
+    {file = "debugpy-1.0.0rc2-cp37-cp37m-macosx_10_14_x86_64.whl", hash = "sha256:d0bf5703fdb8beaa453adbb47eb0d1986b9dbc92d291d7822e92111a836789dd"},
+    {file = "debugpy-1.0.0rc2-cp37-cp37m-manylinux1_i686.whl", hash = "sha256:a2479bfcb2d9e394e5b66bd01be76dc01c6ddb1d4f7fbc8cbd754d4c71ca8abd"},
+    {file = "debugpy-1.0.0rc2-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:a2be34304bb9c1194a91c599c9a4591b9c867f1279023115003a0e96216a712d"},
+    {file = "debugpy-1.0.0rc2-cp37-cp37m-manylinux2010_x86_64.whl", hash = "sha256:2b01b7f9c371e52c12b6fcab2ebb87e57d980c0449664d733edd96acd9fac5d9"},
+    {file = "debugpy-1.0.0rc2-cp37-cp37m-win32.whl", hash = "sha256:b96df3eb65bb113ccf22a9e1e3ea50da00d45b72c3ba269460bedff785d8282d"},
+    {file = "debugpy-1.0.0rc2-cp37-cp37m-win_amd64.whl", hash = "sha256:03212bef95cfe9916953c811745fe6ae41ba8622d554a24bece179e17eafda32"},
+    {file = "debugpy-1.0.0rc2-cp38-cp38-macosx_10_14_x86_64.whl", hash = "sha256:16736274ceb4a68ddbf07d03e717e6aeb0b4c6bf753aaf60bd3deab409ea64a0"},
+    {file = "debugpy-1.0.0rc2-cp38-cp38-manylinux1_i686.whl", hash = "sha256:bd59c7b7b39e1fa0a0fb43bd79cf3cefe8fbd8fa4865bb418211c2eba13155d3"},
+    {file = "debugpy-1.0.0rc2-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:97da112e7d4e2ba05f276bbcd99eb67628e908ea2711b5560872981379b421e3"},
+    {file = "debugpy-1.0.0rc2-cp38-cp38-manylinux2010_x86_64.whl", hash = "sha256:de7c7ae86c4140c3aa907cf3267da33b1c7b38ce24875c4733eb7e51e208d19f"},
+    {file = "debugpy-1.0.0rc2-cp38-cp38-win32.whl", hash = "sha256:8d7fb02394817b82c2f2877227ffc8aac5522cdae2e8549a90d05825daacc9f0"},
+    {file = "debugpy-1.0.0rc2-cp38-cp38-win_amd64.whl", hash = "sha256:81b426d28ffa94e7eff2c084e4a5e4db06795e83d75b303db6cd7e4048a53883"},
+    {file = "debugpy-1.0.0rc2-py2.py3-none-any.whl", hash = "sha256:e0f2a71245541659f21f262aa811fb5874f897a6533905f8c54b2718890d0156"},
+    {file = "debugpy-1.0.0rc2.zip", hash = "sha256:e68d1d2d7349eec1da00ba1681cdeff17b24b736119602d75ce1eb4038427812"},
 ]
 future = [
     {file = "future-0.18.2.tar.gz", hash = "sha256:b1bead90b70cf6ec3f0710ae53a525360fa360d306a86583adc6bf83a4db537d"},

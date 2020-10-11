@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.4.6] - 2020-10-11
+* Introduces the `maxsize` as an argument to `to_stage` and `to_iterable`.
+* `ordered` now takes an optinal `maxsize` parameter.
+
 ## [0.4.5] - 2020-10-04
 * Fixed `pl.task.from_iterable` to solve #56
 * `pl.*.ordered` implementations now based on `bisect.insort`.

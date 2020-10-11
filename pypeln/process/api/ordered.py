@@ -22,12 +22,12 @@ class Ordered(tp.NamedTuple):
 
 
 @tp.overload
-def ordered(stage: Stage[A]) -> Stage[A]:
+def ordered(stage: Stage[A], maxsize: int = 0,) -> Stage[A]:
     ...
 
 
 @tp.overload
-def ordered() -> pypeln_utils.Partial[Stage[A]]:
+def ordered(maxsize: int = 0) -> pypeln_utils.Partial[Stage[A]]:
     ...
 
 
@@ -65,6 +65,7 @@ def ordered(
 
     Arguments:
         stage: A Stage or Iterable.
+        maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
 
     Returns:
         If the `stage` parameters is given then this function returns an iterable, else it returns a `Partial`.

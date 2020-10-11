@@ -190,6 +190,11 @@
   </a>
 </li>
 <li class="md-nav__item">
+<a class="md-nav__link" href="#run-tests">
+    Run Tests
+  </a>
+</li>
+<li class="md-nav__item">
 <a class="md-nav__link" href="#related-stuff">
     Related Stuff
   </a>
@@ -538,6 +543,11 @@
   </a>
 </li>
 <li class="md-nav__item">
+<a class="md-nav__link" href="#run-tests">
+    Run Tests
+  </a>
+</li>
+<li class="md-nav__item">
 <a class="md-nav__link" href="#related-stuff">
     Related Stuff
   </a>
@@ -704,6 +714,13 @@
     <span class="o">|</span> <span class="nb">list</span>
 <span class="p">)</span>
 </code></pre></div>
+<h2 id="run-tests">Run Tests</h2>
+<p>A sample script is provided to run the tests in a container (either Docker or Podman is supported), to run tests:</p>
+<div class="codehilite"><pre><span></span><code>$ bash scripts/run-tests.sh
+</code></pre></div>
+<p>This script can also receive a python version to check test against, i.e</p>
+<div class="codehilite"><pre><span></span><code>$ bash scripts/run-tests.sh <span class="m">3</span>.7
+</code></pre></div>
 <h2 id="related-stuff">Related Stuff</h2>
 <ul>
 <li><a href="https://medium.com/@cgarciae/making-an-infinite-number-of-requests-with-python-aiohttp-pypeln-3a552b97dc95">Making an Unlimited Number of Requests with Python aiohttp + pypeln</a></li>
@@ -716,6 +733,7 @@
 <h2 id="contributors">Contributors</h2>
 <ul>
 <li><a href="https://github.com/cgarciae">cgarciae</a></li>
+<li><a href="https://github.com/Davidnet">Davidnet</a></li>
 </ul>
 <h2 id="license">License</h2>
 <p>MIT</p>

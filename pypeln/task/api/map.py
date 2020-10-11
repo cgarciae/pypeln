@@ -115,7 +115,7 @@ def map(
             )
         )
 
-    stage = to_stage(stage)
+    stage = to_stage(stage, maxsize=maxsize)
 
     return Stage(
         process_fn=Map(f),

@@ -40,7 +40,7 @@ def concat(
         A stage object.
     """
 
-    dependencies: tp.List[Stage[A]] = [to_stage(stage) for stage in stages]
+    dependencies: tp.List[Stage[A]] = [to_stage(stage, maxsize=maxsize) for stage in stages]
 
     return Stage(
         process_fn=Concat(),

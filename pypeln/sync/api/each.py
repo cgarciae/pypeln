@@ -123,7 +123,7 @@ def each(
             )
         )
 
-    stage_ = to_stage(stage)
+    stage_ = to_stage(stage, maxsize=maxsize)
 
     stage_ = Stage(
         process_fn=Each(f),

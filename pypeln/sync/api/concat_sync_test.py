@@ -37,4 +37,3 @@ def test_concat_multiple(nums):
     nums_pl2 = pl.sync.concat([nums_pl1, nums_pl])
 
     assert sorted(nums_py2) == sorted(list(nums_pl2))
-

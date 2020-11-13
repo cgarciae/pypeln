@@ -47,7 +47,6 @@ jobs:
         run: |
           poetry export --without-hashes --dev -f requirements.txt > requirements.txt
           pip install -r requirements.txt
-          pip install jax
 
       - name: Run Tests
         run: bash scripts/get-coverage.sh

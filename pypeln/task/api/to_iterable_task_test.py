@@ -12,7 +12,6 @@ MAX_EXAMPLES = 10
 T = tp.TypeVar("T")
 
 
-
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_from_to_iterable(nums: tp.List[int]):
@@ -30,6 +29,7 @@ def test_from_to_iterable(nums: tp.List[int]):
     nums_py = list(nums_py)
 
     assert nums_py == nums_pl
+
 
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)

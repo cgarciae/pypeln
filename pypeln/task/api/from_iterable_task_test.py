@@ -15,7 +15,6 @@ MAX_EXAMPLES = 10
 T = tp.TypeVar("T")
 
 
-
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_from_to_iterable(nums: tp.List[int]):
@@ -26,6 +25,7 @@ def test_from_to_iterable(nums: tp.List[int]):
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums_py
+
 
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
@@ -38,6 +38,7 @@ async def test_from_to_iterable_async_1(nums: tp.List[int]):
     nums_pl = [x async for x in nums_pl]
 
     assert nums_pl == nums_py
+
 
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
@@ -54,6 +55,7 @@ def test_from_to_iterable_async_iterable(nums: tp.List[int]):
 
     assert nums_pl == nums_py
 
+
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_from_to_iterable_pipe(nums):
@@ -63,6 +65,7 @@ def test_from_to_iterable_pipe(nums):
     nums_pl = nums | pl.task.from_iterable() | list
 
     assert nums_pl == nums_py
+
 
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)

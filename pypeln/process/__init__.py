@@ -44,4 +44,3 @@ from .queue import IterableQueue, OutputQueues
 from .supervisor import Supervisor
 from .utils import Namespace
 from .worker import StageParams, Worker, WorkerInfo, start_workers
-

@@ -12,7 +12,6 @@ MAX_EXAMPLES = 10
 T = tp.TypeVar("T")
 
 
-
 class TestEach(TestCase):
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)

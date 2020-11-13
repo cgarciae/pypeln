@@ -28,7 +28,9 @@ class TestWorkerThread(TestCase):
                 worker.stage_params.output_queues.put(x)
 
         stage_params: pl.process.StageParams = mock.Mock(
-            input_queue=input_queue, output_queues=output_queues, total_workers=1,
+            input_queue=input_queue,
+            output_queues=output_queues,
+            total_workers=1,
         )
 
         worker = pl.process.Worker(
@@ -49,7 +51,9 @@ class TestWorkerThread(TestCase):
 
         assert nums_pl == nums
 
-    def test_raises(self,):
+    def test_raises(
+        self,
+    ):
         input_queue = pl.process.IterableQueue()
         output_queue = pl.process.IterableQueue()
         output_queues = pl.process.OutputQueues([output_queue])
@@ -58,7 +62,9 @@ class TestWorkerThread(TestCase):
             raise MyException()
 
         stage_params: pl.process.StageParams = mock.Mock(
-            input_queue=input_queue, output_queues=output_queues, total_workers=1,
+            input_queue=input_queue,
+            output_queues=output_queues,
+            total_workers=1,
         )
 
         worker = pl.process.Worker(
@@ -78,7 +84,9 @@ class TestWorkerThread(TestCase):
         with pytest.raises(MyException):
             nums_pl = list(output_queue)
 
-    def test_timeout(self,):
+    def test_timeout(
+        self,
+    ):
         input_queue = pl.process.IterableQueue()
         output_queue = pl.process.IterableQueue()
         output_queues = pl.process.OutputQueues([output_queue])
@@ -88,7 +96,9 @@ class TestWorkerThread(TestCase):
                 time.sleep(0.2)
 
         stage_params: pl.process.StageParams = mock.Mock(
-            input_queue=input_queue, output_queues=output_queues, total_workers=1,
+            input_queue=input_queue,
+            output_queues=output_queues,
+            total_workers=1,
         )
 
         worker = pl.process.Worker(
@@ -108,7 +118,9 @@ class TestWorkerThread(TestCase):
         time.sleep(0.02)
         assert worker.did_timeout()
 
-    def test_del1(self,):
+    def test_del1(
+        self,
+    ):
         input_queue = pl.process.IterableQueue()
         output_queue = pl.process.IterableQueue()
         output_queues = pl.process.OutputQueues([output_queue])
@@ -118,7 +130,9 @@ class TestWorkerThread(TestCase):
                 time.sleep(0.01)
 
         stage_params: pl.process.StageParams = mock.Mock(
-            input_queue=input_queue, output_queues=output_queues, total_workers=1,
+            input_queue=input_queue,
+            output_queues=output_queues,
+            total_workers=1,
         )
 
         worker = pl.process.Worker(
@@ -141,7 +155,9 @@ class TestWorkerThread(TestCase):
 
         assert not process.is_alive()
 
-    def test_del3(self,):
+    def test_del3(
+        self,
+    ):
         def start_worker():
             input_queue = pl.process.IterableQueue()
             output_queue = pl.process.IterableQueue()
@@ -152,11 +168,15 @@ class TestWorkerThread(TestCase):
                     time.sleep(0.01)
 
             stage_params: pl.process.StageParams = mock.Mock(
-                input_queue=input_queue, output_queues=output_queues, total_workers=1,
+                input_queue=input_queue,
+                output_queues=output_queues,
+                total_workers=1,
             )
 
             stage_params: pl.process.StageParams = mock.Mock(
-                input_queue=input_queue, output_queues=output_queues, total_workers=1,
+                input_queue=input_queue,
+                output_queues=output_queues,
+                total_workers=1,
             )
 
             worker = pl.process.Worker(
@@ -198,7 +218,9 @@ class TestWorkerProcess(TestCase):
                 worker.stage_params.output_queues.put(x)
 
         stage_params: pl.process.StageParams = mock.Mock(
-            input_queue=input_queue, output_queues=output_queues, total_workers=1,
+            input_queue=input_queue,
+            output_queues=output_queues,
+            total_workers=1,
         )
 
         worker = pl.process.Worker(
@@ -219,7 +241,9 @@ class TestWorkerProcess(TestCase):
 
         assert nums_pl == nums
 
-    def test_raises(self,):
+    def test_raises(
+        self,
+    ):
         input_queue = pl.process.IterableQueue()
         output_queue = pl.process.IterableQueue()
         output_queues = pl.process.OutputQueues([output_queue])
@@ -228,7 +252,9 @@ class TestWorkerProcess(TestCase):
             raise MyException()
 
         stage_params: pl.process.StageParams = mock.Mock(
-            input_queue=input_queue, output_queues=output_queues, total_workers=1,
+            input_queue=input_queue,
+            output_queues=output_queues,
+            total_workers=1,
         )
 
         worker = pl.process.Worker(
@@ -248,7 +274,9 @@ class TestWorkerProcess(TestCase):
         with pytest.raises(MyException):
             nums_pl = list(output_queue)
 
-    def test_timeout(self,):
+    def test_timeout(
+        self,
+    ):
         input_queue = pl.process.IterableQueue()
         output_queue = pl.process.IterableQueue()
         output_queues = pl.process.OutputQueues([output_queue])
@@ -258,7 +286,9 @@ class TestWorkerProcess(TestCase):
                 time.sleep(0.2)
 
         stage_params: pl.process.StageParams = mock.Mock(
-            input_queue=input_queue, output_queues=output_queues, total_workers=1,
+            input_queue=input_queue,
+            output_queues=output_queues,
+            total_workers=1,
         )
 
         worker = pl.process.Worker(
@@ -278,7 +308,9 @@ class TestWorkerProcess(TestCase):
         time.sleep(0.1)
         assert worker.did_timeout()
 
-    def test_del1(self,):
+    def test_del1(
+        self,
+    ):
         input_queue = pl.process.IterableQueue()
         output_queue = pl.process.IterableQueue()
         output_queues = pl.process.OutputQueues([output_queue])
@@ -288,7 +320,9 @@ class TestWorkerProcess(TestCase):
                 time.sleep(0.01)
 
         stage_params: pl.process.StageParams = mock.Mock(
-            input_queue=input_queue, output_queues=output_queues, total_workers=1,
+            input_queue=input_queue,
+            output_queues=output_queues,
+            total_workers=1,
         )
 
         worker = pl.process.Worker(
@@ -311,7 +345,9 @@ class TestWorkerProcess(TestCase):
 
         assert not process.is_alive()
 
-    def test_del3(self,):
+    def test_del3(
+        self,
+    ):
         def start_worker():
             input_queue = pl.process.IterableQueue()
             output_queue = pl.process.IterableQueue()
@@ -322,11 +358,15 @@ class TestWorkerProcess(TestCase):
                     time.sleep(0.01)
 
             stage_params: pl.process.StageParams = mock.Mock(
-                input_queue=input_queue, output_queues=output_queues, total_workers=1,
+                input_queue=input_queue,
+                output_queues=output_queues,
+                total_workers=1,
             )
 
             stage_params: pl.process.StageParams = mock.Mock(
-                input_queue=input_queue, output_queues=output_queues, total_workers=1,
+                input_queue=input_queue,
+                output_queues=output_queues,
+                total_workers=1,
             )
 
             worker = pl.process.Worker(

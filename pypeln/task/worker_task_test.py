@@ -43,7 +43,9 @@ def test_basic(nums):
             await worker.stage_params.output_queues.put(x)
 
     stage_params: pl.task.StageParams = mock.Mock(
-        input_queue=input_queue, output_queues=output_queues, total_workers=1,
+        input_queue=input_queue,
+        output_queues=output_queues,
+        total_workers=1,
     )
 
     worker = pl.task.Worker(
@@ -81,7 +83,9 @@ async def test_basic_async(nums):
             await worker.stage_params.output_queues.put(x)
 
     stage_params: pl.task.StageParams = mock.Mock(
-        input_queue=input_queue, output_queues=output_queues, total_workers=1,
+        input_queue=input_queue,
+        output_queues=output_queues,
+        total_workers=1,
     )
 
     worker = pl.task.Worker(
@@ -114,7 +118,9 @@ def test_raises():
         raise MyException()
 
     stage_params: pl.task.StageParams = mock.Mock(
-        input_queue=input_queue, output_queues=output_queues, total_workers=1,
+        input_queue=input_queue,
+        output_queues=output_queues,
+        total_workers=1,
     )
 
     worker = pl.task.Worker(
@@ -147,7 +153,9 @@ async def test_raises_async():
         raise MyException()
 
     stage_params: pl.task.StageParams = mock.Mock(
-        input_queue=input_queue, output_queues=output_queues, total_workers=1,
+        input_queue=input_queue,
+        output_queues=output_queues,
+        total_workers=1,
     )
 
     worker = pl.task.Worker(
@@ -184,7 +192,9 @@ def test_timeout():
         await worker.tasks.put(task)
 
     stage_params: pl.task.StageParams = mock.Mock(
-        input_queue=input_queue, output_queues=output_queues, total_workers=1,
+        input_queue=input_queue,
+        output_queues=output_queues,
+        total_workers=1,
     )
 
     worker = pl.task.Worker(
@@ -228,7 +238,9 @@ async def test_timeout_async():
         await worker.tasks.put(task)
 
     stage_params: pl.task.StageParams = mock.Mock(
-        input_queue=input_queue, output_queues=output_queues, total_workers=1,
+        input_queue=input_queue,
+        output_queues=output_queues,
+        total_workers=1,
     )
 
     worker = pl.task.Worker(
@@ -270,7 +282,9 @@ def test_no_timeout():
         await worker.tasks.put(task)
 
     stage_params: pl.task.StageParams = mock.Mock(
-        input_queue=input_queue, output_queues=output_queues, total_workers=1,
+        input_queue=input_queue,
+        output_queues=output_queues,
+        total_workers=1,
     )
 
     worker = pl.task.Worker(
@@ -311,7 +325,9 @@ async def test_no_timeout_async():
         await worker.tasks.put(task)
 
     stage_params: pl.task.StageParams = mock.Mock(
-        input_queue=input_queue, output_queues=output_queues, total_workers=1,
+        input_queue=input_queue,
+        output_queues=output_queues,
+        total_workers=1,
     )
     worker = pl.task.Worker(
         process_fn=CustomProcess(f),
@@ -345,7 +361,9 @@ def test_del1():
             await asyncio.sleep(0.01)
 
     stage_params: pl.task.StageParams = mock.Mock(
-        input_queue=input_queue, output_queues=output_queues, total_workers=1,
+        input_queue=input_queue,
+        output_queues=output_queues,
+        total_workers=1,
     )
 
     worker = pl.task.Worker(
@@ -382,7 +400,9 @@ async def test_del1_async():
             await asyncio.sleep(0.01)
 
     stage_params: pl.task.StageParams = mock.Mock(
-        input_queue=input_queue, output_queues=output_queues, total_workers=1,
+        input_queue=input_queue,
+        output_queues=output_queues,
+        total_workers=1,
     )
 
     worker = pl.task.Worker(
@@ -419,11 +439,15 @@ def test_del3():
                 await asyncio.sleep(0.01)
 
         stage_params: pl.task.StageParams = mock.Mock(
-            input_queue=input_queue, output_queues=output_queues, total_workers=1,
+            input_queue=input_queue,
+            output_queues=output_queues,
+            total_workers=1,
         )
 
         stage_params: pl.task.StageParams = mock.Mock(
-            input_queue=input_queue, output_queues=output_queues, total_workers=1,
+            input_queue=input_queue,
+            output_queues=output_queues,
+            total_workers=1,
         )
 
         worker = pl.task.Worker(
@@ -462,7 +486,9 @@ async def test_del3_async():
                 await asyncio.sleep(0.01)
 
         stage_params: pl.task.StageParams = mock.Mock(
-            input_queue=input_queue, output_queues=output_queues, total_workers=1,
+            input_queue=input_queue,
+            output_queues=output_queues,
+            total_workers=1,
         )
 
         worker = pl.task.Worker(

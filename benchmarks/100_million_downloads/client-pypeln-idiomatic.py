@@ -19,7 +19,9 @@ async def main():
                 return await response.read()
 
         await pl.task.each(
-            fetch, urls, workers=limit,
+            fetch,
+            urls,
+            workers=limit,
         )
 
 

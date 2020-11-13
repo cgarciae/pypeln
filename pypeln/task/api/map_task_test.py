@@ -266,7 +266,11 @@ def test_kwargs():
         namespace.on_done = y
 
     nums_pl = pl.task.map(
-        lambda x, y: y, nums, on_start=on_start, on_done=on_done, workers=n_workers,
+        lambda x, y: y,
+        nums,
+        on_start=on_start,
+        on_done=on_done,
+        workers=n_workers,
     )
     nums_pl = list(nums_pl)
 
@@ -290,7 +294,11 @@ async def test_kwargs_async():
         namespace.on_done = y
 
     nums_pl = pl.task.map(
-        lambda x, y: y, nums, on_start=on_start, on_done=on_done, workers=n_workers,
+        lambda x, y: y,
+        nums,
+        on_start=on_start,
+        on_done=on_done,
+        workers=n_workers,
     )
     nums_pl = await nums_pl
 

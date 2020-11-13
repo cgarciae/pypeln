@@ -88,7 +88,12 @@ def test_worker_info():
     def _lambda(x, index):
         return index
 
-    nums_pl = pl.sync.map(_lambda, nums, on_start=on_start, workers=n_workers,)
+    nums_pl = pl.sync.map(
+        _lambda,
+        nums,
+        on_start=on_start,
+        workers=n_workers,
+    )
     nums_pl = set(nums_pl)
 
     assert nums_pl.issubset(set(range(n_workers)))
@@ -109,7 +114,11 @@ def test_kwargs():
         namespace.on_done = y
 
     nums_pl = pl.sync.map(
-        lambda x, y: y, nums, on_start=on_start, on_done=on_done, workers=n_workers,
+        lambda x, y: y,
+        nums,
+        on_start=on_start,
+        on_done=on_done,
+        workers=n_workers,
     )
     nums_pl = list(nums_pl)
 

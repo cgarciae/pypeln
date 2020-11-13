@@ -46,7 +46,7 @@ jobs:
       - name: Install Dependencies
         run: |
           poetry export --without-hashes --dev -f requirements.txt > requirements.txt
-          pip install -r requirements.txt
+          pip install -r requirements.txt 
 
       - name: Run Tests
         run: bash scripts/get-coverage.sh

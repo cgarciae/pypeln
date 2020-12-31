@@ -102,10 +102,10 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
                     yield elem.value
 
     def __iter__(self):
-        return self.to_iterable(maxsize=0, return_index=False)
+        return self.to_iterable(maxsize=self.maxsize, return_index=False)
 
     def __aiter__(self):
-        return self.to_async_iterable(maxsize=0, return_index=False)
+        return self.to_async_iterable(maxsize=self.maxsize, return_index=False)
 
     async def _await(self):
         return [x async for x in self]

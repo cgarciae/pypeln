@@ -18,7 +18,8 @@ def to_iterable(
 
 @tp.overload
 def to_iterable(
-    maxsize: int = 0, return_index: bool = False,
+    maxsize: int = 0,
+    return_index: bool = False,
 ) -> pypeln_utils.Partial[tp.Iterable[A]]:
     ...
 
@@ -68,7 +69,8 @@ def to_async_iterable(
 
 @tp.overload
 def to_async_iterable(
-    maxsize: int = 0, return_index: bool = False,
+    maxsize: int = 0,
+    return_index: bool = False,
 ) -> pypeln_utils.Partial[tp.AsyncIterable[A]]:
     ...
 

@@ -71,7 +71,7 @@ def test_timeout():
     def f(x):
         if x == 2:
             while True:
-                time.sleep(0.1)
+                time.sleep(0.02)
 
         return x
 
@@ -115,7 +115,11 @@ def test_kwargs():
         namespace.on_done = y
 
     nums_pl = pl.process.map(
-        lambda x, y: y, nums, on_start=on_start, on_done=on_done, workers=n_workers,
+        lambda x, y: y,
+        nums,
+        on_start=on_start,
+        on_done=on_done,
+        workers=n_workers,
     )
     nums_pl = list(nums_pl)
 
@@ -144,6 +148,8 @@ def test_map_square_event_end(nums: tp.List[int]):
         lambda x: x ** 2, nums, workers=3, on_start=on_start, on_done=on_done
     )
     nums_pl = list(nums_pl)
+
+    time.sleep(0.1)
 
     assert namespace.x == 2
     assert namespace.done == True

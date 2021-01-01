@@ -42,7 +42,8 @@ def run_coroutine_in_loop(
 
 
 def run_function_in_loop(
-    f: tp.Callable[[], tp.Any], loop: tp.Optional[asyncio.AbstractEventLoop] = None,
+    f: tp.Callable[[], tp.Any],
+    loop: tp.Optional[asyncio.AbstractEventLoop] = None,
 ) -> asyncio.Handle:
     loop = loop if loop else get_running_loop()
 

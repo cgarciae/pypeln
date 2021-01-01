@@ -140,7 +140,8 @@ class Worker(tp.Generic[T]):
             return
 
         stopit.async_raise(
-            self.process.ident, pypeln_utils.StopThreadException,
+            self.process.ident,
+            pypeln_utils.StopThreadException,
         )
 
     def done(self):
@@ -192,7 +193,7 @@ class StageStatus:
     @property
     def done(self) -> bool:
         """
-        `bool` : `True` if all workers finished. 
+        `bool` : `True` if all workers finished.
         """
         with self._lock:
             return self._namespace.active_workers == 0
@@ -200,7 +201,7 @@ class StageStatus:
     @property
     def active_workers(self):
         """
-        `int` : Number of active workers. 
+        `int` : Number of active workers.
         """
         with self._lock:
             return self._namespace.active_workers

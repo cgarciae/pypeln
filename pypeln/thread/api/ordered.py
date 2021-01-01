@@ -47,7 +47,7 @@ def ordered(
 
     def slow_squared(x):
         time.sleep(random.random())
-        
+
         return x ** 2
 
     stage = range(5)
@@ -59,7 +59,7 @@ def ordered(
 
     !!! note
         `ordered` will work even if the previous stages are from different `pypeln` modules, but it may not work if you introduce an itermediate external iterable stage.
-    
+
     !!! warning
         This stage will not yield util it accumulates all of the elements from the previous stage, use this only if all elements fit in memory.
 

@@ -49,7 +49,7 @@ jobs:
           pip install -r requirements.txt 
 
       - name: Run Tests
-        run: bash scripts/get-coverage.sh
+        run: bash scripts/tests-and-coverage.sh
 
       - name: Upload coverage
         uses: codecov/codecov-action@v1

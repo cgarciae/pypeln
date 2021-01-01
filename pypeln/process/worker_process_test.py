@@ -93,7 +93,7 @@ class TestWorkerThread(TestCase):
 
         def f(self: pl.process.Worker):
             with self.measure_task_time():
-                time.sleep(0.2)
+                time.sleep(0.8)
 
         stage_params: pl.process.StageParams = mock.Mock(
             input_queue=input_queue,
@@ -107,7 +107,7 @@ class TestWorkerThread(TestCase):
             stage_params=stage_params,
             main_queue=output_queue,
             use_threads=True,
-            timeout=0.001,
+            timeout=0.01,
             on_start=None,
             on_done=None,
             f_args=[],
@@ -115,7 +115,7 @@ class TestWorkerThread(TestCase):
         worker.start()
 
         assert not worker.did_timeout()
-        time.sleep(0.02)
+        time.sleep(0.1)
         assert worker.did_timeout()
 
     def test_del1(
@@ -283,7 +283,7 @@ class TestWorkerProcess(TestCase):
 
         def f(self: pl.process.Worker):
             with self.measure_task_time():
-                time.sleep(0.2)
+                time.sleep(0.8)
 
         stage_params: pl.process.StageParams = mock.Mock(
             input_queue=input_queue,
@@ -297,7 +297,7 @@ class TestWorkerProcess(TestCase):
             stage_params=stage_params,
             main_queue=output_queue,
             use_threads=False,
-            timeout=0.001,
+            timeout=0.01,
             on_start=None,
             on_done=None,
             f_args=[],

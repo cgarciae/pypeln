@@ -8,6 +8,12 @@ on:
       - master
   pull_request:
 jobs:
+  wip:
+    if: ${{ !contains(github.event.pull_request.title, 'WIP') }}
+    name: Check for WIP
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
   black-test:
     if: ${{ !contains(github.event.pull_request.title, 'WIP') }}
     name: Black Python code format
@@ -25,6 +31,7 @@ jobs:
       - name: Ensure contributor used ("black ./") before commit
         run: black --check .
   test:
+    if: ${{ !contains(github.event.pull_request.title, 'WIP') }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -50,7 +57,10 @@ jobs:
           poetry install
 
       - name: Run Tests
-        run: bash scripts/tests-and-coverage.sh
+        run: |
+          coverage run --concurrency=multiprocessing -m pytest --hypothesis-profile=pypeln
+          coverage combine
+          coverage xml --omit '.venv/*' --omit '*_test.py'
 
       - name: Upload coverage
         uses: codecov/codecov-action@v1

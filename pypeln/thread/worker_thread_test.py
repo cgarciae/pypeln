@@ -147,7 +147,7 @@ class TestWorker(TestCase):
         process = worker.process
 
         worker.stop()
-        time.sleep(0.1)
+        time.sleep(0.2)
 
         assert not process.is_alive()
 

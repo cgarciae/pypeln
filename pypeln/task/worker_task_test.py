@@ -383,7 +383,7 @@ def test_del1():
     time.sleep(0.01)
 
     worker.stop()
-    time.sleep(0.02)
+    time.sleep(0.2)
 
     assert task.cancelled()
     assert worker.is_done
@@ -422,7 +422,7 @@ async def test_del1_async():
     await asyncio.sleep(0.01)
 
     worker.stop()
-    await asyncio.sleep(0.01)
+    await asyncio.sleep(0.2)
 
     assert task.cancelled()
     assert worker.is_done

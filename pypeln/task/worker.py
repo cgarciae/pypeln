@@ -107,7 +107,8 @@ class Worker(tp.Generic[T]):
             if self.on_done is not None:
 
                 kwargs.setdefault(
-                    "stage_status", StageStatus(),
+                    "stage_status",
+                    StageStatus(),
                 )
 
                 coro = self.on_done(
@@ -165,14 +166,14 @@ class StageStatus(tp.NamedTuple):
     @property
     def done(self) -> bool:
         """
-        `bool` : `True` if all workers finished. 
+        `bool` : `True` if all workers finished.
         """
         return True
 
     @property
     def active_workers(self):
         """
-        `int` : Number of active workers. 
+        `int` : Number of active workers.
         """
         return 0
 

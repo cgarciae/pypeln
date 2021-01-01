@@ -13,7 +13,7 @@ A clear and concise description of what the bug is.
 **Minimal code to reproduce**
 Small snippet that contains a minimal amount of code.
 ```python
-import elegy
+import pypeln
 ```
 
 **Expected behavior**
@@ -22,8 +22,8 @@ A clear and concise description of what you expected to happen.
 **Library Info**
 Please provide os info and elegy version.
 ```python
-import elegy
-print(elegy.__version__)
+import pypeln
+print(pypeln.__version__)
 ```
 **Screenshots**
 If applicable, add screenshots to help explain your problem.

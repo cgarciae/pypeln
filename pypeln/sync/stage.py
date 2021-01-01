@@ -76,13 +76,15 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
         kwargs.setdefault("worker_info", worker_info)
 
         yield from self.process_fn(
-            self, **{key: value for key, value in kwargs.items() if key in self.f_args},
+            self,
+            **{key: value for key, value in kwargs.items() if key in self.f_args},
         )
 
         if self.on_done is not None:
 
             kwargs.setdefault(
-                "stage_status", StageStatus(),
+                "stage_status",
+                StageStatus(),
             )
 
             self.on_done(
@@ -124,14 +126,14 @@ class StageStatus(tp.NamedTuple):
     @property
     def done(self) -> bool:
         """
-        `bool` : `True` if all workers finished. 
+        `bool` : `True` if all workers finished.
         """
         return True
 
     @property
     def active_workers(self):
         """
-        `int` : Number of active workers. 
+        `int` : Number of active workers.
         """
         return 0
 

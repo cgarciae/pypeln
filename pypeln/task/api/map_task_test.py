@@ -328,6 +328,8 @@ def test_map_square_event_end(nums: tp.List[int]):
     )
     nums_pl = list(nums_pl)
 
+    time.sleep(0.1)
+
     assert namespace.x == 2
     assert namespace.done == True
     assert namespace.active_workers == 0
@@ -355,6 +357,8 @@ async def test_map_square_event_end_async(nums: tp.List[int]):
         lambda x: x ** 2, nums, workers=3, on_start=on_start, on_done=on_done
     )
     nums_pl = await nums_pl
+
+    await asyncio.sleep(0.1)
 
     assert namespace.x == 2
     assert namespace.done == True

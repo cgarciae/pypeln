@@ -184,7 +184,7 @@ def test_timeout():
     async def f(x):
         if x == 2:
             while True:
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.02)
 
         return x
 

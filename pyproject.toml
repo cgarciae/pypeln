@@ -10,7 +10,7 @@ repository = "https://github.com/cgarciae/pypeln"
 homepage = "https://cgarciae.github.io/pypeln"
 
 [tool.poetry.dependencies]
-python = "^3.5"
+python = "^3.6.1"
 stopit = "^1.1.2"
 typing_extensions = "^3.7.4"
 
@@ -29,6 +29,7 @@ black = {version = "^19.10b0", allow-prereleases = true}
 mkautodoc = "^0.1.0"
 mkdocstrings = "^0.12.0"
 ipython = "^7.15.0"
+numpy = "^1.19.4"
 
 [build-system]
 requires = ["poetry>=0.12"]

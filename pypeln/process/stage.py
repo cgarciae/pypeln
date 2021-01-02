@@ -71,7 +71,8 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
 
         # build stages first to verify reuse
         main_queue: IterableQueue[pypeln_utils.Element] = IterableQueue(
-            maxsize=maxsize, total_sources=self.workers,
+            maxsize=maxsize,
+            total_sources=self.workers,
         )
 
         built = {}
@@ -87,4 +88,4 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
                     yield elem.value
 
     def __iter__(self):
-        return self.to_iterable(maxsize=0, return_index=False)
+        return self.to_iterable(maxsize=self.maxsize, return_index=False)

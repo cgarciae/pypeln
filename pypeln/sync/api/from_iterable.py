@@ -10,10 +10,13 @@ from dataclasses import dataclass
 @dataclass
 class FromIterable(ProcessFn):
     iterable: tp.Iterable
+    maxsize: int
 
     def __call__(self, worker: Stage, **kwargs) -> tp.Iterable:
         if isinstance(self.iterable, pypeln_utils.BaseStage):
-            yield from self.iterable.to_iterable(maxsize=0, return_index=True)
+            yield from self.iterable.to_iterable(
+                maxsize=self.maxsize, return_index=True
+            )
         else:
             for i, x in enumerate(self.iterable):
                 if isinstance(x, pypeln_utils.Element):
@@ -23,18 +26,23 @@ class FromIterable(ProcessFn):
 
 
 @tp.overload
-def from_iterable(iterable: tp.Iterable[T], use_thread: bool = True) -> Stage[T]:
+def from_iterable(
+    iterable: tp.Iterable[T], use_thread: bool = True, maxsize: int = 0
+) -> Stage[T]:
     ...
 
 
 @tp.overload
-def from_iterable(use_thread: bool = True) -> pypeln_utils.Partial[Stage[T]]:
+def from_iterable(
+    use_thread: bool = True, maxsize: int = 0
+) -> pypeln_utils.Partial[Stage[T]]:
     ...
 
 
 def from_iterable(
     iterable: tp.Union[tp.Iterable[T], pypeln_utils.Undefined] = pypeln_utils.UNDEFINED,
     use_thread: bool = True,
+    maxsize: int = 0,
 ) -> tp.Union[Stage[T], pypeln_utils.Partial[Stage[T]]]:
     """
     Creates a stage from an iterable.
@@ -51,7 +59,7 @@ def from_iterable(
         return pypeln_utils.Partial(lambda iterable: from_iterable(iterable))
 
     return Stage(
-        process_fn=FromIterable(iterable),
+        process_fn=FromIterable(iterable, maxsize=maxsize),
         timeout=0,
         dependencies=[],
         on_start=None,

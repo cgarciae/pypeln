@@ -1,11 +1,12 @@
+import sys
+import time
 import typing as tp
 from unittest import TestCase
 
 import hypothesis as hp
 from hypothesis import strategies as st
+
 import pypeln as pl
-from pypeln.task.utils import run_test_async
-import time
 
 MAX_EXAMPLES = 10
 T = tp.TypeVar("T")
@@ -52,7 +53,7 @@ class TestEach(TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_test_async
+    @pl.task.utils.run_test_async
     async def test_each_list_2(self, nums: tp.List[int]):
 
         nums_pl = pl.task.each(lambda x: x, nums)
@@ -72,7 +73,7 @@ class TestEach(TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_test_async
+    @pl.task.utils.run_test_async
     async def test_each_list_3(self, nums: tp.List[int]):
 
         nums_pl = await pl.task.each(lambda x: x, nums)
@@ -81,7 +82,7 @@ class TestEach(TestCase):
 
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
-    @run_test_async
+    @pl.task.utils.run_test_async
     async def test_each_list_4(self, nums: tp.List[int]):
 
         nums_pl = await (pl.task.each(lambda x: x, nums))

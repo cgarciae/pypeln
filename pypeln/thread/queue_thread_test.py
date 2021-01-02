@@ -66,6 +66,7 @@ class TestQueue(TestCase):
             for i in nums:
                 queue.put(i)
 
+            time.sleep(0.01)
             queue.stop()
 
         processes = pl.thread.start_workers(worker)

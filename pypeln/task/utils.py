@@ -7,15 +7,8 @@ import typing as tp
 from pypeln import utils as pypeln_utils
 
 
-class _Namespace:
-    def __init__(self, **kwargs):
-
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-
-
 def Namespace(**kwargs) -> tp.Any:
-    return _Namespace(**kwargs)
+    return pypeln_utils.Namespace(**kwargs)
 
 
 def get_running_loop() -> asyncio.AbstractEventLoop:
@@ -29,7 +22,8 @@ def get_running_loop() -> asyncio.AbstractEventLoop:
     if not loop.is_running():
 
         def run():
-            loop.run_forever()
+            if not loop.is_running():
+                loop.run_forever()
 
         thread = threading.Thread(target=run)
         thread.daemon = True
@@ -49,7 +43,8 @@ def run_coroutine_in_loop(
 
 
 def run_function_in_loop(
-    f: tp.Callable[[], tp.Any], loop: tp.Optional[asyncio.AbstractEventLoop] = None,
+    f: tp.Callable[[], tp.Any],
+    loop: tp.Optional[asyncio.AbstractEventLoop] = None,
 ) -> asyncio.Handle:
     loop = loop if loop else get_running_loop()
 

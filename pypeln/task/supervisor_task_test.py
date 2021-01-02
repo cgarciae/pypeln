@@ -1,5 +1,6 @@
 import asyncio
 from dataclasses import dataclass
+import sys
 import time
 import typing as tp
 from unittest import TestCase
@@ -13,8 +14,6 @@ import pytest
 
 from pypeln import utils as pypeln_utils
 import pypeln as pl
-from pypeln.task.utils import run_test_async
-from pypeln.task.worker import TaskPool
 
 MAX_EXAMPLES = 10
 T = tp.TypeVar("T")
@@ -50,7 +49,7 @@ def test_stop_nowait():
     worker.stop.assert_called_once()
 
 
-@run_test_async
+@pl.task.utils.run_test_async
 async def test_stop():
 
     queue = pl.task.IterableQueue()
@@ -83,7 +82,7 @@ def test_context():
     worker.stop.assert_called_once()
 
 
-@run_test_async
+@pl.task.utils.run_test_async
 async def test_context_async():
 
     queue: pl.task.IterableQueue = mock.Mock()

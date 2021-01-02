@@ -7,9 +7,6 @@ import typing as tp
 
 from pypeln import utils as pypeln_utils
 
-# multiprocessing = get_context("fork")
-MANAGER = multiprocessing.Manager()
-
 
 def Namespace(**kwargs) -> tp.Any:
-    return MANAGER.Namespace(**kwargs)
+    return pypeln_utils.Namespace(**kwargs)

@@ -1,7 +1,11 @@
+import random
+import sys
+import time
+
 import hypothesis as hp
 from hypothesis import strategies as st
-import time
-import random
+import pytest
+
 import pypeln as pl
 
 MAX_EXAMPLES = 10
@@ -39,20 +43,19 @@ def test_process_sync(nums):
 
     assert nums_pl == nums
 
+    @hp.given(nums=st.lists(st.integers()))
+    @hp.settings(max_examples=MAX_EXAMPLES)
+    def test_process_task(nums):
+        def f(x):
+            time.sleep(random.random() * SLEEP)
+            return x
 
-@hp.given(nums=st.lists(st.integers()))
-@hp.settings(max_examples=MAX_EXAMPLES)
-def test_process_task(nums):
-    def f(x):
-        time.sleep(random.random() * SLEEP)
-        return x
+        nums_pl = pl.process.map(f, nums, workers=2)
+        nums_pl = pl.task.map(f, nums_pl, workers=2)
+        nums_pl = pl.task.ordered(nums_pl)
+        nums_pl = list(nums_pl)
 
-    nums_pl = pl.process.map(f, nums, workers=2)
-    nums_pl = pl.task.map(f, nums_pl, workers=2)
-    nums_pl = pl.task.ordered(nums_pl)
-    nums_pl = list(nums_pl)
-
-    assert nums_pl == nums
+        assert nums_pl == nums
 
 
 #########################################################
@@ -156,6 +159,8 @@ def test_sync_task(nums):
 #########################################################
 # task
 #########################################################
+
+
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_task_process(nums):

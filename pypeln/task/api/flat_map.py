@@ -10,8 +10,10 @@ from ..stage import Stage
 from ..worker import ProcessFn, Worker, ApplyProcess
 
 
-class FlatMapFn(tp.Protocol):
-    def __call__(self, A, **kwargs) -> tp.Union[tp.Iterable[B], tp.AsyncIterable[B]]:
+class FlatMapFn(pypeln_utils.Protocol):
+    def __call__(
+        self, A, **kwargs
+    ) -> tp.Union[tp.Iterable[B], tp.AsyncIterable[B], tp.Awaitable[tp.Iterable]]:
         ...
 
 
@@ -25,7 +27,9 @@ class FlatMap(ApplyProcess):
             kwargs["element_index"] = elem.index
 
         ys: tp.Union[
-            tp.Iterable[pypeln_utils.Element], tp.AsyncIterable[pypeln_utils.Element]
+            tp.Iterable[pypeln_utils.Element],
+            tp.AsyncIterable[pypeln_utils.Element],
+            tp.Awaitable[tp.Iterable],
         ] = self.f(elem.value, **kwargs)
 
         if isinstance(ys, tp.AsyncIterable):
@@ -35,6 +39,9 @@ class FlatMap(ApplyProcess):
                 await worker.stage_params.output_queues.put(elem_y)
                 i += 1
         else:
+            if isinstance(ys, tp.Awaitable):
+                ys = await ys
+
             for i, y in enumerate(ys):
                 elem_y = pypeln_utils.Element(index=elem.index + (i,), value=y)
                 await worker.stage_params.output_queues.put(elem_y)
@@ -100,8 +107,8 @@ def flat_map(
     ```
 
     !!! note
-        Because of concurrency order is not guaranteed. 
-        
+        Because of concurrency order is not guaranteed.
+
     `flat_map` is a more general operation, you can actually implement `pypeln.process.map` and `pypeln.process.filter` with it, for example:
 
     ```python
@@ -118,7 +125,7 @@ def flat_map(
         stage: A Stage, Iterable or AsyncIterable.
         workers: The number of workers the stage should contain.
         maxsize: The maximum number of objects the stage can hold simultaneously, if set to `0` (default) then the stage can grow unbounded.
-        timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded. 
+        timeout: Seconds before stoping the worker if its current task is not yet completed. Defaults to `0` which means its unbounded.
         on_start: A function with signature `on_start(worker_info?) -> kwargs?`, where `kwargs` can be a `dict` of keyword arguments that can be consumed by `f` and `on_done`. `on_start` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
         on_done: A function with signature `on_done(stage_status?)`. This function is executed once per worker when the worker finishes. `on_done` can accept additional arguments by name as described in [Advanced Usage](https://cgarciae.github.io/pypeln/advanced/#dependency-injection).
 
@@ -139,7 +146,7 @@ def flat_map(
             )
         )
 
-    stage = to_stage(stage)
+    stage = to_stage(stage, maxsize=maxsize)
 
     return Stage(
         process_fn=FlatMap(f),

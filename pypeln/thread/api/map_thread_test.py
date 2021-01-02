@@ -71,7 +71,7 @@ def test_timeout():
     def f(x):
         if x == 2:
             while True:
-                time.sleep(0.1)
+                time.sleep(0.02)
 
         return x
 
@@ -115,7 +115,11 @@ def test_kwargs():
         namespace.on_done = y
 
     nums_pl = pl.thread.map(
-        lambda x, y: y, nums, on_start=on_start, on_done=on_done, workers=n_workers,
+        lambda x, y: y,
+        nums,
+        on_start=on_start,
+        on_done=on_done,
+        workers=n_workers,
     )
     nums_pl = list(nums_pl)
 
@@ -144,6 +148,8 @@ def test_map_square_event_end(nums: tp.List[int]):
         lambda x: x ** 2, nums, workers=3, on_start=on_start, on_done=on_done
     )
     nums_pl = list(nums_pl)
+
+    time.sleep(0.1)
 
     assert namespace.x == 2
     assert namespace.done == True
@@ -183,3 +189,27 @@ def test_error_handling():
         error = e
 
     assert isinstance(error, MyError)
+
+
+def test_maxsize():
+
+    namespace = pl.thread.utils.Namespace(count=0)
+
+    def f(x) -> tp.Any:
+        namespace.count += 1
+        return x
+
+    stage = pl.thread.map(f, range(20))
+    stage = pl.thread.to_iterable(stage, maxsize=3)
+
+    iterator = iter(stage)
+    next(iterator)
+
+    time.sleep(0.1)
+
+    # + 1 element which was yieled on next(...)
+    # + 3 elements which are on the queue.
+    # + 1 element which it pending to be put.
+    # -------------------------------------------
+    # + 5 total
+    assert namespace.count == 5

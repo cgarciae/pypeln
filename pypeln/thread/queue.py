@@ -1,15 +1,13 @@
-import multiprocessing
-from multiprocessing.queues import Empty, Queue
 import sys
+import time
 import traceback
 import typing as tp
-
+from queue import Queue, Empty, Full
+from threading import Lock
 
 from pypeln import utils as pypeln_utils
 
 from . import utils
-import time
-
 
 T = tp.TypeVar("T")
 
@@ -21,18 +19,24 @@ class PipelineException(tp.NamedTuple, BaseException):
 
 class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
     def __init__(self, maxsize: int = 0, total_sources: int = 1):
-        super().__init__(maxsize=maxsize, ctx=multiprocessing.get_context())
+        super().__init__(maxsize=maxsize)
 
-        self.lock = multiprocessing.Lock()
+        self.lock = Lock()
         self.namespace = utils.Namespace(
             remaining=total_sources, exception=False, force_stop=False
         )
-        self.exception_queue: Queue[PipelineException] = Queue(
-            ctx=multiprocessing.get_context()
-        )
+        self.exception_queue: "Queue[PipelineException]" = Queue()
 
     def get(self, *arg, **kwargs) -> T:
         return super().get(*arg, **kwargs)
+
+    def put(self, x: T):
+        while True:
+            try:
+                super().put(x, timeout=pypeln_utils.TIMEOUT)
+                return
+            except Full as e:
+                pass
 
     def __iter__(self) -> tp.Iterator[T]:
 

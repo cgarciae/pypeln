@@ -13,6 +13,7 @@ from ..worker import ProcessFn, Worker
 
 class FromIterable(tp.NamedTuple):
     iterable: tp.Union[tp.Iterable, tp.AsyncIterable]
+    maxsize: int
 
     async def __call__(self, worker: Worker, **kwargs):
         iterable: tp.AsyncIterable
@@ -23,7 +24,9 @@ class FromIterable(tp.NamedTuple):
             sync_iterable: tp.Iterable
 
             if isinstance(self.iterable, pypeln_utils.BaseStage):
-                sync_iterable = self.iterable.to_iterable(maxsize=0, return_index=True)
+                sync_iterable = self.iterable.to_iterable(
+                    maxsize=self.maxsize, return_index=True
+                )
             else:
                 sync_iterable = self.iterable
 
@@ -58,7 +61,10 @@ class FromIterable(tp.NamedTuple):
         loop: asyncio.AbstractEventLoop,
     ):
         try:
-            for x in iterable:
+            for i, x in enumerate(iterable):
+                if not isinstance(x, pypeln_utils.Element):
+                    x = pypeln_utils.Element(index=(i,), value=x)
+
                 if worker.is_done:
                     return
 
@@ -79,13 +85,17 @@ class FromIterable(tp.NamedTuple):
 
 @tp.overload
 def from_iterable(
-    iterable: tp.Union[tp.Iterable[T], tp.AsyncIterable[T]], use_thread: bool = True,
+    iterable: tp.Union[tp.Iterable[T], tp.AsyncIterable[T]],
+    use_thread: bool = True,
+    maxsize: int = 0,
 ) -> Stage[T]:
     ...
 
 
 @tp.overload
-def from_iterable(use_thread: bool = True) -> pypeln_utils.Partial[Stage[T]]:
+def from_iterable(
+    use_thread: bool = True, maxsize: int = 0
+) -> pypeln_utils.Partial[Stage[T]]:
     ...
 
 
@@ -94,6 +104,7 @@ def from_iterable(
         tp.Iterable[T], tp.AsyncIterable[T], pypeln_utils.Undefined
     ] = pypeln_utils.UNDEFINED,
     use_thread: bool = True,
+    maxsize: int = 0,
 ) -> tp.Union[Stage[T], pypeln_utils.Partial[Stage[T]]]:
     """
     Creates a stage from an iterable. This function gives you more control of the iterable is consumed.
@@ -111,9 +122,9 @@ def from_iterable(
         )
 
     return Stage(
-        process_fn=FromIterable(iterable),
+        process_fn=FromIterable(iterable, maxsize=maxsize),
         workers=1,
-        maxsize=0,
+        maxsize=maxsize,
         total_sources=1,
         timeout=0,
         dependencies=[],

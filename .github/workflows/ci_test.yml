@@ -1,0 +1,66 @@
+# Checks that we can build and validate the Unittest
+name: GitHub CI
+on:
+  push:
+    # Sequence of patterns matched against refs/heads
+    branches:    
+      # Push events on master branch
+      - master
+  pull_request:
+jobs:
+  wip:
+    if: ${{ !contains(github.event.pull_request.title, 'WIP') }}
+    name: Check for WIP
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+  black-test:
+    if: ${{ !contains(github.event.pull_request.title, 'WIP') }}
+    name: Black Python code format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install "black~=20.8b1"
+      - name: Ensure contributor used ("black ./") before commit
+        run: black --check .
+  test:
+    if: ${{ !contains(github.event.pull_request.title, 'WIP') }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1.1.1
+        with:
+          version: 1.1.4
+
+      - name: Install Dependencies
+        run: |
+          poetry config virtualenvs.create false
+          poetry install
+
+      - name: Run Tests
+        run: |
+          coverage run --concurrency=multiprocessing -m pytest --hypothesis-profile=pypeln
+          coverage combine
+          coverage xml --omit '.venv/*' --omit '*_test.py'
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v1

@@ -1,11 +1,14 @@
-import inspect
-import typing as tp
 from abc import ABC, abstractmethod
+import inspect
+import sys
+import typing as tp
 
-from typing import Protocol
+if sys.version_info >= (3, 8):
+    from typing import Protocol, runtime_checkable
+else:
+    from typing_extensions import Protocol, runtime_checkable
 
 TIMEOUT = 0.0001
-MAXSIZE = 100
 
 
 Kwargs = tp.Dict[str, tp.Any]
@@ -20,6 +23,21 @@ class Element(tp.NamedTuple):
 
     def set(self, value: T):
         return Element(self.index, value)
+
+    def __lt__(self, x: "Element") -> bool:
+        return self.index < x.index
+
+    def __le__(self, x: "Element") -> bool:
+        return self.index <= x.index
+
+    def __gt__(self, x: "Element") -> bool:
+        return self.index > x.index
+
+    def __ge__(self, x: "Element") -> bool:
+        return self.index >= x.index
+
+    def __eq__(self, x: "Element") -> bool:
+        return self.value == x.index
 
 
 class BaseStage(tp.Generic[T], tp.Iterable[T], ABC):

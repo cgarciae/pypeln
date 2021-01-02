@@ -8,14 +8,9 @@ from ..worker import ProcessFn, Worker
 from copy import copy
 
 
-@tp.runtime_checkable
-class GeneratorFn(tp.Protocol):
-    def __call__(self) -> tp.Union[tp.Iterable]:
-        ...
-
-
 class FromIterable(tp.NamedTuple):
     iterable: tp.Iterable
+    maxsize: int
 
     def __call__(self, worker: Worker, **kwargs):
 
@@ -23,7 +18,7 @@ class FromIterable(tp.NamedTuple):
 
         if isinstance(iterable, pypeln_utils.BaseStage):
 
-            for x in iterable.to_iterable(maxsize=0, return_index=True):
+            for x in iterable.to_iterable(maxsize=self.maxsize, return_index=True):
                 worker.stage_params.output_queues.put(x)
         else:
             for i, x in enumerate(iterable):
@@ -36,18 +31,23 @@ class FromIterable(tp.NamedTuple):
 
 
 @tp.overload
-def from_iterable(iterable: tp.Iterable[T], use_thread: bool = True) -> Stage[T]:
+def from_iterable(
+    iterable: tp.Iterable[T], use_thread: bool = True, maxsize: int = 0
+) -> Stage[T]:
     ...
 
 
 @tp.overload
-def from_iterable(use_thread: bool = True) -> pypeln_utils.Partial[Stage[T]]:
+def from_iterable(
+    use_thread: bool = True, maxsize: int = 0
+) -> pypeln_utils.Partial[Stage[T]]:
     ...
 
 
 def from_iterable(
     iterable: tp.Union[tp.Iterable[T], pypeln_utils.Undefined] = pypeln_utils.UNDEFINED,
     use_thread: bool = True,
+    maxsize: int = 0,
 ) -> tp.Union[Stage[T], pypeln_utils.Partial[Stage[T]]]:
     """
     Creates a stage from an iterable.
@@ -66,9 +66,9 @@ def from_iterable(
         )
 
     return Stage(
-        process_fn=FromIterable(iterable),
+        process_fn=FromIterable(iterable, maxsize=maxsize),
         workers=1,
-        maxsize=0,
+        maxsize=maxsize,
         timeout=0,
         total_sources=1,
         dependencies=[],

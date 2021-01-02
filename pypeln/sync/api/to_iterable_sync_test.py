@@ -24,4 +24,3 @@ def test_from_to_iterable(nums):
     nums_py = list(nums_py)
 
     assert nums_py == nums_pl
-

@@ -35,7 +35,7 @@ def concat(
         A stage object.
     """
 
-    dependencies = [to_stage(stage) for stage in stages]
+    dependencies = [to_stage(stage, maxsize=maxsize) for stage in stages]
 
     return Stage(
         process_fn=Concat(),
@@ -45,4 +45,3 @@ def concat(
         on_done=None,
         f_args=[],
     )
-

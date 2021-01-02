@@ -1,4 +1,7 @@
+import asyncio
 from dataclasses import dataclass
+import sys
+import sys
 import time
 import typing as tp
 from unittest import TestCase
@@ -13,7 +16,6 @@ import pytest
 from pypeln import utils as pypeln_utils
 import pypeln as pl
 from pypeln.task.utils import run_test_async
-import asyncio
 
 MAX_EXAMPLES = 10
 T = tp.TypeVar("T")

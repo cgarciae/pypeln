@@ -19,15 +19,8 @@ Kwargs = tp.Dict[str, tp.Any]
 T = tp.TypeVar("T")
 
 
-@tp.runtime_checkable
-class ProcessFn(tp.Protocol):
+class ProcessFn(pypeln_utils.Protocol):
     async def __call__(self, worker: "Worker", **kwargs):
-        ...
-
-
-@tp.runtime_checkable
-class ApplyFn(tp.Protocol):
-    async def __call__(self, worker: "Worker", elem: tp.Any, **kwargs):
         ...
 
 
@@ -114,7 +107,8 @@ class Worker(tp.Generic[T]):
             if self.on_done is not None:
 
                 kwargs.setdefault(
-                    "stage_status", StageStatus(),
+                    "stage_status",
+                    StageStatus(),
                 )
 
                 coro = self.on_done(
@@ -133,9 +127,9 @@ class Worker(tp.Generic[T]):
         except BaseException as e:
             await self.main_queue.raise_exception(e)
         finally:
+            self.is_done = True
             self.tasks.stop()
             await self.stage_params.output_queues.done()
-            self.is_done = True
 
     def start(self):
         [self.process] = start_workers(self)
@@ -145,11 +139,15 @@ class Worker(tp.Generic[T]):
         if self.process is None:
             return
 
+        def cancel():
+            self.process.cancel()
+            # self.is_done = True
+
         self.tasks.stop()
-        utils.run_function_in_loop(self.process.cancel)
+        utils.run_function_in_loop(cancel)
 
 
-class Applicable(tp.Protocol):
+class Applicable(pypeln_utils.Protocol):
     def apply(self, worker: "Worker", elem: tp.Any, **kwargs):
         ...
 
@@ -172,14 +170,14 @@ class StageStatus(tp.NamedTuple):
     @property
     def done(self) -> bool:
         """
-        `bool` : `True` if all workers finished. 
+        `bool` : `True` if all workers finished.
         """
         return True
 
     @property
     def active_workers(self):
         """
-        `int` : Number of active workers. 
+        `int` : Number of active workers.
         """
         return 0
 
@@ -213,7 +211,7 @@ class TaskPool:
         if self.semaphore:
             await self.semaphore.acquire()
 
-        task = asyncio.create_task(self.get_task(coro_f))
+        task = asyncio.ensure_future(self.get_task(coro_f))
 
         self.tasks.add(task)
 

@@ -42,7 +42,8 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
         )
 
         stage_params = StageParams.create(
-            input_queue=input_queue, output_queues=built[self],
+            input_queue=input_queue,
+            output_queues=built[self],
         )
 
         yield Worker(
@@ -65,7 +66,8 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
         utils.get_running_loop()
 
         main_queue: IterableQueue[pypeln_utils.Element] = IterableQueue(
-            maxsize=maxsize, total_sources=1,
+            maxsize=maxsize,
+            total_sources=1,
         )
 
         built = {}
@@ -86,7 +88,8 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
 
         # build stages first to verify reuse
         main_queue: IterableQueue[pypeln_utils.Element] = IterableQueue(
-            maxsize=maxsize, total_sources=1,
+            maxsize=maxsize,
+            total_sources=1,
         )
 
         built = {}
@@ -102,10 +105,10 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
                     yield elem.value
 
     def __iter__(self):
-        return self.to_iterable(maxsize=0, return_index=False)
+        return self.to_iterable(maxsize=self.maxsize, return_index=False)
 
     def __aiter__(self):
-        return self.to_async_iterable(maxsize=0, return_index=False)
+        return self.to_async_iterable(maxsize=self.maxsize, return_index=False)
 
     async def _await(self):
         return [x async for x in self]

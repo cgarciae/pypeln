@@ -1,10 +1,11 @@
+import sys
 import typing as tp
 import unittest
 
 import hypothesis as hp
 from hypothesis import strategies as st
+
 import pypeln as pl
-from pypeln.task.utils import run_test_async
 
 MAX_EXAMPLES = 10
 T = tp.TypeVar("T")
@@ -26,7 +27,7 @@ def test_map_square_workers_sorted(nums: tp.List[int]):
 
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
-@run_test_async
+@pl.task.utils.run_test_async
 async def test_map_square_workers_sorted_2(nums: tp.List[int]):
 
     nums_py = map(lambda x: x ** 2, nums)

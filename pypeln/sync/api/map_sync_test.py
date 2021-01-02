@@ -47,7 +47,7 @@ def test_map_square_event_start(nums):
     nums_py = map(lambda x: x ** 2, nums)
     nums_py = list(nums_py)
 
-    namespace = pl.sync.get_namespace()
+    namespace = pl.sync.Namespace()
     namespace.x = 0
 
     def on_start():
@@ -67,7 +67,7 @@ def test_timeout():
     def f(x):
         if x == 2:
             while True:
-                time.sleep(0.1)
+                time.sleep(0.02)
 
         return x
 
@@ -88,7 +88,12 @@ def test_worker_info():
     def _lambda(x, index):
         return index
 
-    nums_pl = pl.sync.map(_lambda, nums, on_start=on_start, workers=n_workers,)
+    nums_pl = pl.sync.map(
+        _lambda,
+        nums,
+        on_start=on_start,
+        workers=n_workers,
+    )
     nums_pl = set(nums_pl)
 
     assert nums_pl.issubset(set(range(n_workers)))
@@ -99,7 +104,7 @@ def test_kwargs():
     nums = range(100)
     n_workers = 4
     letters = "abc"
-    namespace = pl.sync.get_namespace()
+    namespace = pl.sync.Namespace()
     namespace.on_done = None
 
     def on_start():
@@ -109,7 +114,11 @@ def test_kwargs():
         namespace.on_done = y
 
     nums_pl = pl.sync.map(
-        lambda x, y: y, nums, on_start=on_start, on_done=on_done, workers=n_workers,
+        lambda x, y: y,
+        nums,
+        on_start=on_start,
+        on_done=on_done,
+        workers=n_workers,
     )
     nums_pl = list(nums_pl)
 
@@ -121,7 +130,7 @@ def test_kwargs():
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_square_event_end(nums):
 
-    namespace = pl.sync.get_namespace()
+    namespace = pl.sync.Namespace()
     namespace.x = 0
     namespace.done = False
     namespace.active_workers = -1
@@ -139,6 +148,8 @@ def test_map_square_event_end(nums):
     )
     nums_pl = list(nums_pl)
 
+    time.sleep(0.1)
+
     assert namespace.x == 2
     assert namespace.done == True
     assert namespace.active_workers == 0
@@ -155,7 +166,5 @@ def test_map_square_workers(nums):
     nums_pl = list(nums_pl)
 
     assert sorted(nums_pl) == sorted(nums_py)
-
-
 
     assert nums_pl == nums_py

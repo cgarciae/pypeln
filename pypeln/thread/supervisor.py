@@ -31,7 +31,7 @@ class Supervisor:
                         worker.stop()
                         worker.start()
 
-                time.sleep(pypeln_utils.TIMEOUT)
+                time.sleep(0.01)
 
         except BaseException as e:
             self.main_queue.raise_exception(e)

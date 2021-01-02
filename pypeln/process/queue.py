@@ -30,8 +30,15 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
             ctx=multiprocessing.get_context()
         )
 
-    def get(self, *arg, **kwargs) -> T:
-        return super().get(*arg, **kwargs)
+    def get(self, block: bool = True, timeout: tp.Optional[float] = None) -> T:
+        return super().get(block=block, timeout=timeout)
+
+    def clear(self):
+        try:
+            while True:
+                self.get_nowait()
+        except Empty:
+            pass
 
     def __iter__(self) -> tp.Iterator[T]:
 
@@ -52,12 +59,6 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
             except Empty:
                 continue
 
-            if isinstance(x, pypeln_utils.Done):
-                with self.lock:
-                    self.namespace.remaining -= 1
-
-                continue
-
             yield x
 
     def is_done(self):
@@ -65,15 +66,20 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
             self.namespace.remaining <= 0 and self.empty()
         )
 
-    def done(self):
-        self.put(pypeln_utils.DONE)
+    def worker_done(self):
+        with self.lock:
+            self.namespace.remaining -= 1
 
     def stop(self):
         with self.lock:
             self.namespace.remaining = 0
+        self.clear()
 
     def kill(self):
-        self.namespace.force_stop = True
+        with self.lock:
+            self.namespace.remaining = 0
+            self.namespace.force_stop = True
+        self.clear()
 
     def raise_exception(self, exception: BaseException):
         pipeline_exception = self.get_pipeline_exception(exception)
@@ -100,9 +106,9 @@ class OutputQueues(tp.List[IterableQueue[T]], tp.Generic[T]):
         for queue in self:
             queue.put(x)
 
-    def done(self):
+    def worker_done(self):
         for queue in self:
-            queue.done()
+            queue.worker_done()
 
     def stop(self):
         for queue in self:

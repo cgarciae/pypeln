@@ -27,16 +27,24 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
         )
         self.exception_queue: "Queue[PipelineException]" = Queue()
 
-    def get(self, *arg, **kwargs) -> T:
-        return super().get(*arg, **kwargs)
+    # def get(self, *arg, **kwargs) -> T:
+    def get(self, block: bool = True, timeout: tp.Optional[float] = None) -> T:
+        return super().get(block=block, timeout=timeout)
 
-    def put(self, x: T):
-        while True:
-            try:
-                super().put(x, timeout=pypeln_utils.TIMEOUT)
-                return
-            except Full as e:
-                pass
+    # put is implemented like this for thread but not for process
+    # because processes can be stopped easily were as
+    # threads have to be active when being terminate, implementing
+    # put in this way ensures the thread constantly active.
+    def put(self, x: T, block: bool = True, timeout: tp.Optional[float] = None):
+        if block and timeout is None:
+            while True:
+                try:
+                    super().put(x, block=True, timeout=pypeln_utils.TIMEOUT)
+                    return
+                except Full as e:
+                    pass
+        else:
+            return super().put(x, block=False, timeout=timeout)
 
     def clear(self):
         try:
@@ -64,11 +72,6 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
             except Empty:
                 continue
 
-            # if isinstance(x, pypeln_utils.Done):
-            #     with self.lock:
-            #         self.namespace.remaining -= 1
-            #     continue
-
             yield x
 
     def is_done(self):
@@ -79,7 +82,6 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
     def worker_done(self):
         with self.lock:
             self.namespace.remaining -= 1
-        # self.put(pypeln_utils.DONE)
 
     def stop(self):
         with self.lock:
@@ -87,7 +89,9 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
         self.clear()
 
     def kill(self):
-        self.namespace.force_stop = True
+        with self.lock:
+            self.namespace.remaining = 0
+            self.namespace.force_stop = True
         self.clear()
 
     def raise_exception(self, exception: BaseException):

@@ -27,7 +27,7 @@ class TestQueue(TestCase):
             for i in nums:
                 queue.put(i)
 
-            queue.done()
+            queue.worker_done()
 
         processes = pl.process.start_workers(worker)
 
@@ -47,7 +47,7 @@ class TestQueue(TestCase):
             for i in nums:
                 queue.put(i)
 
-            queue.done()
+            queue.worker_done()
 
         processes = pl.process.start_workers(worker, n_workers=n_workers)
 
@@ -66,6 +66,7 @@ class TestQueue(TestCase):
             for i in nums:
                 queue.put(i)
 
+            time.sleep(0.1)
             queue.stop()
 
         processes = pl.process.start_workers(worker)
@@ -139,11 +140,12 @@ class TestOutputQueues(TestCase):
 
         queues.append(queue)
 
-        queues.done()
+        queues.worker_done()
 
-        x = queue.get()
+        with pytest.raises(pl.process.queue.Empty):
+            x = queue.get(timeout=0.01)
 
-        assert isinstance(x, pypeln_utils.Done)
+        assert all(q.is_done() for q in queues)
 
     def test_stop(self):
         queues: pl.process.OutputQueues[int] = pl.process.OutputQueues()
@@ -167,4 +169,4 @@ class TestOutputQueues(TestCase):
 
         queues.kill()
 
-        assert queue.namespace.remaining == True
+        assert queue.namespace.force_stop == True

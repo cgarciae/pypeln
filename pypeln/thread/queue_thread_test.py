@@ -142,7 +142,8 @@ class TestOutputQueues(TestCase):
 
         queues.worker_done()
 
-        time.sleep(0.1)
+        with pytest.raises(pl.thread.queue.Empty):
+            x = queue.get(timeout=0.01)
 
         assert all(q.is_done() for q in queues)
 
@@ -168,4 +169,4 @@ class TestOutputQueues(TestCase):
 
         queues.kill()
 
-        assert queue.namespace.remaining == True
+        assert queue.namespace.force_stop == True

@@ -27,13 +27,23 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
         )
         self.exception_queue: "Queue[PipelineException]" = Queue()
 
-    # def get(self, *arg, **kwargs) -> T:
+    # get is implemented like this for thread but not for process
+    # because processes can be stopped easily were as
+    # threads have to be active when being terminated, implementing
+    # get in this way ensures the thread constantly active.
     def get(self, block: bool = True, timeout: tp.Optional[float] = None) -> T:
-        return super().get(block=block, timeout=timeout)
+        if block and timeout is None:
+            while True:
+                try:
+                    return super().get(block=True, timeout=pypeln_utils.TIMEOUT)
+                except Empty:
+                    continue
+        else:
+            return super().get(block=block, timeout=timeout)
 
     # put is implemented like this for thread but not for process
     # because processes can be stopped easily were as
-    # threads have to be active when being terminate, implementing
+    # threads have to be active when being terminated, implementing
     # put in this way ensures the thread constantly active.
     def put(self, x: T, block: bool = True, timeout: tp.Optional[float] = None):
         if block and timeout is None:

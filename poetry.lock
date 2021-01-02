@@ -36,51 +36,21 @@ python-versions = ">=3.5.3"
 
 [[package]]
 name = "atomicwrites"
-<<<<<<< HEAD
-version = "1.3.0"
-description = "Atomic file writes."
-category = "dev"
-=======
 version = "1.4.0"
 description = "Atomic file writes."
 category = "main"
->>>>>>> master
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
 [[package]]
 name = "attrs"
-<<<<<<< HEAD
-version = "19.3.0"
-description = "Classes Without Boilerplate"
-category = "dev"
-=======
 version = "20.3.0"
 description = "Classes Without Boilerplate"
 category = "main"
->>>>>>> master
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
 [package.extras]
-<<<<<<< HEAD
-azure-pipelines = ["coverage", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "zope.interface", "pytest-azurepipelines"]
-dev = ["coverage", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "zope.interface", "sphinx", "pre-commit"]
-docs = ["sphinx", "zope.interface"]
-tests = ["coverage", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "zope.interface"]
-
-[[package]]
-name = "backcall"
-version = "0.2.0"
-description = "Specifications for callback functions passed in to an API"
-category = "dev"
-optional = false
-python-versions = "*"
-
-[[package]]
-name = "beautifulsoup4"
-version = "4.9.1"
-=======
 dev = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "zope.interface", "furo", "sphinx", "pre-commit"]
 docs = ["furo", "sphinx", "zope.interface"]
 tests = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "zope.interface"]
@@ -89,21 +59,13 @@ tests_no_zope = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>
 [[package]]
 name = "beautifulsoup4"
 version = "4.9.3"
->>>>>>> master
 description = "Screen-scraping library"
 category = "dev"
 optional = false
 python-versions = "*"
 
 [package.dependencies]
-<<<<<<< HEAD
-soupsieve = [
-    ">1.2",
-    "<2.0",
-]
-=======
 soupsieve = {version = ">1.2", markers = "python_version >= \"3.0\""}
->>>>>>> master
 
 [package.extras]
 html5lib = ["html5lib"]
@@ -111,11 +73,7 @@ lxml = ["lxml"]
 
 [[package]]
 name = "black"
-<<<<<<< HEAD
-version = "19.10b0"
-=======
 version = "20.8b1"
->>>>>>> master
 description = "The uncompromising code formatter."
 category = "dev"
 optional = false
@@ -146,19 +104,6 @@ python-versions = "*"
 
 [[package]]
 name = "click"
-<<<<<<< HEAD
-version = "7.0"
-description = "Composable command line interface toolkit"
-category = "dev"
-optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-
-[[package]]
-name = "colorama"
-version = "0.4.3"
-description = "Cross-platform colored terminal text."
-category = "dev"
-=======
 version = "7.1.2"
 description = "Composable command line interface toolkit"
 category = "dev"
@@ -170,21 +115,14 @@ name = "colorama"
 version = "0.4.4"
 description = "Cross-platform colored terminal text."
 category = "main"
->>>>>>> master
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
 name = "coverage"
-<<<<<<< HEAD
-version = "5.0.4"
-description = "Code coverage measurement for Python"
-category = "dev"
-=======
 version = "5.3.1"
 description = "Code coverage measurement for Python"
 category = "main"
->>>>>>> master
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, <4"
 
@@ -206,16 +144,6 @@ toolz = ">=0.8.0"
 cython = ["cython"]
 
 [[package]]
-<<<<<<< HEAD
-name = "decorator"
-version = "4.4.2"
-description = "Decorators for Humans"
-category = "dev"
-optional = false
-python-versions = ">=2.6, !=3.0.*, !=3.1.*"
-
-[[package]]
-=======
 name = "dataclasses"
 version = "0.7"
 description = "A backport of the dataclasses module for Python 3.6"
@@ -232,7 +160,6 @@ optional = false
 python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*"
 
 [[package]]
->>>>>>> master
 name = "future"
 version = "0.18.2"
 description = "Clean single-source support for Python 3 and 2"
@@ -242,19 +169,11 @@ python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 
 [[package]]
 name = "hypothesis"
-<<<<<<< HEAD
-version = "5.5.1"
-description = "A library for property-based testing"
-category = "dev"
-optional = false
-python-versions = ">=3.5.2"
-=======
 version = "5.43.5"
 description = "A library for property-based testing"
 category = "dev"
 optional = false
 python-versions = ">=3.6"
->>>>>>> master
 
 [package.dependencies]
 attrs = ">=19.2.0"
@@ -277,86 +196,6 @@ zoneinfo = ["importlib-resources (>=3.3.0)", "backports.zoneinfo (>=0.2.1)", "tz
 
 [[package]]
 name = "idna"
-<<<<<<< HEAD
-version = "2.8"
-description = "Internationalized Domain Names in Applications (IDNA)"
-category = "dev"
-optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-
-[[package]]
-name = "idna-ssl"
-version = "1.1.0"
-description = "Patch ssl.match_hostname for Unicode(idna) domains support"
-category = "dev"
-optional = false
-python-versions = "*"
-
-[package.dependencies]
-idna = ">=2.0"
-
-[[package]]
-name = "importlib-metadata"
-version = "1.5.0"
-description = "Read metadata from Python packages"
-category = "dev"
-optional = false
-python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
-
-[package.dependencies]
-zipp = ">=0.5"
-
-[package.extras]
-docs = ["sphinx", "rst.linker"]
-testing = ["packaging", "importlib-resources"]
-
-[[package]]
-name = "ipython"
-version = "7.15.0"
-description = "IPython: Productive Interactive Computing"
-category = "dev"
-optional = false
-python-versions = ">=3.6"
-
-[package.dependencies]
-appnope = {version = "*", markers = "sys_platform == \"darwin\""}
-backcall = "*"
-colorama = {version = "*", markers = "sys_platform == \"win32\""}
-decorator = "*"
-jedi = ">=0.10"
-pexpect = {version = "*", markers = "sys_platform != \"win32\""}
-pickleshare = "*"
-prompt-toolkit = ">=2.0.0,<3.0.0 || >3.0.0,<3.0.1 || >3.0.1,<3.1.0"
-pygments = "*"
-traitlets = ">=4.2"
-
-[package.extras]
-all = ["Sphinx (>=1.3)", "ipykernel", "ipyparallel", "ipywidgets", "nbconvert", "nbformat", "nose (>=0.10.1)", "notebook", "numpy (>=1.14)", "pygments", "qtconsole", "requests", "testpath"]
-doc = ["Sphinx (>=1.3)"]
-kernel = ["ipykernel"]
-nbconvert = ["nbconvert"]
-nbformat = ["nbformat"]
-notebook = ["notebook", "ipywidgets"]
-parallel = ["ipyparallel"]
-qtconsole = ["qtconsole"]
-test = ["nose (>=0.10.1)", "requests", "testpath", "pygments", "nbformat", "ipykernel", "numpy (>=1.14)"]
-
-[[package]]
-name = "ipython-genutils"
-version = "0.2.0"
-description = "Vestigial utilities from IPython"
-category = "dev"
-optional = false
-python-versions = "*"
-
-[[package]]
-name = "jedi"
-version = "0.17.1"
-description = "An autocompletion tool for Python that can be used for text editors."
-category = "dev"
-optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
-=======
 version = "3.0"
 description = "Internationalized Domain Names in Applications (IDNA)"
 category = "dev"
@@ -381,28 +220,18 @@ description = "Read metadata from Python packages"
 category = "main"
 optional = false
 python-versions = ">=3.6"
->>>>>>> master
 
 [package.dependencies]
 typing-extensions = {version = ">=3.6.4", markers = "python_version < \"3.8\""}
 zipp = ">=0.5"
 
 [package.extras]
-<<<<<<< HEAD
-qa = ["flake8 (==3.7.9)"]
-testing = ["Django (<3.1)", "colorama", "docopt", "pytest (>=3.9.0,<5.0.0)"]
-
-[[package]]
-name = "jinja2"
-version = "2.11.1"
-=======
 docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["pytest (>=3.5,!=3.7.3)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pytest-cov", "jaraco.test (>=3.2.0)", "packaging", "pep517", "pyfakefs", "flufl.flake8", "pytest-black (>=0.3.7)", "pytest-mypy", "importlib-resources (>=1.3)"]
 
 [[package]]
 name = "jinja2"
 version = "2.11.2"
->>>>>>> master
 description = "A very fast and expressive template engine."
 category = "dev"
 optional = false
@@ -416,24 +245,15 @@ i18n = ["Babel (>=0.8)"]
 
 [[package]]
 name = "joblib"
-<<<<<<< HEAD
-version = "0.15.1"
-description = "Lightweight pipelining: using Python functions as pipeline jobs."
-=======
 version = "1.0.0"
 description = "Lightweight pipelining with Python functions"
->>>>>>> master
 category = "dev"
 optional = false
 python-versions = ">=3.6"
 
 [[package]]
 name = "livereload"
-<<<<<<< HEAD
-version = "2.6.1"
-=======
 version = "2.6.3"
->>>>>>> master
 description = "Python LiveReload is an awesome tool for web developers"
 category = "dev"
 optional = false
@@ -461,13 +281,6 @@ languages = ["nltk (>=3.2.5,<3.5)", "nltk (>=3.2.5)"]
 
 [[package]]
 name = "markdown"
-<<<<<<< HEAD
-version = "3.2.1"
-description = "Python implementation of Markdown."
-category = "dev"
-optional = false
-python-versions = ">=3.5"
-=======
 version = "3.3.3"
 description = "Python implementation of Markdown."
 category = "dev"
@@ -476,7 +289,6 @@ python-versions = ">=3.6"
 
 [package.dependencies]
 importlib-metadata = {version = "*", markers = "python_version < \"3.8\""}
->>>>>>> master
 
 [package.extras]
 testing = ["coverage", "pyyaml"]
@@ -530,11 +342,7 @@ pymdown-extensions = ">=6.3"
 
 [[package]]
 name = "mkdocstrings"
-<<<<<<< HEAD
-version = "0.12.0"
-=======
 version = "0.12.2"
->>>>>>> master
 description = "Automatic documentation from sources, for MkDocs."
 category = "dev"
 optional = false
@@ -548,35 +356,14 @@ pytkdocs = ">=0.2.0,<0.8.0"
 
 [[package]]
 name = "more-itertools"
-<<<<<<< HEAD
-version = "8.2.0"
-description = "More routines for operating on iterables, beyond itertools"
-category = "dev"
-=======
 version = "8.6.0"
 description = "More routines for operating on iterables, beyond itertools"
 category = "main"
->>>>>>> master
 optional = false
 python-versions = ">=3.5"
 
 [[package]]
 name = "multidict"
-<<<<<<< HEAD
-version = "4.7.4"
-description = "multidict implementation"
-category = "dev"
-optional = false
-python-versions = ">=3.5"
-
-[[package]]
-name = "nltk"
-version = "3.5"
-description = "Natural Language Toolkit"
-category = "dev"
-optional = false
-python-versions = "*"
-=======
 version = "5.1.0"
 description = "multidict implementation"
 category = "dev"
@@ -598,7 +385,6 @@ description = "Natural Language Toolkit"
 category = "dev"
 optional = false
 python-versions = "*"
->>>>>>> master
 
 [package.dependencies]
 click = "*"
@@ -615,25 +401,10 @@ tgrep = ["pyparsing"]
 twitter = ["twython"]
 
 [[package]]
-<<<<<<< HEAD
-name = "numpy"
-version = "1.19.4"
-description = "NumPy is the fundamental package for array computing with Python."
-category = "dev"
-optional = false
-python-versions = ">=3.6"
-
-[[package]]
-name = "packaging"
-version = "20.1"
-description = "Core utilities for Python packages"
-category = "dev"
-=======
 name = "packaging"
 version = "20.8"
 description = "Core utilities for Python packages"
 category = "main"
->>>>>>> master
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
@@ -641,61 +412,18 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 pyparsing = ">=2.0.2"
 
 [[package]]
-<<<<<<< HEAD
-name = "parso"
-version = "0.7.0"
-description = "A Python Parser"
-category = "dev"
-optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-
-[package.extras]
-testing = ["docopt", "pytest (>=3.0.7)"]
-
-[[package]]
-name = "pathspec"
-version = "0.8.0"
-description = "Utility library for gitignore style pattern matching of file paths."
-category = "dev"
-optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
-
-[[package]]
-name = "pexpect"
-version = "4.8.0"
-description = "Pexpect allows easy control of interactive console applications."
-category = "dev"
-optional = false
-python-versions = "*"
-
-[package.dependencies]
-ptyprocess = ">=0.5"
-
-[[package]]
-name = "pickleshare"
-version = "0.7.5"
-description = "Tiny 'shelve'-like database with concurrency support"
-category = "dev"
-optional = false
-python-versions = "*"
-=======
 name = "pathspec"
 version = "0.8.1"
 description = "Utility library for gitignore style pattern matching of file paths."
 category = "dev"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
->>>>>>> master
 
 [[package]]
 name = "pluggy"
 version = "0.13.1"
 description = "plugin and hook calling mechanisms for python"
-<<<<<<< HEAD
-category = "dev"
-=======
 category = "main"
->>>>>>> master
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
@@ -706,52 +434,15 @@ importlib-metadata = {version = ">=0.12", markers = "python_version < \"3.8\""}
 dev = ["pre-commit", "tox"]
 
 [[package]]
-<<<<<<< HEAD
-name = "prompt-toolkit"
-version = "3.0.5"
-description = "Library for building powerful interactive command lines in Python"
-category = "dev"
-optional = false
-python-versions = ">=3.6.1"
-
-[package.dependencies]
-wcwidth = "*"
-
-[[package]]
-name = "ptyprocess"
-version = "0.6.0"
-description = "Run a subprocess in a pseudo terminal"
-category = "dev"
-optional = false
-python-versions = "*"
-
-[[package]]
-name = "py"
-version = "1.8.1"
-description = "library with cross-python path, ini-parsing, io, code, log facilities"
-category = "dev"
-=======
 name = "py"
 version = "1.10.0"
 description = "library with cross-python path, ini-parsing, io, code, log facilities"
 category = "main"
->>>>>>> master
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
 [[package]]
 name = "pygments"
-<<<<<<< HEAD
-version = "2.5.2"
-description = "Pygments is a syntax highlighting package written in Python."
-category = "dev"
-optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
-
-[[package]]
-name = "pymdown-extensions"
-version = "6.3"
-=======
 version = "2.7.3"
 description = "Pygments is a syntax highlighting package written in Python."
 category = "dev"
@@ -761,7 +452,6 @@ python-versions = ">=3.5"
 [[package]]
 name = "pymdown-extensions"
 version = "7.1"
->>>>>>> master
 description = "Extension pack for Python Markdown."
 category = "dev"
 optional = false
@@ -772,29 +462,17 @@ Markdown = ">=3.2"
 
 [[package]]
 name = "pyparsing"
-<<<<<<< HEAD
-version = "2.4.6"
-description = "Python parsing module"
-category = "dev"
-=======
 version = "2.4.7"
 description = "Python parsing module"
 category = "main"
->>>>>>> master
 optional = false
 python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 
 [[package]]
 name = "pytest"
-<<<<<<< HEAD
-version = "5.3.5"
-description = "pytest: simple powerful testing with Python"
-category = "dev"
-=======
 version = "5.4.3"
 description = "pytest: simple powerful testing with Python"
 category = "main"
->>>>>>> master
 optional = false
 python-versions = ">=3.5"
 
@@ -828,10 +506,6 @@ pytest = ">=3.0.6"
 testing = ["async-generator (>=1.3)", "coverage", "hypothesis (>=3.64)"]
 
 [[package]]
-<<<<<<< HEAD
-name = "pytest-sugar"
-version = "0.9.2"
-=======
 name = "pytest-cov"
 version = "2.10.1"
 description = "Pytest plugin for measuring coverage."
@@ -849,7 +523,6 @@ testing = ["fields", "hunter", "process-tests (==2.0.2)", "six", "pytest-xdist",
 [[package]]
 name = "pytest-sugar"
 version = "0.9.4"
->>>>>>> master
 description = "pytest-sugar is a plugin for pytest that changes the default look and feel of pytest (e.g. progressbar, show tests that fail instantly)."
 category = "dev"
 optional = false
@@ -862,11 +535,7 @@ termcolor = ">=1.1.0"
 
 [[package]]
 name = "pytkdocs"
-<<<<<<< HEAD
-version = "0.6.0"
-=======
 version = "0.7.0"
->>>>>>> master
 description = "Load Python objects documentation."
 category = "dev"
 optional = false
@@ -874,11 +543,7 @@ python-versions = ">=3.6,<4.0"
 
 [[package]]
 name = "pyyaml"
-<<<<<<< HEAD
-version = "5.3"
-=======
 version = "5.3.1"
->>>>>>> master
 description = "YAML parser and emitter for Python"
 category = "dev"
 optional = false
@@ -886,11 +551,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
 name = "regex"
-<<<<<<< HEAD
-version = "2020.4.4"
-=======
 version = "2020.11.13"
->>>>>>> master
 description = "Alternative regular expression module, to replace re."
 category = "dev"
 optional = false
@@ -898,11 +559,7 @@ python-versions = "*"
 
 [[package]]
 name = "six"
-<<<<<<< HEAD
-version = "1.14.0"
-=======
 version = "1.15.0"
->>>>>>> master
 description = "Python 2 and 3 compatibility utilities"
 category = "dev"
 optional = false
@@ -910,11 +567,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
 
 [[package]]
 name = "sortedcontainers"
-<<<<<<< HEAD
-version = "2.1.0"
-=======
 version = "2.3.0"
->>>>>>> master
 description = "Sorted Containers -- Sorted List, Sorted Dict, Sorted Set"
 category = "dev"
 optional = false
@@ -922,19 +575,11 @@ python-versions = "*"
 
 [[package]]
 name = "soupsieve"
-<<<<<<< HEAD
-version = "1.9.6"
-description = "A modern CSS selector implementation for Beautiful Soup."
-category = "dev"
-optional = false
-python-versions = "*"
-=======
 version = "2.1"
 description = "A modern CSS selector implementation for Beautiful Soup."
 category = "dev"
 optional = false
 python-versions = ">=3.5"
->>>>>>> master
 
 [[package]]
 name = "stopit"
@@ -949,61 +594,10 @@ name = "termcolor"
 version = "1.1.0"
 description = "ANSII Color formatting for output in terminal."
 category = "dev"
-<<<<<<< HEAD
 optional = false
 python-versions = "*"
 
 [[package]]
-name = "toml"
-version = "0.10.0"
-description = "Python Library for Tom's Obvious, Minimal Language"
-category = "dev"
-=======
->>>>>>> master
-optional = false
-python-versions = "*"
-
-[[package]]
-<<<<<<< HEAD
-name = "toolz"
-version = "0.10.0"
-description = "List processing tools and functional utilities"
-category = "dev"
-optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-
-[[package]]
-name = "tornado"
-version = "6.0.3"
-description = "Tornado is a Python web framework and asynchronous networking library, originally developed at FriendFeed."
-category = "dev"
-optional = false
-python-versions = ">= 3.5"
-
-[[package]]
-name = "tqdm"
-version = "4.43.0"
-description = "Fast, Extensible Progress Meter"
-category = "dev"
-optional = false
-python-versions = ">=2.6, !=3.0.*, !=3.1.*"
-
-[package.extras]
-dev = ["py-make (>=0.1.0)", "twine", "argopt", "pydoc-markdown"]
-
-[[package]]
-name = "traitlets"
-version = "4.3.3"
-description = "Traitlets Python config system"
-category = "dev"
-optional = false
-python-versions = "*"
-
-[package.dependencies]
-decorator = "*"
-ipython-genutils = "*"
-six = "*"
-=======
 name = "toml"
 version = "0.10.2"
 description = "Python Library for Tom's Obvious, Minimal Language"
@@ -1034,7 +628,6 @@ description = "Fast, Extensible Progress Meter"
 category = "dev"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,>=2.7"
->>>>>>> master
 
 [package.extras]
 dev = ["py-make (>=0.1.0)", "twine", "wheel"]
@@ -1042,11 +635,7 @@ telegram = ["requests"]
 
 [[package]]
 name = "typed-ast"
-<<<<<<< HEAD
-version = "1.4.1"
-=======
 version = "1.4.2"
->>>>>>> master
 description = "a fork of Python 2 and 3 ast modules with type comment support"
 category = "dev"
 optional = false
@@ -1054,11 +643,7 @@ python-versions = "*"
 
 [[package]]
 name = "typing-extensions"
-<<<<<<< HEAD
-version = "3.7.4.2"
-=======
 version = "3.7.4.3"
->>>>>>> master
 description = "Backported and Experimental Type Hints for Python 3.5+"
 category = "main"
 optional = false
@@ -1066,33 +651,19 @@ python-versions = "*"
 
 [[package]]
 name = "wcwidth"
-<<<<<<< HEAD
-version = "0.1.8"
-description = "Measures number of Terminal column cells of wide-character codes"
-category = "dev"
-=======
 version = "0.2.5"
 description = "Measures the displayed width of unicode strings in a terminal"
 category = "main"
->>>>>>> master
 optional = false
 python-versions = "*"
 
 [[package]]
 name = "yarl"
-<<<<<<< HEAD
-version = "1.4.2"
-description = "Yet another URL library"
-category = "dev"
-optional = false
-python-versions = ">=3.5"
-=======
 version = "1.6.3"
 description = "Yet another URL library"
 category = "dev"
 optional = false
 python-versions = ">=3.6"
->>>>>>> master
 
 [package.dependencies]
 idna = ">=2.0"
@@ -1101,15 +672,9 @@ typing-extensions = {version = ">=3.7.4", markers = "python_version < \"3.8\""}
 
 [[package]]
 name = "zipp"
-<<<<<<< HEAD
-version = "2.2.0"
-description = "Backport of pathlib-compatible object wrapper for zip files"
-category = "dev"
-=======
 version = "3.4.0"
 description = "Backport of pathlib-compatible object wrapper for zip files"
 category = "main"
->>>>>>> master
 optional = false
 python-versions = ">=3.6"
 
@@ -1119,13 +684,8 @@ testing = ["pytest (>=3.5,!=3.7.3)", "pytest-checkdocs (>=1.2.3)", "pytest-flake
 
 [metadata]
 lock-version = "1.1"
-<<<<<<< HEAD
 python-versions = "^3.6.1"
-content-hash = "08fa7ec3f29e5a764edae7ca5a7d53570711aa1c87368f5e4fed9196c32648ca"
-=======
-python-versions = "^3.6"
-content-hash = "73f68fc0c087745b5c1e01a19fdb2bb9682ec327027e1eb09895647345d56d0c"
->>>>>>> master
+content-hash = "0c364e9cc20dd674de9b2d853bac330ba5c124bfc6659dcc2fd76a52286307c8"
 
 [metadata.files]
 aiohttp = [
@@ -1325,20 +885,8 @@ hypothesis = [
     {file = "hypothesis-5.43.5.tar.gz", hash = "sha256:9377cd796a5bca3c0ae74ef1c592aa231d3a04cde948467bace9344148ee75cb"},
 ]
 idna = [
-<<<<<<< HEAD
-    {file = "idna-2.8-py2.py3-none-any.whl", hash = "sha256:ea8b7f6188e6fa117537c3df7da9fc686d485087abf6ac197f9c46432f7e4a3c"},
-    {file = "idna-2.8.tar.gz", hash = "sha256:c357b3f628cf53ae2c4c05627ecc484553142ca23264e593d327bcde5e9c3407"},
-]
-idna-ssl = [
-    {file = "idna-ssl-1.1.0.tar.gz", hash = "sha256:a933e3bb13da54383f9e8f35dc4f9cb9eb9b3b78c6b36f311254d6d0d92c6c7c"},
-]
-importlib-metadata = [
-    {file = "importlib_metadata-1.5.0-py2.py3-none-any.whl", hash = "sha256:b97607a1a18a5100839aec1dc26a1ea17ee0d93b20b0f008d80a5a050afb200b"},
-    {file = "importlib_metadata-1.5.0.tar.gz", hash = "sha256:06f5b3a99029c7134207dd882428a66992a9de2bef7c2b699b5641f9886c3302"},
-=======
     {file = "idna-3.0-py2.py3-none-any.whl", hash = "sha256:320229aadbdfc597bc28876748cc0c9d04d476e0fe6caacaaddea146365d9f63"},
     {file = "idna-3.0.tar.gz", hash = "sha256:c9a26e10e5558412384fac891eefb41957831d31be55f1e2c98ed97a70abb969"},
->>>>>>> master
 ]
 idna-ssl = [
     {file = "idna-ssl-1.1.0.tar.gz", hash = "sha256:a933e3bb13da54383f9e8f35dc4f9cb9eb9b3b78c6b36f311254d6d0d92c6c7c"},
@@ -1465,42 +1013,6 @@ mypy-extensions = [
 ]
 nltk = [
     {file = "nltk-3.5.zip", hash = "sha256:845365449cd8c5f9731f7cb9f8bd6fd0767553b9d53af9eb1b3abf7700936b35"},
-]
-numpy = [
-    {file = "numpy-1.19.4-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:e9b30d4bd69498fc0c3fe9db5f62fffbb06b8eb9321f92cc970f2969be5e3949"},
-    {file = "numpy-1.19.4-cp36-cp36m-manylinux1_i686.whl", hash = "sha256:fedbd128668ead37f33917820b704784aff695e0019309ad446a6d0b065b57e4"},
-    {file = "numpy-1.19.4-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:8ece138c3a16db8c1ad38f52eb32be6086cc72f403150a79336eb2045723a1ad"},
-    {file = "numpy-1.19.4-cp36-cp36m-manylinux2010_i686.whl", hash = "sha256:64324f64f90a9e4ef732be0928be853eee378fd6a01be21a0a8469c4f2682c83"},
-    {file = "numpy-1.19.4-cp36-cp36m-manylinux2010_x86_64.whl", hash = "sha256:ad6f2ff5b1989a4899bf89800a671d71b1612e5ff40866d1f4d8bcf48d4e5764"},
-    {file = "numpy-1.19.4-cp36-cp36m-manylinux2014_aarch64.whl", hash = "sha256:d6c7bb82883680e168b55b49c70af29b84b84abb161cbac2800e8fcb6f2109b6"},
-    {file = "numpy-1.19.4-cp36-cp36m-win32.whl", hash = "sha256:13d166f77d6dc02c0a73c1101dd87fdf01339febec1030bd810dcd53fff3b0f1"},
-    {file = "numpy-1.19.4-cp36-cp36m-win_amd64.whl", hash = "sha256:448ebb1b3bf64c0267d6b09a7cba26b5ae61b6d2dbabff7c91b660c7eccf2bdb"},
-    {file = "numpy-1.19.4-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:27d3f3b9e3406579a8af3a9f262f5339005dd25e0ecf3cf1559ff8a49ed5cbf2"},
-    {file = "numpy-1.19.4-cp37-cp37m-manylinux1_i686.whl", hash = "sha256:16c1b388cc31a9baa06d91a19366fb99ddbe1c7b205293ed072211ee5bac1ed2"},
-    {file = "numpy-1.19.4-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:e5b6ed0f0b42317050c88022349d994fe72bfe35f5908617512cd8c8ef9da2a9"},
-    {file = "numpy-1.19.4-cp37-cp37m-manylinux2010_i686.whl", hash = "sha256:18bed2bcb39e3f758296584337966e68d2d5ba6aab7e038688ad53c8f889f757"},
-    {file = "numpy-1.19.4-cp37-cp37m-manylinux2010_x86_64.whl", hash = "sha256:fe45becb4c2f72a0907c1d0246ea6449fe7a9e2293bb0e11c4e9a32bb0930a15"},
-    {file = "numpy-1.19.4-cp37-cp37m-manylinux2014_aarch64.whl", hash = "sha256:6d7593a705d662be5bfe24111af14763016765f43cb6923ed86223f965f52387"},
-    {file = "numpy-1.19.4-cp37-cp37m-win32.whl", hash = "sha256:6ae6c680f3ebf1cf7ad1d7748868b39d9f900836df774c453c11c5440bc15b36"},
-    {file = "numpy-1.19.4-cp37-cp37m-win_amd64.whl", hash = "sha256:9eeb7d1d04b117ac0d38719915ae169aa6b61fca227b0b7d198d43728f0c879c"},
-    {file = "numpy-1.19.4-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:cb1017eec5257e9ac6209ac172058c430e834d5d2bc21961dceeb79d111e5909"},
-    {file = "numpy-1.19.4-cp38-cp38-manylinux1_i686.whl", hash = "sha256:edb01671b3caae1ca00881686003d16c2209e07b7ef8b7639f1867852b948f7c"},
-    {file = "numpy-1.19.4-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:f29454410db6ef8126c83bd3c968d143304633d45dc57b51252afbd79d700893"},
-    {file = "numpy-1.19.4-cp38-cp38-manylinux2010_i686.whl", hash = "sha256:ec149b90019852266fec2341ce1db513b843e496d5a8e8cdb5ced1923a92faab"},
-    {file = "numpy-1.19.4-cp38-cp38-manylinux2010_x86_64.whl", hash = "sha256:1aeef46a13e51931c0b1cf8ae1168b4a55ecd282e6688fdb0a948cc5a1d5afb9"},
-    {file = "numpy-1.19.4-cp38-cp38-manylinux2014_aarch64.whl", hash = "sha256:08308c38e44cc926bdfce99498b21eec1f848d24c302519e64203a8da99a97db"},
-    {file = "numpy-1.19.4-cp38-cp38-win32.whl", hash = "sha256:5734bdc0342aba9dfc6f04920988140fb41234db42381cf7ccba64169f9fe7ac"},
-    {file = "numpy-1.19.4-cp38-cp38-win_amd64.whl", hash = "sha256:09c12096d843b90eafd01ea1b3307e78ddd47a55855ad402b157b6c4862197ce"},
-    {file = "numpy-1.19.4-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:e452dc66e08a4ce642a961f134814258a082832c78c90351b75c41ad16f79f63"},
-    {file = "numpy-1.19.4-cp39-cp39-manylinux1_i686.whl", hash = "sha256:a5d897c14513590a85774180be713f692df6fa8ecf6483e561a6d47309566f37"},
-    {file = "numpy-1.19.4-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:a09f98011236a419ee3f49cedc9ef27d7a1651df07810ae430a6b06576e0b414"},
-    {file = "numpy-1.19.4-cp39-cp39-manylinux2010_i686.whl", hash = "sha256:50e86c076611212ca62e5a59f518edafe0c0730f7d9195fec718da1a5c2bb1fc"},
-    {file = "numpy-1.19.4-cp39-cp39-manylinux2010_x86_64.whl", hash = "sha256:f0d3929fe88ee1c155129ecd82f981b8856c5d97bcb0d5f23e9b4242e79d1de3"},
-    {file = "numpy-1.19.4-cp39-cp39-manylinux2014_aarch64.whl", hash = "sha256:c42c4b73121caf0ed6cd795512c9c09c52a7287b04d105d112068c1736d7c753"},
-    {file = "numpy-1.19.4-cp39-cp39-win32.whl", hash = "sha256:8cac8790a6b1ddf88640a9267ee67b1aee7a57dfa2d2dd33999d080bc8ee3a0f"},
-    {file = "numpy-1.19.4-cp39-cp39-win_amd64.whl", hash = "sha256:4377e10b874e653fe96985c05feed2225c912e328c8a26541f7fc600fb9c637b"},
-    {file = "numpy-1.19.4-pp36-pypy36_pp73-manylinux2010_x86_64.whl", hash = "sha256:2a2740aa9733d2e5b2dfb33639d98a64c3b0f24765fed86b0fd2aec07f6a0a08"},
-    {file = "numpy-1.19.4.zip", hash = "sha256:141ec3a3300ab89c7f2b0775289954d193cc8edb621ea05f99db9cb181530512"},
 ]
 packaging = [
     {file = "packaging-20.8-py2.py3-none-any.whl", hash = "sha256:24e0da08660a87484d1602c30bb4902d74816b6985b93de36926f5bc95741858"},
@@ -1679,38 +1191,6 @@ tqdm = [
     {file = "tqdm-4.55.0.tar.gz", hash = "sha256:f4f80b96e2ceafea69add7bf971b8403b9cba8fb4451c1220f91c79be4ebd208"},
 ]
 typed-ast = [
-<<<<<<< HEAD
-    {file = "typed_ast-1.4.1-cp35-cp35m-manylinux1_i686.whl", hash = "sha256:73d785a950fc82dd2a25897d525d003f6378d1cb23ab305578394694202a58c3"},
-    {file = "typed_ast-1.4.1-cp35-cp35m-manylinux1_x86_64.whl", hash = "sha256:aaee9905aee35ba5905cfb3c62f3e83b3bec7b39413f0a7f19be4e547ea01ebb"},
-    {file = "typed_ast-1.4.1-cp35-cp35m-win32.whl", hash = "sha256:0c2c07682d61a629b68433afb159376e24e5b2fd4641d35424e462169c0a7919"},
-    {file = "typed_ast-1.4.1-cp35-cp35m-win_amd64.whl", hash = "sha256:4083861b0aa07990b619bd7ddc365eb7fa4b817e99cf5f8d9cf21a42780f6e01"},
-    {file = "typed_ast-1.4.1-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:269151951236b0f9a6f04015a9004084a5ab0d5f19b57de779f908621e7d8b75"},
-    {file = "typed_ast-1.4.1-cp36-cp36m-manylinux1_i686.whl", hash = "sha256:24995c843eb0ad11a4527b026b4dde3da70e1f2d8806c99b7b4a7cf491612652"},
-    {file = "typed_ast-1.4.1-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:fe460b922ec15dd205595c9b5b99e2f056fd98ae8f9f56b888e7a17dc2b757e7"},
-    {file = "typed_ast-1.4.1-cp36-cp36m-manylinux2014_aarch64.whl", hash = "sha256:fcf135e17cc74dbfbc05894ebca928ffeb23d9790b3167a674921db19082401f"},
-    {file = "typed_ast-1.4.1-cp36-cp36m-win32.whl", hash = "sha256:4e3e5da80ccbebfff202a67bf900d081906c358ccc3d5e3c8aea42fdfdfd51c1"},
-    {file = "typed_ast-1.4.1-cp36-cp36m-win_amd64.whl", hash = "sha256:249862707802d40f7f29f6e1aad8d84b5aa9e44552d2cc17384b209f091276aa"},
-    {file = "typed_ast-1.4.1-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:8ce678dbaf790dbdb3eba24056d5364fb45944f33553dd5869b7580cdbb83614"},
-    {file = "typed_ast-1.4.1-cp37-cp37m-manylinux1_i686.whl", hash = "sha256:c9e348e02e4d2b4a8b2eedb48210430658df6951fa484e59de33ff773fbd4b41"},
-    {file = "typed_ast-1.4.1-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:bcd3b13b56ea479b3650b82cabd6b5343a625b0ced5429e4ccad28a8973f301b"},
-    {file = "typed_ast-1.4.1-cp37-cp37m-manylinux2014_aarch64.whl", hash = "sha256:f208eb7aff048f6bea9586e61af041ddf7f9ade7caed625742af423f6bae3298"},
-    {file = "typed_ast-1.4.1-cp37-cp37m-win32.whl", hash = "sha256:d5d33e9e7af3b34a40dc05f498939f0ebf187f07c385fd58d591c533ad8562fe"},
-    {file = "typed_ast-1.4.1-cp37-cp37m-win_amd64.whl", hash = "sha256:0666aa36131496aed8f7be0410ff974562ab7eeac11ef351def9ea6fa28f6355"},
-    {file = "typed_ast-1.4.1-cp38-cp38-macosx_10_15_x86_64.whl", hash = "sha256:d205b1b46085271b4e15f670058ce182bd1199e56b317bf2ec004b6a44f911f6"},
-    {file = "typed_ast-1.4.1-cp38-cp38-manylinux1_i686.whl", hash = "sha256:6daac9731f172c2a22ade6ed0c00197ee7cc1221aa84cfdf9c31defeb059a907"},
-    {file = "typed_ast-1.4.1-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:498b0f36cc7054c1fead3d7fc59d2150f4d5c6c56ba7fb150c013fbc683a8d2d"},
-    {file = "typed_ast-1.4.1-cp38-cp38-manylinux2014_aarch64.whl", hash = "sha256:7e4c9d7658aaa1fc80018593abdf8598bf91325af6af5cce4ce7c73bc45ea53d"},
-    {file = "typed_ast-1.4.1-cp38-cp38-win32.whl", hash = "sha256:715ff2f2df46121071622063fc7543d9b1fd19ebfc4f5c8895af64a77a8c852c"},
-    {file = "typed_ast-1.4.1-cp38-cp38-win_amd64.whl", hash = "sha256:fc0fea399acb12edbf8a628ba8d2312f583bdbdb3335635db062fa98cf71fca4"},
-    {file = "typed_ast-1.4.1-cp39-cp39-macosx_10_15_x86_64.whl", hash = "sha256:d43943ef777f9a1c42bf4e552ba23ac77a6351de620aa9acf64ad54933ad4d34"},
-    {file = "typed_ast-1.4.1-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:92c325624e304ebf0e025d1224b77dd4e6393f18aab8d829b5b7e04afe9b7a2c"},
-    {file = "typed_ast-1.4.1-cp39-cp39-manylinux1_i686.whl", hash = "sha256:d648b8e3bf2fe648745c8ffcee3db3ff903d0817a01a12dd6a6ea7a8f4889072"},
-    {file = "typed_ast-1.4.1-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:fac11badff8313e23717f3dada86a15389d0708275bddf766cca67a84ead3e91"},
-    {file = "typed_ast-1.4.1-cp39-cp39-manylinux2014_aarch64.whl", hash = "sha256:0d8110d78a5736e16e26213114a38ca35cb15b6515d535413b090bd50951556d"},
-    {file = "typed_ast-1.4.1-cp39-cp39-win32.whl", hash = "sha256:b52ccf7cfe4ce2a1064b18594381bccf4179c2ecf7f513134ec2f993dd4ab395"},
-    {file = "typed_ast-1.4.1-cp39-cp39-win_amd64.whl", hash = "sha256:3742b32cf1c6ef124d57f95be609c473d7ec4c14d0090e5a5e05a15269fb4d0c"},
-    {file = "typed_ast-1.4.1.tar.gz", hash = "sha256:8c8aaad94455178e3187ab22c8b01a3837f8ee50e09cf31f1ba129eb293ec30b"},
-=======
     {file = "typed_ast-1.4.2-cp35-cp35m-manylinux1_i686.whl", hash = "sha256:7703620125e4fb79b64aa52427ec192822e9f45d37d4b6625ab37ef403e1df70"},
     {file = "typed_ast-1.4.2-cp35-cp35m-manylinux1_x86_64.whl", hash = "sha256:c9aadc4924d4b5799112837b226160428524a9a45f830e0d0f184b19e4090487"},
     {file = "typed_ast-1.4.2-cp35-cp35m-manylinux2014_aarch64.whl", hash = "sha256:9ec45db0c766f196ae629e509f059ff05fc3148f9ffd28f3cfe75d4afb485412"},
@@ -1741,7 +1221,6 @@ typed-ast = [
     {file = "typed_ast-1.4.2-cp39-cp39-win32.whl", hash = "sha256:cc7b98bf58167b7f2db91a4327da24fb93368838eb84a44c472283778fc2446b"},
     {file = "typed_ast-1.4.2-cp39-cp39-win_amd64.whl", hash = "sha256:7147e2a76c75f0f64c4319886e7639e490fee87c9d25cb1d4faef1d8cf83a440"},
     {file = "typed_ast-1.4.2.tar.gz", hash = "sha256:9fc0b3cb5d1720e7141d103cf4819aea239f7d136acf9ee4a69b047b7986175a"},
->>>>>>> master
 ]
 typing-extensions = [
     {file = "typing_extensions-3.7.4.3-py2-none-any.whl", hash = "sha256:dafc7639cde7f1b6e1acc0f457842a83e722ccca8eef5270af2d74792619a89f"},

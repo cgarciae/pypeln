@@ -27,7 +27,7 @@ class TestQueue(TestCase):
             for i in nums:
                 queue.put(i)
 
-            queue.done()
+            queue.worker_done()
 
         processes = pl.thread.start_workers(worker)
 
@@ -47,7 +47,7 @@ class TestQueue(TestCase):
             for i in nums:
                 queue.put(i)
 
-            queue.done()
+            queue.worker_done()
 
         processes = pl.thread.start_workers(worker, n_workers=n_workers)
 
@@ -140,11 +140,11 @@ class TestOutputQueues(TestCase):
 
         queues.append(queue)
 
-        queues.done()
+        queues.worker_done()
 
-        x = queue.get()
+        time.sleep(0.1)
 
-        assert isinstance(x, pypeln_utils.Done)
+        assert all(q.is_done() for q in queues)
 
     def test_stop(self):
         queues: pl.thread.OutputQueues[int] = pl.thread.OutputQueues()

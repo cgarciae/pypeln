@@ -125,7 +125,7 @@ class Worker(tp.Generic[T]):
                 pass
         finally:
             self.namespace.done = True
-            self.stage_params.output_queues.done()
+            self.stage_params.output_queues.worker_done()
 
     def start(self):
         [self.process] = start_workers(self)

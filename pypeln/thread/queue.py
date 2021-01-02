@@ -38,6 +38,13 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
             except Full as e:
                 pass
 
+    def clear(self):
+        try:
+            while True:
+                self.get_nowait()
+        except Empty:
+            pass
+
     def __iter__(self) -> tp.Iterator[T]:
 
         while not self.is_done():
@@ -57,11 +64,10 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
             except Empty:
                 continue
 
-            if isinstance(x, pypeln_utils.Done):
-                with self.lock:
-                    self.namespace.remaining -= 1
-
-                continue
+            # if isinstance(x, pypeln_utils.Done):
+            #     with self.lock:
+            #         self.namespace.remaining -= 1
+            #     continue
 
             yield x
 
@@ -70,15 +76,19 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
             self.namespace.remaining <= 0 and self.empty()
         )
 
-    def done(self):
-        self.put(pypeln_utils.DONE)
+    def worker_done(self):
+        with self.lock:
+            self.namespace.remaining -= 1
+        # self.put(pypeln_utils.DONE)
 
     def stop(self):
         with self.lock:
             self.namespace.remaining = 0
+        self.clear()
 
     def kill(self):
         self.namespace.force_stop = True
+        self.clear()
 
     def raise_exception(self, exception: BaseException):
         pipeline_exception = self.get_pipeline_exception(exception)
@@ -105,9 +115,9 @@ class OutputQueues(tp.List[IterableQueue[T]], tp.Generic[T]):
         for queue in self:
             queue.put(x)
 
-    def done(self):
+    def worker_done(self):
         for queue in self:
-            queue.done()
+            queue.worker_done()
 
     def stop(self):
         for queue in self:

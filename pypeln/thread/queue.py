@@ -31,6 +31,7 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
     # because processes can be stopped easily were as
     # threads have to be active when being terminated, implementing
     # get in this way ensures the thread constantly active.
+
     def get(self, block: bool = True, timeout: tp.Optional[float] = None) -> T:
         if block and timeout is None:
             while True:
@@ -40,6 +41,9 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
                     continue
         else:
             return super().get(block=block, timeout=timeout)
+
+    # def get(self, block: bool = True, timeout: tp.Optional[float] = None) -> T:
+    #     return super().get(block=block, timeout=timeout)
 
     # put is implemented like this for thread but not for process
     # because processes can be stopped easily were as

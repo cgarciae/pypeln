@@ -155,11 +155,13 @@ class Worker(tp.Generic[T]):
         self.namespace.done = True
 
     def did_timeout(self):
+        task_start_time = self.namespace.task_start_time
+        done = self.namespace.done
         return (
             self.timeout
-            and not self.namespace.done
-            and self.namespace.task_start_time is not None
-            and (time.time() - self.namespace.task_start_time > self.timeout)
+            and not done
+            and task_start_time is not None
+            and (time.time() - task_start_time > self.timeout)
         )
 
     @dataclass

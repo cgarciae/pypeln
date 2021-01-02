@@ -39,7 +39,7 @@ class TestQueue(TestCase):
             for i in nums:
                 await queue.put(i)
 
-            await queue.done()
+            await queue.worker_done()
 
         processes = pl.task.start_workers(worker)
 
@@ -59,7 +59,7 @@ class TestQueue(TestCase):
             for i in nums:
                 await queue.put(i)
 
-            await queue.done()
+            await queue.worker_done()
 
         processes = pl.task.start_workers(worker)
 
@@ -79,7 +79,7 @@ class TestQueue(TestCase):
             for i in nums:
                 await queue.put(i)
 
-            await queue.done()
+            await queue.worker_done()
 
         processes = pl.task.start_workers(worker)
 
@@ -98,7 +98,7 @@ class TestQueue(TestCase):
             for i in nums:
                 await queue.put(i)
 
-            await queue.done()
+            await queue.worker_done()
 
         processes = pl.task.start_workers(worker)
 
@@ -118,7 +118,7 @@ class TestQueue(TestCase):
             for i in nums:
                 await queue.put(i)
 
-            queue.done_nowait()
+            queue.worker_done_nowait()
 
         processes = pl.task.start_workers(worker)
 
@@ -138,7 +138,7 @@ class TestQueue(TestCase):
             for i in nums:
                 await queue.put(i)
 
-            await queue.done()
+            await queue.worker_done()
 
         processes = pl.task.start_workers(worker, n_workers=n_workers)
 
@@ -159,7 +159,7 @@ class TestQueue(TestCase):
             for i in nums:
                 await queue.put(i)
 
-            await queue.done()
+            await queue.worker_done()
 
         processes = pl.task.start_workers(worker, n_workers=n_workers)
 
@@ -378,11 +378,11 @@ class TestOutputQueues(TestCase):
 
         queues.append(queue)
 
-        await queues.done()
+        await queues.worker_done()
 
         x = await queue.get()
 
-        assert isinstance(x, pypeln_utils.Done)
+        assert isinstance(x, pypeln_utils.Continue)
 
     def test_done_nowait(self):
         queues: pl.task.OutputQueues[int] = pl.task.OutputQueues()
@@ -390,11 +390,11 @@ class TestOutputQueues(TestCase):
 
         queues.append(queue)
 
-        queues.done_nowait()
+        queues.worker_done_nowait()
 
         x = queue.get_nowait()
 
-        assert isinstance(x, pypeln_utils.Done)
+        assert isinstance(x, pypeln_utils.Continue)
 
     @run_test_async
     async def test_stop(self):

@@ -57,10 +57,6 @@ class IterableQueue(asyncio.Queue, tp.Generic[T], tp.Iterable[T]):
 
             if isinstance(x, pypeln_utils.Continue):
                 continue
-            if isinstance(x, pypeln_utils.Done):
-                self.namespace.remaining -= 1
-
-                continue
 
             yield x
 
@@ -82,9 +78,6 @@ class IterableQueue(asyncio.Queue, tp.Generic[T], tp.Iterable[T]):
 
             if isinstance(x, pypeln_utils.Continue):
                 continue
-            elif isinstance(x, pypeln_utils.Done):
-                self.namespace.remaining -= 1
-                continue
 
             yield x
 
@@ -93,11 +86,13 @@ class IterableQueue(asyncio.Queue, tp.Generic[T], tp.Iterable[T]):
             self.namespace.remaining <= 0 and self.empty()
         )
 
-    async def done(self):
-        await self.put(pypeln_utils.DONE)
+    async def worker_done(self):
+        self.namespace.remaining -= 1
+        await self.put(pypeln_utils.CONTINUE)
 
-    def done_nowait(self):
-        self.put_nowait(pypeln_utils.DONE)
+    def worker_done_nowait(self):
+        self.namespace.remaining -= 1
+        self.put_nowait(pypeln_utils.CONTINUE)
 
     async def stop(self):
         self.namespace.remaining = 0
@@ -155,13 +150,13 @@ class OutputQueues(tp.List[IterableQueue[T]], tp.Generic[T]):
         for queue in self:
             queue.put_nowait(x)
 
-    async def done(self):
+    async def worker_done(self):
         for queue in self:
-            await queue.done()
+            await queue.worker_done()
 
-    def done_nowait(self):
+    def worker_done_nowait(self):
         for queue in self:
-            queue.done_nowait()
+            queue.worker_done_nowait()
 
     async def stop(self):
         for queue in self:

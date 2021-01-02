@@ -129,7 +129,7 @@ class Worker(tp.Generic[T]):
         finally:
             self.is_done = True
             self.tasks.stop()
-            await self.stage_params.output_queues.done()
+            await self.stage_params.output_queues.worker_done()
 
     def start(self):
         [self.process] = start_workers(self)

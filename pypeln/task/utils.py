@@ -22,7 +22,8 @@ def get_running_loop() -> asyncio.AbstractEventLoop:
     if not loop.is_running():
 
         def run():
-            loop.run_forever()
+            if not loop.is_running():
+                loop.run_forever()
 
         thread = threading.Thread(target=run)
         thread.daemon = True

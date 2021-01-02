@@ -418,3 +418,27 @@ async def test_error_handling_async():
         error = e
 
     assert isinstance(error, MyError)
+
+
+def test_maxsize():
+
+    namespace = pl.task.utils.Namespace(count=0)
+
+    def f(x) -> tp.Any:
+        namespace.count += 1
+        return x
+
+    stage = pl.task.map(f, range(20))
+    stage = pl.task.to_iterable(stage, maxsize=3)
+
+    iterator = iter(stage)
+    next(iterator)
+
+    time.sleep(0.1)
+
+    # + 1 element which was yieled on next(...)
+    # + 3 elements which are on the queue.
+    # + 1 element which it pending to be put.
+    # -------------------------------------------
+    # + 5 total
+    assert namespace.count == 5

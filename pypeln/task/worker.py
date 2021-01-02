@@ -127,9 +127,9 @@ class Worker(tp.Generic[T]):
         except BaseException as e:
             await self.main_queue.raise_exception(e)
         finally:
+            self.is_done = True
             self.tasks.stop()
             await self.stage_params.output_queues.done()
-            self.is_done = True
 
     def start(self):
         [self.process] = start_workers(self)
@@ -139,8 +139,12 @@ class Worker(tp.Generic[T]):
         if self.process is None:
             return
 
+        def cancel():
+            self.process.cancel()
+            # self.is_done = True
+
         self.tasks.stop()
-        utils.run_function_in_loop(self.process.cancel)
+        utils.run_function_in_loop(cancel)
 
 
 class Applicable(pypeln_utils.Protocol):

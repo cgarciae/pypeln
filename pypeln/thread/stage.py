@@ -86,4 +86,4 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
                     yield elem.value
 
     def __iter__(self):
-        return self.to_iterable(maxsize=0, return_index=False)
+        return self.to_iterable(maxsize=self.maxsize, return_index=False)

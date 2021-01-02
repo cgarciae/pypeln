@@ -122,6 +122,7 @@ class Worker(tp.Generic[T]):
                 if isinstance(coro, tp.Awaitable):
                     await coro
 
+            await self.stage_params.output_queues.worker_done()
         except asyncio.CancelledError:
             pass
         except BaseException as e:
@@ -129,7 +130,6 @@ class Worker(tp.Generic[T]):
         finally:
             self.is_done = True
             self.tasks.stop()
-            await self.stage_params.output_queues.worker_done()
 
     def start(self):
         [self.process] = start_workers(self)

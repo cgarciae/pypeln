@@ -46,9 +46,6 @@ class Supervisor:
             worker.stop()
 
         while any(worker.process.is_alive() for worker in self.workers):
-            for worker in self.workers:
-                worker.stop()
-
             time.sleep(pypeln_utils.TIMEOUT)
 
     def start(self):

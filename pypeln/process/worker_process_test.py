@@ -151,7 +151,7 @@ class TestWorkerThread(TestCase):
         process = worker.process
 
         worker.stop()
-        time.sleep(0.2)
+        time.sleep(0.4)
 
         assert not process.is_alive()
 

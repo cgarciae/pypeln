@@ -31,16 +31,38 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
     # because processes can be stopped easily were as
     # threads have to be active when being terminated, implementing
     # get in this way ensures the thread constantly active.
-
     def get(self, block: bool = True, timeout: tp.Optional[float] = None) -> T:
-        if block and timeout is None:
-            while True:
+        while True:
+            with self.namespace:
+                has_exception = self.namespace.exception
+
+            if has_exception:
+                exception, trace = self.exception_queue.get()
+
                 try:
-                    return super().get(block=True, timeout=pypeln_utils.TIMEOUT)
-                except Empty:
-                    continue
-        else:
-            return super().get(block=block, timeout=timeout)
+                    exception = exception(f"\n\n{trace}")
+                except:
+                    exception = Exception(f"\n\nOriginal: {exception}\n\n{trace}")
+
+                raise exception
+
+            if block and timeout is None:
+                while True:
+                    try:
+                        x = super().get(block=True, timeout=pypeln_utils.TIMEOUT)
+                        break
+                    except Empty:
+                        continue
+            else:
+                x = super().get(block=block, timeout=timeout)
+
+            if isinstance(x, pypeln_utils.Done):
+                with self.namespace:
+                    self.namespace.remaining -= 1
+
+                continue
+
+            return x
 
     # def get(self, block: bool = True, timeout: tp.Optional[float] = None) -> T:
     #     return super().get(block=block, timeout=timeout)
@@ -71,19 +93,6 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
 
         while not self.is_done():
 
-            with self.namespace:
-                has_exception = self.namespace.exception
-
-            if has_exception:
-                exception, trace = self.exception_queue.get()
-
-                try:
-                    exception = exception(f"\n\n{trace}")
-                except:
-                    exception = Exception(f"\n\nOriginal: {exception}\n\n{trace}")
-
-                raise exception
-
             try:
                 x = self.get(timeout=pypeln_utils.TIMEOUT)
             except Empty:
@@ -93,13 +102,15 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
 
     def is_done(self):
         with self.namespace:
-            return self.namespace.force_stop or (
-                self.namespace.remaining <= 0 and self.empty()
-            )
+            force_stop = self.namespace.force_stop
+            remaining = self.namespace.remaining
+
+        return force_stop or (remaining <= 0 and self.empty())
 
     def worker_done(self):
-        with self.namespace:
-            self.namespace.remaining -= 1
+        self.put(pypeln_utils.DONE)
+        # with self.namespace:
+        #     self.namespace.remaining -= 1
 
     def stop(self):
         with self.namespace:

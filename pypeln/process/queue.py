@@ -65,12 +65,12 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
             yield x
 
     def is_done(self):
-        is_empty = self.empty()
 
         with self.namespace:
-            return self.namespace.force_stop or (
-                self.namespace.remaining <= 0 and is_empty
-            )
+            force_stop = self.namespace.force_stop
+            remaining = self.namespace.remaining
+
+        return force_stop or (remaining <= 0 and self.empty())
 
     def worker_done(self):
         with self.namespace:

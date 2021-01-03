@@ -121,15 +121,15 @@ class Worker(tp.Generic[T]):
                     }
                 )
 
+            self.stage_params.output_queues.worker_done()
+
         except pypeln_utils.StopThreadException:
             pass
         except BaseException as e:
             self.main_queue.raise_exception(e)
             time.sleep(0.01)
         finally:
-            self.stage_params.output_queues.worker_done()
-            with self.namespace:
-                self.namespace.done = True
+            self.done()
 
     def start(self):
         [self.process] = start_workers(self, use_threads=self.use_threads)

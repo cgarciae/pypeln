@@ -31,19 +31,7 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
         )
 
     def get(self, block: bool = True, timeout: tp.Optional[float] = None) -> T:
-        return super().get(block=block, timeout=timeout)
-
-    def clear(self):
-        try:
-            while True:
-                self.get_nowait()
-        except Empty:
-            pass
-
-    def __iter__(self) -> tp.Iterator[T]:
-
-        while not self.is_done():
-
+        while True:
             with self.namespace:
                 has_exception = self.namespace.exception
 
@@ -56,6 +44,27 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
                     exception = Exception(f"\n\nOriginal: {exception}\n\n{trace}")
 
                 raise exception
+
+            x = super().get(block=block, timeout=timeout)
+
+            if isinstance(x, pypeln_utils.Done):
+                with self.namespace:
+                    self.namespace.remaining -= 1
+
+                continue
+
+            return x
+
+    def clear(self):
+        try:
+            while True:
+                self.get_nowait()
+        except Empty:
+            pass
+
+    def __iter__(self) -> tp.Iterator[T]:
+
+        while not self.is_done():
 
             try:
                 x = self.get(timeout=pypeln_utils.TIMEOUT)
@@ -73,8 +82,9 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
         return force_stop or (remaining <= 0 and self.empty())
 
     def worker_done(self):
-        with self.namespace:
-            self.namespace.remaining -= 1
+        # with self.namespace:
+        #     self.namespace.remaining -= 1
+        self.put(pypeln_utils.DONE)
 
     def stop(self):
         with self.namespace:

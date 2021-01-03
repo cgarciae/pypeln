@@ -105,7 +105,7 @@ class TestQueue(TestCase):
         await asyncio.sleep(0.01)
 
         if len(nums) > 0:
-            x = queue.get_nowait()
+            x = queue._get_nowait()
             assert x == nums[0]
 
     @hp.given(nums=st.lists(st.integers()))
@@ -352,7 +352,7 @@ class TestOutputQueues(TestCase):
 
         queues.put_nowait(3)
 
-        x = queue.get_nowait()
+        x = queue._get_nowait()
 
         assert isinstance(queues, list)
         assert x == 3
@@ -382,7 +382,7 @@ class TestOutputQueues(TestCase):
 
         x = await queue.get()
 
-        assert isinstance(x, pypeln_utils.Continue)
+        assert isinstance(x, pl.utils.Done)
 
     def test_done_nowait(self):
         queues: pl.task.OutputQueues[int] = pl.task.OutputQueues()
@@ -392,9 +392,8 @@ class TestOutputQueues(TestCase):
 
         queues.worker_done_nowait()
 
-        x = queue.get_nowait()
-
-        assert isinstance(x, pypeln_utils.Continue)
+        with pytest.raises(asyncio.QueueEmpty):
+            x = queue._get_nowait()
 
     @run_test_async
     async def test_stop(self):

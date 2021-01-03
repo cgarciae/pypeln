@@ -29,42 +29,12 @@ class IterableQueue(asyncio.Queue, tp.Generic[T], tp.Iterable[T]):
             maxsize=1
         )
 
-    async def get(self, *arg, **kwargs) -> tp.Awaitable[T]:
-        return await super().get(*arg, **kwargs)
+    async def get(self) -> tp.Awaitable[T]:
+        while True:
+            # with self.namespace:
+            has_exception = self.namespace.exception
 
-    def get_nowait(self, *arg, **kwargs) -> T:
-        return super().get_nowait(*arg, **kwargs)
-
-    def __iter__(self) -> tp.Iterator[T]:
-
-        while not self.is_done():
-
-            if self.namespace.exception:
-                exception, trace = self.exception_queue.get_nowait()
-
-                try:
-                    exception = exception(f"\n\n{trace}")
-                except:
-                    exception = Exception(f"\n\nOriginal: {exception}\n\n{trace}")
-
-                raise exception
-
-            try:
-                x = self.get_nowait()
-            except asyncio.QueueEmpty:
-                time.sleep(pypeln_utils.TIMEOUT)
-                continue
-
-            if isinstance(x, pypeln_utils.Continue):
-                continue
-
-            yield x
-
-    async def __aiter__(self) -> tp.AsyncIterator[T]:
-
-        while not self.is_done():
-
-            if self.namespace.exception:
+            if has_exception:
                 exception, trace = await self.exception_queue.get()
 
                 try:
@@ -74,9 +44,60 @@ class IterableQueue(asyncio.Queue, tp.Generic[T], tp.Iterable[T]):
 
                 raise exception
 
+            x = await super().get()
+
+            if isinstance(x, pypeln_utils.Done):
+                self.namespace.remaining -= 1
+
+            return x
+
+    def _get_nowait(self) -> T:
+        while True:
+            # with self.namespace:
+            has_exception = self.namespace.exception
+
+            if has_exception:
+                exception, trace = self.exception_queue.get_nowait()
+
+                try:
+                    exception = exception(f"\n\n{trace}")
+                except:
+                    exception = Exception(f"\n\nOriginal: {exception}\n\n{trace}")
+
+                raise exception
+
+            x = super().get_nowait()
+
+            if isinstance(x, pypeln_utils.Continue):
+                continue
+            elif isinstance(x, pypeln_utils.Done):
+                self.namespace.remaining -= 1
+                continue
+
+            return x
+
+    def __iter__(self) -> tp.Iterator[T]:
+
+        while not self.is_done():
+
+            try:
+                x = self._get_nowait()
+            except asyncio.QueueEmpty:
+                time.sleep(pypeln_utils.TIMEOUT)
+                continue
+
+            yield x
+
+    async def __aiter__(self) -> tp.AsyncIterator[T]:
+
+        while not self.is_done():
+
             x = await self.get()
 
             if isinstance(x, pypeln_utils.Continue):
+                continue
+            elif isinstance(x, pypeln_utils.Done):
+                self.namespace.remaining -= 1
                 continue
 
             yield x
@@ -87,12 +108,10 @@ class IterableQueue(asyncio.Queue, tp.Generic[T], tp.Iterable[T]):
         )
 
     async def worker_done(self):
-        self.namespace.remaining -= 1
-        await self.put(pypeln_utils.CONTINUE)
+        await self.put(pypeln_utils.DONE)
 
     def worker_done_nowait(self):
-        self.namespace.remaining -= 1
-        self.put_nowait(pypeln_utils.CONTINUE)
+        self.put_nowait(pypeln_utils.DONE)
 
     async def stop(self):
         self.namespace.remaining = 0

@@ -38,7 +38,7 @@ class StageParams(tp.NamedTuple):
         )
 
     def worker_done(self):
-        with self.lock:
+        with self.namespace:
             self.namespace.active_workers -= 1
 
 
@@ -126,7 +126,8 @@ class Worker(tp.Generic[T]):
             except pypeln_utils.StopThreadException:
                 pass
         finally:
-            self.namespace.done = True
+            with self.namespace:
+                self.namespace.done = True
 
     def start(self):
         [self.process] = start_workers(self)
@@ -135,7 +136,8 @@ class Worker(tp.Generic[T]):
         if self.process is None:
             return
 
-        self.namespace.task_start_time = None
+        with self.namespace:
+            self.namespace.task_start_time = None
 
         if not self.process.is_alive():
             return
@@ -146,25 +148,29 @@ class Worker(tp.Generic[T]):
         )
 
     def done(self):
-        self.namespace.done = True
+        with self.namespace:
+            self.namespace.done = True
 
     def did_timeout(self):
-        return (
-            self.timeout
-            and not self.namespace.done
-            and self.namespace.task_start_time is not None
-            and (time.time() - self.namespace.task_start_time > self.timeout)
-        )
+        with self.namespace:
+            return (
+                self.timeout
+                and not self.namespace.done
+                and self.namespace.task_start_time is not None
+                and (time.time() - self.namespace.task_start_time > self.timeout)
+            )
 
     @dataclass
     class MeasureTaskTime:
         worker: "Worker"
 
         def __enter__(self):
-            self.worker.namespace.task_start_time = time.time()
+            with self.worker.namespace:
+                self.worker.namespace.task_start_time = time.time()
 
         def __exit__(self, *args):
-            self.worker.namespace.task_start_time = None
+            with self.worker.namespace:
+                self.worker.namespace.task_start_time = None
 
     def measure_task_time(self):
         return self.MeasureTaskTime(self)
@@ -196,7 +202,7 @@ class StageStatus:
         """
         `bool` : `True` if all workers finished.
         """
-        with self._lock:
+        with self._namespace:
             return self._namespace.active_workers == 0
 
     @property
@@ -204,7 +210,7 @@ class StageStatus:
         """
         `int` : Number of active workers.
         """
-        with self._lock:
+        with self._namespace:
             return self._namespace.active_workers
 
     def __str__(self):

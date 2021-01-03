@@ -44,7 +44,10 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
 
         while not self.is_done():
 
-            if self.namespace.exception:
+            with self.namespace:
+                has_exception = self.namespace.exception
+
+            if has_exception:
                 exception, trace = self.exception_queue.get()
 
                 try:
@@ -62,28 +65,30 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
             yield x
 
     def is_done(self):
-        return self.namespace.force_stop or (
-            self.namespace.remaining <= 0 and self.empty()
-        )
+        with self.namespace:
+            return self.namespace.force_stop or (
+                self.namespace.remaining <= 0 and self.empty()
+            )
 
     def worker_done(self):
-        with self.lock:
+        with self.namespace:
             self.namespace.remaining -= 1
 
     def stop(self):
-        with self.lock:
+        with self.namespace:
             self.namespace.remaining = 0
         self.clear()
 
     def kill(self):
-        with self.lock:
+        with self.namespace:
             self.namespace.remaining = 0
             self.namespace.force_stop = True
         self.clear()
 
     def raise_exception(self, exception: BaseException):
         pipeline_exception = self.get_pipeline_exception(exception)
-        self.namespace.exception = True
+        with self.namespace:
+            self.namespace.exception = True
         self.exception_queue.put(pipeline_exception)
 
     def get_pipeline_exception(self, exception: BaseException) -> PipelineException:

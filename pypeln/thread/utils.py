@@ -1,12 +1,38 @@
-from collections import namedtuple
-from dataclasses import dataclass
-from multiprocessing import get_context
-import multiprocessing
-from multiprocessing.queues import Empty, Full
 import typing as tp
+import threading
 
 from pypeln import utils as pypeln_utils
 
 
-def Namespace(**kwargs) -> tp.Any:
-    return pypeln_utils.Namespace(**kwargs)
+class Namespace:
+    def __init__(self, **kwargs):
+        self.__dict__["_namespace"] = pypeln_utils._Namespace(**kwargs)
+        self.__dict__["_lock"] = threading.Lock()
+
+    def __getattr__(self, key) -> tp.Any:
+        if key in ("_namespace", "_lock"):
+            raise AttributeError()
+
+        if not self.__dict__["_lock"].locked():
+            raise pypeln_utils.NoLock(
+                "Namespace not locked, use: \n\nwith namespace:\n    # code here\n\nto lock namespace."
+            )
+
+        return getattr(self.__dict__["_namespace"], key)
+
+    def __setattr__(self, key, value) -> None:
+        if key in ("_namespace", "_lock"):
+            raise AttributeError()
+
+        if not self.__dict__["_lock"].locked():
+            raise pypeln_utils.NoLock(
+                "Namespace not locked, use: \n\nwith namespace:\n    # code here\n\nto lock namespace."
+            )
+
+        setattr(self.__dict__["_namespace"], key, value)
+
+    def __enter__(self):
+        self._lock.acquire()
+
+    def __exit__(self, *args):
+        self._lock.release()

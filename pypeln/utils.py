@@ -17,6 +17,10 @@ A = tp.TypeVar("A")
 B = tp.TypeVar("B")
 
 
+class NoLock(Exception):
+    pass
+
+
 class Element(tp.NamedTuple):
     index: tp.Tuple[int, ...]
     value: T
@@ -72,7 +76,7 @@ class Partial(tp.Generic[T]):
         return self.f(stage)
 
 
-class Namespace(object):
+class _Namespace(object):
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)

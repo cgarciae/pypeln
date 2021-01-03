@@ -112,7 +112,7 @@ class TestWorker(TestCase):
         worker.start()
 
         assert not worker.did_timeout()
-        time.sleep(0.1)
+        time.sleep(0.5)
         assert worker.did_timeout()
 
     def test_del1(

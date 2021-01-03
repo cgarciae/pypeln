@@ -153,11 +153,13 @@ class TestOutputQueues(TestCase):
 
         queues.append(queue)
 
-        assert queue.namespace.remaining == 1
+        with queue.namespace:
+            assert queue.namespace.remaining == 1
 
         queues.stop()
 
-        assert queue.namespace.remaining == 0
+        with queue.namespace:
+            assert queue.namespace.remaining == 0
 
     def test_kill(self):
         queues: pl.thread.OutputQueues[int] = pl.thread.OutputQueues()
@@ -165,8 +167,10 @@ class TestOutputQueues(TestCase):
 
         queues.append(queue)
 
-        assert queue.namespace.force_stop == False
+        with queue.namespace:
+            assert queue.namespace.force_stop == False
 
         queues.kill()
 
-        assert queue.namespace.force_stop == True
+        with queue.namespace:
+            assert queue.namespace.force_stop == True

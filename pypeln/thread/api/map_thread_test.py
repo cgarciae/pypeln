@@ -51,17 +51,18 @@ def test_map_square_event_start(nums: tp.List[int]):
     nums_py = map(lambda x: x ** 2, nums)
     nums_py = list(nums_py)
 
-    namespace = pl.thread.Namespace()
-    namespace.x = 0
+    namespace = pl.thread.Namespace(x=0)
 
     def on_start():
-        namespace.x = 1
+        with namespace:
+            namespace.x = 1
 
     nums_pl = pl.thread.map(lambda x: x ** 2, nums, on_start=on_start)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums_py
-    assert namespace.x == 1
+    with namespace:
+        assert namespace.x == 1
 
 
 def test_timeout():
@@ -105,14 +106,14 @@ def test_kwargs():
     nums = range(100)
     n_workers = 4
     letters = "abc"
-    namespace = pl.thread.Namespace()
-    namespace.on_done = None
+    namespace = pl.thread.Namespace(on_done=None)
 
     def on_start():
         return dict(y=letters)
 
     def on_done(y):
-        namespace.on_done = y
+        with namespace:
+            namespace.on_done = y
 
     nums_pl = pl.thread.map(
         lambda x, y: y,
@@ -123,7 +124,8 @@ def test_kwargs():
     )
     nums_pl = list(nums_pl)
 
-    assert namespace.on_done == letters
+    with namespace:
+        assert namespace.on_done == letters
     assert nums_pl == [letters] * len(nums)
 
 
@@ -131,18 +133,21 @@ def test_kwargs():
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_square_event_end(nums: tp.List[int]):
 
-    namespace = pl.thread.Namespace()
-    namespace.x = 0
-    namespace.done = False
-    namespace.active_workers = -1
+    namespace = pl.thread.Namespace(
+        x=0,
+        done=False,
+        active_workers=-1,
+    )
 
     def on_start():
-        namespace.x = 1
+        with namespace:
+            namespace.x = 1
 
     def on_done(stage_status):
-        namespace.x = 2
-        namespace.active_workers = stage_status.active_workers
-        namespace.done = stage_status.done
+        with namespace:
+            namespace.x = 2
+            namespace.active_workers = stage_status.active_workers
+            namespace.done = stage_status.done
 
     nums_pl = pl.thread.map(
         lambda x: x ** 2, nums, workers=3, on_start=on_start, on_done=on_done
@@ -151,9 +156,10 @@ def test_map_square_event_end(nums: tp.List[int]):
 
     time.sleep(0.1)
 
-    assert namespace.x == 2
-    assert namespace.done == True
-    assert namespace.active_workers == 0
+    with namespace:
+        assert namespace.x == 2
+        assert namespace.done == True
+        assert namespace.active_workers == 0
 
 
 @hp.given(nums=st.lists(st.integers()))
@@ -196,7 +202,8 @@ def test_maxsize():
     namespace = pl.thread.utils.Namespace(count=0)
 
     def f(x) -> tp.Any:
-        namespace.count += 1
+        with namespace:
+            namespace.count += 1
         return x
 
     stage = pl.thread.map(f, range(20))
@@ -212,4 +219,5 @@ def test_maxsize():
     # + 1 element which it pending to be put.
     # -------------------------------------------
     # + 5 total
-    assert namespace.count == 5
+    with namespace:
+        assert namespace.count == 5

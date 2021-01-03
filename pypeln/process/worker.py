@@ -121,14 +121,13 @@ class Worker(tp.Generic[T]):
                     }
                 )
 
-            self.stage_params.output_queues.worker_done()
-
         except pypeln_utils.StopThreadException:
             pass
         except BaseException as e:
             self.main_queue.raise_exception(e)
             time.sleep(0.01)
         finally:
+            self.stage_params.output_queues.worker_done()
             with self.namespace:
                 self.namespace.done = True
 
@@ -161,12 +160,13 @@ class Worker(tp.Generic[T]):
         with self.namespace:
             task_start_time = self.namespace.task_start_time
             done = self.namespace.done
-            return (
-                self.timeout
-                and not done
-                and task_start_time is not None
-                and (time.time() - task_start_time > self.timeout)
-            )
+
+        return (
+            self.timeout
+            and not done
+            and task_start_time is not None
+            and (time.time() - task_start_time > self.timeout)
+        )
 
     @dataclass
     class MeasureTaskTime:

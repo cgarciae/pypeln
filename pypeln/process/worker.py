@@ -138,9 +138,6 @@ class Worker(tp.Generic[T]):
         if self.process is None:
             return
 
-        with self.namespace:
-            self.namespace.task_start_time = None
-
         if not self.process.is_alive():
             return
 
@@ -151,6 +148,9 @@ class Worker(tp.Generic[T]):
                 self.process.ident,
                 pypeln_utils.StopThreadException,
             )
+
+        with self.namespace:
+            self.namespace.task_start_time = None
 
     def done(self):
         with self.namespace:

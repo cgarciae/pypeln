@@ -29,10 +29,8 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
 
     def get(self, block: bool = True, timeout: tp.Optional[float] = None) -> T:
         while True:
-            with self.namespace:
-                has_exception = self.namespace.exception
 
-            if has_exception:
+            if self.namespace.exception:
                 exception, trace = self.exception_queue.get()
 
                 try:
@@ -98,9 +96,8 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
             yield x
 
     def is_done(self):
-        with self.namespace:
-            force_stop = self.namespace.force_stop
-            remaining = self.namespace.remaining
+        force_stop = self.namespace.force_stop
+        remaining = self.namespace.remaining
 
         return force_stop or (remaining <= 0 and self.empty())
 
@@ -122,8 +119,7 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
 
     def raise_exception(self, exception: BaseException):
         pipeline_exception = self.get_pipeline_exception(exception)
-        with self.namespace:
-            self.namespace.exception = True
+        self.namespace.exception = True
         self.exception_queue.put(pipeline_exception)
 
     def get_pipeline_exception(self, exception: BaseException) -> PipelineException:

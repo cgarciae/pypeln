@@ -126,8 +126,7 @@ class Worker(tp.Generic[T]):
             except pypeln_utils.StopThreadException:
                 pass
         finally:
-            with self.namespace:
-                self.namespace.done = True
+            self.namespace.done = True
 
     def start(self):
         [self.process] = start_workers(self)
@@ -136,8 +135,7 @@ class Worker(tp.Generic[T]):
         if self.process is None:
             return
 
-        with self.namespace:
-            self.namespace.task_start_time = None
+        self.namespace.task_start_time = None
 
         if not self.process.is_alive():
             return
@@ -148,29 +146,26 @@ class Worker(tp.Generic[T]):
         )
 
     def done(self):
-        with self.namespace:
-            self.namespace.done = True
+        self.namespace.done = True
 
     def did_timeout(self):
-        with self.namespace:
-            return (
-                self.timeout
-                and not self.namespace.done
-                and self.namespace.task_start_time is not None
-                and (time.time() - self.namespace.task_start_time > self.timeout)
-            )
+
+        return (
+            self.timeout
+            and not self.namespace.done
+            and self.namespace.task_start_time is not None
+            and (time.time() - self.namespace.task_start_time > self.timeout)
+        )
 
     @dataclass
     class MeasureTaskTime:
         worker: "Worker"
 
         def __enter__(self):
-            with self.worker.namespace:
-                self.worker.namespace.task_start_time = time.time()
+            self.worker.namespace.task_start_time = time.time()
 
         def __exit__(self, *args):
-            with self.worker.namespace:
-                self.worker.namespace.task_start_time = None
+            self.worker.namespace.task_start_time = None
 
     def measure_task_time(self):
         return self.MeasureTaskTime(self)

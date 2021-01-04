@@ -186,7 +186,8 @@ def test_timeout():
 
     async def f(worker: pl.task.Worker):
         async def task():
-            await asyncio.sleep(0.01)
+            for i in range(1000):
+                await asyncio.sleep(0.01)
             namespace.x = 1
 
         await worker.tasks.put(task)

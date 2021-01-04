@@ -157,11 +157,10 @@ class Worker(tp.Generic[T]):
         except asyncio.CancelledError:
             pass
         except BaseException as e:
-            print("ERRORRRR", e)
-            import sys, traceback
-
-            exception_type, _exception, _traceback = sys.exc_info()
-            traceback.print_exception(exception_type, _exception, _traceback)
+            # print("ERRORRRR", e)
+            # import sys, traceback
+            # exception_type, _exception, _traceback = sys.exc_info()
+            # traceback.print_exception(exception_type, _exception, _traceback)
             await self.main_queue.raise_exception(e)
         finally:
             self.is_done = True

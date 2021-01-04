@@ -296,7 +296,7 @@ def test_no_timeout():
         total_workers=1,
     )
 
-    timeout = 0.001
+    timeout = 0.0
 
     worker = pl.task.Worker.create(
         process_fn=CustomProcess(f),
@@ -335,6 +335,8 @@ async def test_no_timeout_async():
 
         await worker.tasks.put(task)
 
+    timeout = 0.02
+
     stage_params: pl.task.StageParams = mock.Mock(
         input_queue=input_queue,
         output_queues=output_queues,
@@ -344,11 +346,11 @@ async def test_no_timeout_async():
         process_fn=CustomProcess(f),
         stage_params=stage_params,
         main_queue=output_queue,
-        timeout=0.02,
+        timeout=timeout,
         on_start=None,
         on_done=None,
         f_args=[],
-        tasks=pl.task.TaskPool.create(workers=0),
+        tasks=pl.task.TaskPool.create(workers=0, timeout=timeout),
     )
     worker.start()
 

@@ -149,17 +149,14 @@ class Worker(tp.Generic[T]):
                 pypeln_utils.StopThreadException,
             )
 
-        with self.namespace:
-            self.namespace.task_start_time = None
+        self.namespace.task_start_time = None
 
     def done(self):
-        with self.namespace:
-            self.namespace.done = True
+        self.namespace.done = True
 
     def did_timeout(self):
-        with self.namespace:
-            task_start_time = self.namespace.task_start_time
-            done = self.namespace.done
+        task_start_time = self.namespace.task_start_time
+        done = self.namespace.done
 
         return (
             self.timeout
@@ -173,12 +170,10 @@ class Worker(tp.Generic[T]):
         worker: "Worker"
 
         def __enter__(self):
-            with self.worker.namespace:
-                self.worker.namespace.task_start_time = time.time()
+            self.worker.namespace.task_start_time = time.time()
 
         def __exit__(self, *args):
-            with self.worker.namespace:
-                self.worker.namespace.task_start_time = None
+            self.worker.namespace.task_start_time = None
 
     def measure_task_time(self):
         return self.MeasureTaskTime(self)
@@ -210,16 +205,14 @@ class StageStatus:
         """
         `bool` : `True` if all workers finished.
         """
-        with self._namespace:
-            return self._namespace.active_workers == 0
+        return self._namespace.active_workers == 0
 
     @property
     def active_workers(self):
         """
         `int` : Number of active workers.
         """
-        with self._namespace:
-            return self._namespace.active_workers
+        return self._namespace.active_workers
 
     def __str__(self):
         return (

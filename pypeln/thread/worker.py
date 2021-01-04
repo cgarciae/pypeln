@@ -197,16 +197,14 @@ class StageStatus:
         """
         `bool` : `True` if all workers finished.
         """
-        with self._namespace:
-            return self._namespace.active_workers == 0
+        return self._namespace.active_workers == 0
 
     @property
     def active_workers(self):
         """
         `int` : Number of active workers.
         """
-        with self._namespace:
-            return self._namespace.active_workers
+        return self._namespace.active_workers
 
     def __str__(self):
         return (

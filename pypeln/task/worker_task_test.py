@@ -48,7 +48,7 @@ def test_basic(nums):
         total_workers=1,
     )
 
-    worker = pl.task.Worker(
+    worker = pl.task.Worker.create(
         process_fn=CustomProcess(f),
         stage_params=stage_params,
         main_queue=output_queue,
@@ -88,7 +88,7 @@ async def test_basic_async(nums):
         total_workers=1,
     )
 
-    worker = pl.task.Worker(
+    worker = pl.task.Worker.create(
         process_fn=CustomProcess(f),
         stage_params=stage_params,
         main_queue=output_queue,
@@ -123,7 +123,7 @@ def test_raises():
         total_workers=1,
     )
 
-    worker = pl.task.Worker(
+    worker = pl.task.Worker.create(
         process_fn=CustomProcess(f),
         stage_params=stage_params,
         main_queue=output_queue,
@@ -178,7 +178,7 @@ async def test_raises_async():
     assert worker.is_done
 
 
-def test_timeout():
+def test_timeout_base():
     input_queue = pl.task.IterableQueue()
     output_queue = pl.task.IterableQueue()
     output_queues = pl.task.OutputQueues([output_queue])
@@ -198,28 +198,30 @@ def test_timeout():
         total_workers=1,
     )
 
-    worker = pl.task.Worker(
+    timeout = 0.001
+
+    worker = pl.task.Worker.create(
         process_fn=CustomProcess(f),
         stage_params=stage_params,
         main_queue=output_queue,
-        timeout=0.001,
+        timeout=timeout,
         on_start=None,
         on_done=None,
         f_args=[],
-        tasks=pl.task.TaskPool.create(workers=1),
+        tasks=pl.task.TaskPool.create(workers=1, timeout=timeout),
     )
+
+    worker.start()
 
     # wait for worker to start
     time.sleep(0.02)
-
-    worker.start()
 
     while len(worker.tasks.tasks) > 0:
         time.sleep(0.001)
 
     assert namespace.x == 0
 
-    time.sleep(0.02)
+    time.sleep(0.1)
 
     assert worker.is_done
 
@@ -244,15 +246,20 @@ async def test_timeout_async():
         total_workers=1,
     )
 
-    worker = pl.task.Worker(
+    timeout = 0.001
+
+    worker = pl.task.Worker.create(
         process_fn=CustomProcess(f),
         stage_params=stage_params,
         main_queue=output_queue,
-        timeout=0.001,
+        timeout=timeout,
         on_start=None,
         on_done=None,
         f_args=[],
-        tasks=pl.task.TaskPool.create(workers=1),
+        tasks=pl.task.TaskPool.create(
+            workers=1,
+            timeout=timeout,
+        ),
     )
 
     # wait for worker to start
@@ -260,7 +267,8 @@ async def test_timeout_async():
 
     worker.start()
 
-    await worker.tasks.join()
+    while len(worker.tasks.tasks) > 0:
+        await asyncio.sleep(0.01)
 
     assert namespace.x == 0
 
@@ -288,15 +296,17 @@ def test_no_timeout():
         total_workers=1,
     )
 
-    worker = pl.task.Worker(
+    timeout = 0.001
+
+    worker = pl.task.Worker.create(
         process_fn=CustomProcess(f),
         stage_params=stage_params,
         main_queue=output_queue,
-        timeout=0.02,
+        timeout=timeout,
         on_start=None,
         on_done=None,
         f_args=[],
-        tasks=pl.task.TaskPool.create(workers=0),
+        tasks=pl.task.TaskPool.create(workers=0, timeout=timeout),
     )
     worker.start()
 
@@ -330,7 +340,7 @@ async def test_no_timeout_async():
         output_queues=output_queues,
         total_workers=1,
     )
-    worker = pl.task.Worker(
+    worker = pl.task.Worker.create(
         process_fn=CustomProcess(f),
         stage_params=stage_params,
         main_queue=output_queue,
@@ -367,7 +377,7 @@ def test_del1():
         total_workers=1,
     )
 
-    worker = pl.task.Worker(
+    worker = pl.task.Worker.create(
         process_fn=CustomProcess(f),
         stage_params=stage_params,
         main_queue=output_queue,
@@ -406,7 +416,7 @@ async def test_del1_async():
         total_workers=1,
     )
 
-    worker = pl.task.Worker(
+    worker = pl.task.Worker.create(
         process_fn=CustomProcess(f),
         stage_params=stage_params,
         main_queue=output_queue,
@@ -451,7 +461,7 @@ def test_del3():
             total_workers=1,
         )
 
-        worker = pl.task.Worker(
+        worker = pl.task.Worker.create(
             process_fn=CustomProcess(f),
             stage_params=stage_params,
             main_queue=output_queue,
@@ -492,7 +502,7 @@ async def test_del3_async():
             total_workers=1,
         )
 
-        worker = pl.task.Worker(
+        worker = pl.task.Worker.create(
             process_fn=CustomProcess(f),
             stage_params=stage_params,
             main_queue=output_queue,

@@ -61,6 +61,36 @@ class Worker(tp.Generic[T]):
     process: tp.Optional[Future] = None
     is_done: bool = False
 
+    @classmethod
+    def create(
+        cls,
+        process_fn: ProcessFn,
+        timeout: float,
+        stage_params: StageParams,
+        main_queue: IterableQueue,
+        on_start: tp.Optional[tp.Callable[..., tp.Union[Kwargs, tp.Awaitable[Kwargs]]]],
+        on_done: tp.Optional[tp.Callable[..., tp.Union[Kwargs, tp.Awaitable[Kwargs]]]],
+        f_args: tp.List[str],
+        tasks: "TaskPool",
+        process: tp.Optional[Future] = None,
+        is_done: bool = False,
+    ) -> "Worker":
+        worker = cls(
+            process_fn=process_fn,
+            timeout=timeout,
+            stage_params=stage_params,
+            main_queue=main_queue,
+            on_start=on_start,
+            on_done=on_done,
+            f_args=f_args,
+            process=process,
+            tasks=tasks,
+        )
+
+        assert worker.timeout == tasks.timeout
+
+        return worker
+
     async def __call__(self):
 
         worker_info = WorkerInfo(index=0)
@@ -123,9 +153,15 @@ class Worker(tp.Generic[T]):
                     await coro
 
             await self.stage_params.output_queues.worker_done()
+
         except asyncio.CancelledError:
             pass
         except BaseException as e:
+            print("ERRORRRR", e)
+            import sys, traceback
+
+            exception_type, _exception, _traceback = sys.exc_info()
+            traceback.print_exception(exception_type, _exception, _traceback)
             await self.main_queue.raise_exception(e)
         finally:
             self.is_done = True
@@ -243,8 +279,10 @@ class TaskPool:
         self.tasks.clear()
 
     async def join(self):
-        self.closed = True
-        await asyncio.gather(*self.tasks)
+        try:
+            await asyncio.gather(*self.tasks)
+        finally:
+            self.closed = True
 
     async def __aenter__(self):
         return self

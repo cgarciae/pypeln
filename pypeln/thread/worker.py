@@ -23,7 +23,6 @@ class ProcessFn(pypeln_utils.Protocol):
 class StageParams(tp.NamedTuple):
     input_queue: IterableQueue
     output_queues: OutputQueues
-    lock: threading.Lock
     namespace: utils.Namespace
 
     @classmethod
@@ -31,7 +30,6 @@ class StageParams(tp.NamedTuple):
         cls, input_queue: IterableQueue, output_queues: OutputQueues, total_workers: int
     ) -> "StageParams":
         return cls(
-            lock=threading.Lock(),
             namespace=utils.Namespace(active_workers=total_workers),
             input_queue=input_queue,
             output_queues=output_queues,
@@ -103,7 +101,6 @@ class Worker(tp.Generic[T]):
                     "stage_status",
                     StageStatus(
                         namespace=self.stage_params.namespace,
-                        lock=self.stage_params.lock,
                     ),
                 )
 
@@ -188,9 +185,8 @@ class StageStatus:
     Object passed to various `on_done` callbacks. It contains information about the stage in case book keeping is needed.
     """
 
-    def __init__(self, namespace, lock):
+    def __init__(self, namespace):
         self._namespace = namespace
-        self._lock = lock
 
     @property
     def done(self) -> bool:

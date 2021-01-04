@@ -22,7 +22,6 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
     def __init__(self, maxsize: int = 0, total_sources: int = 1):
         super().__init__(maxsize=maxsize, ctx=multiprocessing.get_context())
 
-        self.lock = multiprocessing.Lock()
         self.namespace = utils.Namespace(
             remaining=total_sources, exception=False, force_stop=False
         )

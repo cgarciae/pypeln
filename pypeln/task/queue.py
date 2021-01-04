@@ -144,7 +144,6 @@ class IterableQueue(asyncio.Queue, tp.Generic[T], tp.Iterable[T]):
         self.exception_queue.put_nowait(pypeline_exception)
         self.put_nowait(pypeln_utils.CONTINUE)
 
-    # TODO: implement this logic in thread + process
     def get_pipeline_exception(self, exception: BaseException) -> PipelineException:
 
         if isinstance(exception, PipelineException):

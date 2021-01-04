@@ -1,14 +1,34 @@
 import asyncio
-from concurrent.futures import Future
 import functools
 import threading
 import typing as tp
+from concurrent.futures import Future
 
 from pypeln import utils as pypeln_utils
 
 
-def Namespace(**kwargs) -> tp.Any:
-    return pypeln_utils._Namespace(**kwargs)
+class Namespace:
+    def __init__(self, **kwargs):
+        self.__dict__["_namespace"] = pypeln_utils._Namespace(**kwargs)
+        self.__dict__["_lock"] = asyncio.Lock()
+
+    def __getattr__(self, key) -> tp.Any:
+        if key in ("_namespace", "_lock"):
+            raise AttributeError()
+
+        return getattr(self._namespace, key)
+
+    def __setattr__(self, key, value) -> None:
+        if key in ("_namespace", "_lock"):
+            raise AttributeError()
+
+        setattr(self._namespace, key, value)
+
+    async def __aenter__(self):
+        await self._lock.acquire()
+
+    async def __aexit__(self, *args):
+        self._lock.release()
 
 
 def get_running_loop() -> asyncio.AbstractEventLoop:

@@ -13,21 +13,11 @@ class Namespace:
         if key in ("_namespace", "_lock"):
             raise AttributeError()
 
-        # if not self._lock.locked():
-        #     raise pypeln_utils.NoLock(
-        #         "Namespace not locked, use: \n\nwith namespace:\n    # code here\n\nto lock namespace."
-        #     )
-
         return getattr(self._namespace, key)
 
     def __setattr__(self, key, value) -> None:
         if key in ("_namespace", "_lock"):
             raise AttributeError()
-
-        # if not self._lock.locked():
-        #     raise pypeln_utils.NoLock(
-        #         "Namespace not locked, use: \n\nwith namespace:\n    # code here\n\nto lock namespace."
-        #     )
 
         setattr(self._namespace, key, value)
 

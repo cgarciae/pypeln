@@ -76,7 +76,7 @@ class FromIterable(tp.NamedTuple):
 
                 asyncio.run_coroutine_threadsafe(queue.put(x), loop)
 
-            asyncio.run_coroutine_threadsafe(queue.done(), loop)
+            asyncio.run_coroutine_threadsafe(queue.worker_done(), loop)
 
         except BaseException as e:
             e = queue.get_pipeline_exception(e)

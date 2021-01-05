@@ -7,7 +7,7 @@ from pypeln import utils as pypeln_utils
 
 
 def Namespace(**kwargs) -> tp.Any:
-    return pypeln_utils.Namespace(**kwargs)
+    return pypeln_utils._Namespace(**kwargs)
 
 
 class StageStatus(object):

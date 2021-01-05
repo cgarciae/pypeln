@@ -31,7 +31,7 @@ class Supervisor:
                         worker.stop()
                         worker.start()
 
-                time.sleep(0.05)
+                time.sleep(0.01)
 
         except BaseException as e:
             self.main_queue.raise_exception(e)

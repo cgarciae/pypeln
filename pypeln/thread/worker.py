@@ -23,7 +23,6 @@ class ProcessFn(pypeln_utils.Protocol):
 class StageParams(tp.NamedTuple):
     input_queue: IterableQueue
     output_queues: OutputQueues
-    lock: threading.Lock
     namespace: utils.Namespace
 
     @classmethod
@@ -31,14 +30,13 @@ class StageParams(tp.NamedTuple):
         cls, input_queue: IterableQueue, output_queues: OutputQueues, total_workers: int
     ) -> "StageParams":
         return cls(
-            lock=threading.Lock(),
             namespace=utils.Namespace(active_workers=total_workers),
             input_queue=input_queue,
             output_queues=output_queues,
         )
 
     def worker_done(self):
-        with self.lock:
+        with self.namespace:
             self.namespace.active_workers -= 1
 
 
@@ -103,7 +101,6 @@ class Worker(tp.Generic[T]):
                     "stage_status",
                     StageStatus(
                         namespace=self.stage_params.namespace,
-                        lock=self.stage_params.lock,
                     ),
                 )
 
@@ -115,6 +112,8 @@ class Worker(tp.Generic[T]):
                     }
                 )
 
+            self.stage_params.output_queues.worker_done()
+
         except pypeln_utils.StopThreadException:
             pass
         except BaseException as e:
@@ -125,7 +124,6 @@ class Worker(tp.Generic[T]):
                 pass
         finally:
             self.namespace.done = True
-            self.stage_params.output_queues.done()
 
     def start(self):
         [self.process] = start_workers(self)
@@ -148,6 +146,7 @@ class Worker(tp.Generic[T]):
         self.namespace.done = True
 
     def did_timeout(self):
+
         return (
             self.timeout
             and not self.namespace.done
@@ -186,25 +185,22 @@ class StageStatus:
     Object passed to various `on_done` callbacks. It contains information about the stage in case book keeping is needed.
     """
 
-    def __init__(self, namespace, lock):
+    def __init__(self, namespace):
         self._namespace = namespace
-        self._lock = lock
 
     @property
     def done(self) -> bool:
         """
         `bool` : `True` if all workers finished.
         """
-        with self._lock:
-            return self._namespace.active_workers == 0
+        return self._namespace.active_workers == 0
 
     @property
     def active_workers(self):
         """
         `int` : Number of active workers.
         """
-        with self._lock:
-            return self._namespace.active_workers
+        return self._namespace.active_workers
 
     def __str__(self):
         return (

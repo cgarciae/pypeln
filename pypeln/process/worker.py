@@ -28,7 +28,6 @@ class ProcessFn(pypeln_utils.Protocol):
 class StageParams(tp.NamedTuple):
     input_queue: IterableQueue
     output_queues: OutputQueues
-    lock: synchronize.Lock
     namespace: utils.Namespace
 
     @classmethod
@@ -36,14 +35,13 @@ class StageParams(tp.NamedTuple):
         cls, input_queue: IterableQueue, output_queues: OutputQueues, total_workers: int
     ) -> "StageParams":
         return cls(
-            lock=multiprocessing.Lock(),
             namespace=utils.Namespace(active_workers=total_workers),
             input_queue=input_queue,
             output_queues=output_queues,
         )
 
     def worker_done(self):
-        with self.lock:
+        with self.namespace:
             self.namespace.active_workers -= 1
 
 
@@ -109,7 +107,6 @@ class Worker(tp.Generic[T]):
                     "stage_status",
                     StageStatus(
                         namespace=self.stage_params.namespace,
-                        lock=self.stage_params.lock,
                     ),
                 )
 
@@ -121,14 +118,15 @@ class Worker(tp.Generic[T]):
                     }
                 )
 
+            self.stage_params.output_queues.worker_done()
+
         except pypeln_utils.StopThreadException:
             pass
         except BaseException as e:
             self.main_queue.raise_exception(e)
             time.sleep(0.01)
         finally:
-            self.namespace.done = True
-            self.stage_params.output_queues.done()
+            self.done()
 
     def start(self):
         [self.process] = start_workers(self, use_threads=self.use_threads)
@@ -136,8 +134,6 @@ class Worker(tp.Generic[T]):
     def stop(self):
         if self.process is None:
             return
-
-        self.namespace.task_start_time = None
 
         if not self.process.is_alive():
             return
@@ -150,15 +146,20 @@ class Worker(tp.Generic[T]):
                 pypeln_utils.StopThreadException,
             )
 
+        self.namespace.task_start_time = None
+
     def done(self):
         self.namespace.done = True
 
     def did_timeout(self):
+        task_start_time = self.namespace.task_start_time
+        done = self.namespace.done
+
         return (
             self.timeout
-            and not self.namespace.done
-            and self.namespace.task_start_time is not None
-            and (time.time() - self.namespace.task_start_time > self.timeout)
+            and not done
+            and task_start_time is not None
+            and (time.time() - task_start_time > self.timeout)
         )
 
     @dataclass
@@ -192,25 +193,22 @@ class StageStatus:
     Object passed to various `on_done` callbacks. It contains information about the stage in case book keeping is needed.
     """
 
-    def __init__(self, namespace, lock):
+    def __init__(self, namespace):
         self._namespace = namespace
-        self._lock = lock
 
     @property
     def done(self) -> bool:
         """
         `bool` : `True` if all workers finished.
         """
-        with self._lock:
-            return self._namespace.active_workers == 0
+        return self._namespace.active_workers == 0
 
     @property
     def active_workers(self):
         """
         `int` : Number of active workers.
         """
-        with self._lock:
-            return self._namespace.active_workers
+        return self._namespace.active_workers
 
     def __str__(self):
         return (

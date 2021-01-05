@@ -31,7 +31,7 @@ class Supervisor:
                         worker.stop()
                         worker.start()
 
-                time.sleep(0.05)
+                time.sleep(0.01)
 
         except BaseException as e:
             self.main_queue.raise_exception(e)
@@ -46,13 +46,7 @@ class Supervisor:
             worker.stop()
 
         while any(worker.process.is_alive() for worker in self.workers):
-            print([worker.process.is_alive() for worker in self.workers])
-            for worker in self.workers:
-                worker.stop()
-
             time.sleep(pypeln_utils.TIMEOUT)
-
-        print("EXIT")
 
     def start(self):
 

@@ -51,8 +51,7 @@ def test_map_square_event_start(nums: tp.List[int]):
     nums_py = map(lambda x: x ** 2, nums)
     nums_py = list(nums_py)
 
-    namespace = pl.process.Namespace()
-    namespace.x = 0
+    namespace = pl.process.Namespace(x=0)
 
     def on_start():
         namespace.x = 1
@@ -105,8 +104,7 @@ def test_kwargs():
     nums = range(100)
     n_workers = 4
     letters = "abc"
-    namespace = pl.process.Namespace()
-    namespace.on_done = None
+    namespace = pl.process.Namespace(on_done=None)
 
     def on_start():
         return dict(y=letters)
@@ -131,18 +129,20 @@ def test_kwargs():
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_square_event_end(nums: tp.List[int]):
 
-    namespace = pl.process.Namespace()
-    namespace.x = 0
-    namespace.done = False
-    namespace.active_workers = -1
+    namespace = pl.process.Namespace(
+        x=0,
+        done=False,
+        active_workers=-1,
+    )
 
     def on_start():
         namespace.x = 1
 
     def on_done(stage_status):
-        namespace.x = 2
-        namespace.active_workers = stage_status.active_workers
-        namespace.done = stage_status.done
+        with namespace:
+            namespace.x = 2
+            namespace.active_workers = stage_status.active_workers
+            namespace.done = stage_status.done
 
     nums_pl = pl.process.map(
         lambda x: x ** 2, nums, workers=3, on_start=on_start, on_done=on_done
@@ -196,7 +196,8 @@ def test_maxsize():
     namespace = pl.process.utils.Namespace(count=0)
 
     def f(x) -> tp.Any:
-        namespace.count += 1
+        with namespace:
+            namespace.count += 1
         return x
 
     stage = pl.process.map(f, range(20))

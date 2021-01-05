@@ -29,17 +29,34 @@ class IterableQueue(asyncio.Queue, tp.Generic[T], tp.Iterable[T]):
             maxsize=1
         )
 
-    async def get(self, *arg, **kwargs) -> tp.Awaitable[T]:
-        return await super().get(*arg, **kwargs)
+    async def get(self) -> tp.Awaitable[T]:
+        while True:
+            # with self.namespace:
+            has_exception = self.namespace.exception
 
-    def get_nowait(self, *arg, **kwargs) -> T:
-        return super().get_nowait(*arg, **kwargs)
+            if has_exception:
+                exception, trace = await self.exception_queue.get()
 
-    def __iter__(self) -> tp.Iterator[T]:
+                try:
+                    exception = exception(f"\n\n{trace}")
+                except:
+                    exception = Exception(f"\n\nOriginal: {exception}\n\n{trace}")
 
-        while not self.is_done():
+                raise exception
 
-            if self.namespace.exception:
+            x = await super().get()
+
+            if isinstance(x, pypeln_utils.Done):
+                self.namespace.remaining -= 1
+
+            return x
+
+    def _get_nowait(self) -> T:
+        while True:
+            # with self.namespace:
+            has_exception = self.namespace.exception
+
+            if has_exception:
                 exception, trace = self.exception_queue.get_nowait()
 
                 try:
@@ -49,17 +66,24 @@ class IterableQueue(asyncio.Queue, tp.Generic[T], tp.Iterable[T]):
 
                 raise exception
 
-            try:
-                x = self.get_nowait()
-            except asyncio.QueueEmpty:
-                time.sleep(pypeln_utils.TIMEOUT)
-                continue
+            x = super().get_nowait()
 
             if isinstance(x, pypeln_utils.Continue):
                 continue
-            if isinstance(x, pypeln_utils.Done):
+            elif isinstance(x, pypeln_utils.Done):
                 self.namespace.remaining -= 1
+                continue
 
+            return x
+
+    def __iter__(self) -> tp.Iterator[T]:
+
+        while not self.is_done():
+
+            try:
+                x = self._get_nowait()
+            except asyncio.QueueEmpty:
+                time.sleep(pypeln_utils.TIMEOUT)
                 continue
 
             yield x
@@ -67,16 +91,6 @@ class IterableQueue(asyncio.Queue, tp.Generic[T], tp.Iterable[T]):
     async def __aiter__(self) -> tp.AsyncIterator[T]:
 
         while not self.is_done():
-
-            if self.namespace.exception:
-                exception, trace = await self.exception_queue.get()
-
-                try:
-                    exception = exception(f"\n\n{trace}")
-                except:
-                    exception = Exception(f"\n\nOriginal: {exception}\n\n{trace}")
-
-                raise exception
 
             x = await self.get()
 
@@ -93,10 +107,10 @@ class IterableQueue(asyncio.Queue, tp.Generic[T], tp.Iterable[T]):
             self.namespace.remaining <= 0 and self.empty()
         )
 
-    async def done(self):
+    async def worker_done(self):
         await self.put(pypeln_utils.DONE)
 
-    def done_nowait(self):
+    def worker_done_nowait(self):
         self.put_nowait(pypeln_utils.DONE)
 
     async def stop(self):
@@ -130,7 +144,6 @@ class IterableQueue(asyncio.Queue, tp.Generic[T], tp.Iterable[T]):
         self.exception_queue.put_nowait(pypeline_exception)
         self.put_nowait(pypeln_utils.CONTINUE)
 
-    # TODO: implement this logic in thread + process
     def get_pipeline_exception(self, exception: BaseException) -> PipelineException:
 
         if isinstance(exception, PipelineException):
@@ -155,13 +168,13 @@ class OutputQueues(tp.List[IterableQueue[T]], tp.Generic[T]):
         for queue in self:
             queue.put_nowait(x)
 
-    async def done(self):
+    async def worker_done(self):
         for queue in self:
-            await queue.done()
+            await queue.worker_done()
 
-    def done_nowait(self):
+    def worker_done_nowait(self):
         for queue in self:
-            queue.done_nowait()
+            queue.worker_done_nowait()
 
     async def stop(self):
         for queue in self:

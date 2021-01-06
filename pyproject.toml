@@ -10,7 +10,7 @@ repository = "https://github.com/cgarciae/pypeln"
 homepage = "https://cgarciae.github.io/pypeln"
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = "^3.6.1"
 stopit = "^1.1.2"
 typing_extensions = { version = "^3.7.4", python = "<3.8" }
 dataclasses =  { version = "^0.7", python = ">=3.6,<3.7" }

@@ -1,4 +1,3 @@
-
 [tool.poetry]
 name = "pypeln"
 version = "0.4.7"
@@ -14,7 +13,6 @@ python = "^3.6"
 stopit = "^1.1.2"
 typing_extensions = { version = "^3.7.4", python = "<3.8" }
 dataclasses =  { version = "^0.7", python = ">=3.6,<3.7" }
-pytest-cov = "^2.10.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.3.5"
@@ -31,6 +29,7 @@ mkautodoc = "^0.1.0"
 mkdocstrings = { version = "^0.12.0", python = ">=3.6" }
 debugpy = "^1.0.0-rc.2"
 black = {version = "^20.8b1", allow-prereleases = true}
+pytest-cov = "^2.11.1"
 
 [build-system]
 requires = ["poetry>=0.12"]

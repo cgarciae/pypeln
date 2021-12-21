@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pypeln"
-version = "0.4.7"
+version = "0.4.8"
 description = ""
 authors = ["Cristian Garcia <cgarcia.e88@gmail.com>"]
 license = "MIT"

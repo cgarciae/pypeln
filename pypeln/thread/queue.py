@@ -1,10 +1,7 @@
 import sys
-import time
 import traceback
-import dataclasses
 import typing as tp
 from queue import Queue, Empty, Full
-from threading import Lock
 
 from pypeln import utils as pypeln_utils
 
@@ -13,10 +10,7 @@ from . import utils
 T = tp.TypeVar("T")
 
 
-@dataclasses.dataclass
-class PipelineException(BaseException):
-    exception: tp.Optional[tp.Type[BaseException]]
-    trace: str
+PipelineException = utils.pypeln_utils.PipelineException
 
 
 class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):

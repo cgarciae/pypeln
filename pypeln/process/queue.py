@@ -13,9 +13,7 @@ from . import utils
 T = tp.TypeVar("T")
 
 
-class PipelineException(tp.NamedTuple, BaseException):
-    exception: tp.Optional[tp.Type[BaseException]]
-    trace: str
+PipelineException = pypeln_utils.PipelineException
 
 
 class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):

@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import inspect
 import sys
 import typing as tp
+import dataclasses
 
 if sys.version_info >= (3, 8):
     from typing import Protocol, runtime_checkable
@@ -15,6 +16,27 @@ Kwargs = tp.Dict[str, tp.Any]
 T = tp.TypeVar("T")
 A = tp.TypeVar("A")
 B = tp.TypeVar("B")
+
+
+@dataclasses.dataclass
+class PipelineException(BaseException):
+    exception: tp.Optional[tp.Type[BaseException]]
+    trace: str
+
+    def __iter__(self):
+        self.n = 0
+        return self
+
+    def __next__(self):
+        # Workaround to make PipelineException act more like the
+        # namedtuple it was designed to be
+        try:
+            item = {0: self.exception, 1: self.trace}[self.n]
+        except KeyError as e:
+            raise StopIteration from e
+
+        self.n += 1
+        return item
 
 
 class NoLock(Exception):

@@ -112,6 +112,13 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
 
         return PipelineException(exception_type, trace)
 
+    def __getstate__(self):
+        return super().__getstate__() + (self.namespace, self.exception_queue)
+
+    def __setstate__(self, state):
+        super().__setstate__(state[:-2])
+        self.namespace, self.exception_queue = state[-2:]
+
 
 class OutputQueues(tp.List[IterableQueue[T]], tp.Generic[T]):
     def put(self, x: T):

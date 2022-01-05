@@ -31,10 +31,7 @@ class PipelineException(BaseException):
         # Workaround to make PipelineException act more like the
         # namedtuple it was designed to be
         try:
-            item = {
-                0: self.exception,
-                1: self.trace
-            }[self.n]
+            item = {0: self.exception, 1: self.trace}[self.n]
         except KeyError as e:
             raise StopIteration from e
 

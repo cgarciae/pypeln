@@ -1,5 +1,9 @@
 # Pypeln
 
+[![Coverage](https://img.shields.io/codecov/c/github/cgarciae/pypeln?color=%2334D058)](https://codecov.io/gh/cgarciae/pypeln)
+
+-----------------
+
 _Pypeln (pronounced as "pypeline") is a simple yet powerful Python library for creating concurrent data pipelines._
 
 #### Main Features

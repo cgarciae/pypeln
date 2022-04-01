@@ -7,8 +7,7 @@ from ..stage import Stage, ProcessFn
 from dataclasses import dataclass
 
 
-@dataclass
-class FromIterable(ProcessFn):
+class FromIterable(tp.NamedTuple):
     iterable: tp.Iterable
     maxsize: int
 

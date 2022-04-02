@@ -3,8 +3,7 @@ import typing as tp
 from pypeln import utils as pypeln_utils
 from pypeln.utils import T
 
-from ..stage import Stage, ProcessFn
-from dataclasses import dataclass
+from ..stage import Stage
 
 
 class FromIterable(tp.NamedTuple):

@@ -1,6 +1,10 @@
-import multiprocessing
-import multiprocessing.synchronize
 import typing as tp
+import sys
+
+if "multiprocess" in sys.modules:
+    from multiprocess import Manager, Lock
+else:
+    from multiprocessing import Manager, Lock
 
 from pypeln import utils as pypeln_utils
 
@@ -12,10 +16,10 @@ class Namespace:
         global MANAGER
 
         if MANAGER is None:
-            MANAGER = multiprocessing.Manager()
+            MANAGER = Manager()
 
         self.__dict__["_namespace"] = MANAGER.Namespace(**kwargs)
-        self.__dict__["_lock"] = multiprocessing.Lock()
+        self.__dict__["_lock"] = Lock()
 
     def __getattr__(self, key) -> tp.Any:
         if key in ("_namespace", "_lock"):

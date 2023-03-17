@@ -1,12 +1,13 @@
-import abc
-from copy import copy
 from dataclasses import dataclass, field
-import functools
-import multiprocessing
-from multiprocessing import synchronize
 import threading
 import time
 import typing as tp
+import sys
+
+if "multiprocess" in sys.modules:
+    from multiprocess import Process
+else:
+    from multiprocessing import Process
 
 import stopit
 
@@ -63,7 +64,7 @@ class Worker(tp.Generic[T]):
     namespace: utils.Namespace = field(
         default_factory=lambda: utils.Namespace(done=False, task_start_time=None)
     )
-    process: tp.Optional[tp.Union[multiprocessing.Process, threading.Thread]] = None
+    process: tp.Optional[tp.Union[Process, threading.Thread]] = None
 
     def __call__(self):
 
@@ -138,7 +139,7 @@ class Worker(tp.Generic[T]):
         if not self.process.is_alive():
             return
 
-        if isinstance(self.process, multiprocessing.Process):
+        if isinstance(self.process, Process):
             self.process.terminate()
         else:
             stopit.async_raise(
@@ -227,7 +228,7 @@ def start_workers(
     args: tp.Tuple[tp.Any, ...] = tuple(),
     kwargs: tp.Optional[tp.Dict[tp.Any, tp.Any]] = None,
     use_threads: bool = False,
-) -> tp.Union[tp.List[multiprocessing.Process], tp.List[threading.Thread]]:
+) -> tp.Union[tp.List[Process], tp.List[threading.Thread]]:
     if kwargs is None:
         kwargs = {}
 
@@ -237,7 +238,7 @@ def start_workers(
         if use_threads:
             t = threading.Thread(target=target, args=args, kwargs=kwargs)
         else:
-            t = multiprocessing.Process(target=target, args=args, kwargs=kwargs)
+            t = Process(target=target, args=args, kwargs=kwargs)
         t.daemon = True
         t.start()
         workers.append(t)

@@ -1,8 +1,13 @@
-import multiprocessing
-from multiprocessing.queues import Empty, Queue
 import sys
 import traceback
 import typing as tp
+
+if "multiprocess" in sys.modules:
+    from multiprocess import get_context
+    from multiprocess.queues import Empty, Queue
+else:
+    from multiprocessing import get_context
+    from multiprocessing.queues import Empty, Queue
 
 
 from pypeln import utils as pypeln_utils
@@ -18,13 +23,13 @@ PipelineException = pypeln_utils.PipelineException
 
 class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
     def __init__(self, maxsize: int = 0, total_sources: int = 1):
-        super().__init__(maxsize=maxsize, ctx=multiprocessing.get_context())
+        super().__init__(maxsize=maxsize, ctx=get_context())
 
         self.namespace = utils.Namespace(
             remaining=total_sources, exception=False, force_stop=False
         )
         self.exception_queue: Queue[PipelineException] = Queue(
-            ctx=multiprocessing.get_context()
+            ctx=get_context()
         )
 
     def get(self, block: bool = True, timeout: tp.Optional[float] = None) -> T:

@@ -1,9 +1,4 @@
-import abc
-from copy import copy
 from dataclasses import dataclass, field
-import functools
-import multiprocessing
-from multiprocessing import synchronize
 import threading
 import time
 import typing as tp
@@ -12,6 +7,7 @@ import stopit
 
 from pypeln import utils as pypeln_utils
 
+from .. import config
 from . import utils
 from .queue import IterableQueue, OutputQueues
 
@@ -63,7 +59,8 @@ class Worker(tp.Generic[T]):
     namespace: utils.Namespace = field(
         default_factory=lambda: utils.Namespace(done=False, task_start_time=None)
     )
-    process: tp.Optional[tp.Union[multiprocessing.Process, threading.Thread]] = None
+    # Any is actually any impl of Process
+    process: tp.Optional[tp.Union[tp.Any, threading.Thread]] = None
 
     def __call__(self):
 
@@ -138,6 +135,8 @@ class Worker(tp.Generic[T]):
         if not self.process.is_alive():
             return
 
+
+        multiprocessing = config.config().get_multiprocessing_impl()[0]
         if isinstance(self.process, multiprocessing.Process):
             self.process.terminate()
         else:
@@ -227,7 +226,7 @@ def start_workers(
     args: tp.Tuple[tp.Any, ...] = tuple(),
     kwargs: tp.Optional[tp.Dict[tp.Any, tp.Any]] = None,
     use_threads: bool = False,
-) -> tp.Union[tp.List[multiprocessing.Process], tp.List[threading.Thread]]:
+) -> tp.Union[tp.List[tp.Any], tp.List[threading.Thread]]:
     if kwargs is None:
         kwargs = {}
 
@@ -237,6 +236,7 @@ def start_workers(
         if use_threads:
             t = threading.Thread(target=target, args=args, kwargs=kwargs)
         else:
+            multiprocessing = config.config().get_multiprocessing_impl()[0]
             t = multiprocessing.Process(target=target, args=args, kwargs=kwargs)
         t.daemon = True
         t.start()

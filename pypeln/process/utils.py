@@ -1,8 +1,8 @@
-import multiprocessing
-import multiprocessing.synchronize
 import typing as tp
 
 from pypeln import utils as pypeln_utils
+
+from .. import config
 
 MANAGER = None
 
@@ -10,6 +10,8 @@ MANAGER = None
 class Namespace:
     def __init__(self, **kwargs):
         global MANAGER
+
+        multiprocessing = config.config().get_multiprocessing_impl()[0]
 
         if MANAGER is None:
             MANAGER = multiprocessing.Manager()

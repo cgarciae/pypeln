@@ -2,7 +2,6 @@ import pypeln as pl
 from tqdm import tqdm
 import time
 
-total = 300_000
 
 
 def f(x):
@@ -12,9 +11,13 @@ def f(x):
 
     return x * 2
 
+def main():
+    total = 300_000
+    stage = range(total)
+    stage = pl.process.map(f, stage, workers=8, maxsize=2000)
+    stage = tqdm(stage, total=total, desc="pipeline")
 
-stage = range(total)
-stage = pl.process.map(f, stage, workers=8, maxsize=2000)
-stage = tqdm(stage, total=total, desc="pipeline")
+    pl.process.run(stage)
 
-pl.process.run(stage)
+if __name__ == "__main__":
+    main()

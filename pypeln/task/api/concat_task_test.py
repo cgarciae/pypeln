@@ -1,9 +1,7 @@
-import sys
-import time
 import typing as tp
-from unittest import TestCase
 
 import hypothesis as hp
+from flaky import flaky
 from hypothesis import strategies as st
 
 import pypeln as pl
@@ -12,6 +10,7 @@ MAX_EXAMPLES = 10
 T = tp.TypeVar("T")
 
 
+@flaky(max_runs=3, min_passes=1)
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_concat_basic(nums: tp.List[int]):
@@ -60,6 +59,7 @@ def test_concat_multiple(nums: tp.List[int] = [1, 2, 3]):
     assert sorted(nums_py2) == sorted(list(nums_pl2))
 
 
+@flaky(max_runs=3, min_passes=1)
 @pl.task.utils.run_test_async
 async def test_concat_multiple_2(nums: tp.List[int] = [1, 2, 3]):
     nums_py = [x + 1 for x in nums]

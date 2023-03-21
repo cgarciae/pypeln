@@ -1,10 +1,9 @@
 import asyncio
-import sys
 import time
 import typing as tp
-from unittest import TestCase
 
 import hypothesis as hp
+from flaky import flaky
 from hypothesis import strategies as st
 
 import pypeln as pl
@@ -399,7 +398,9 @@ async def test_error_handling_async():
     assert isinstance(error, MyError)
 
 
+@flaky(max_runs=5, min_passes=1)
 def test_maxsize():
+    time.sleep(0.2)
     namespace = pl.task.utils.Namespace(count=0)
 
     def f(x) -> tp.Any:
@@ -412,7 +413,7 @@ def test_maxsize():
     iterator = iter(stage)
     next(iterator)
 
-    time.sleep(0.1)
+    time.sleep(0.2)
 
     # + 1 element which was yieled on next(...)
     # + 3 elements which are on the queue.

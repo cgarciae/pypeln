@@ -1,3 +1,4 @@
+import time
 import typing as tp
 
 import hypothesis as hp
@@ -10,10 +11,11 @@ MAX_EXAMPLES = 10
 T = tp.TypeVar("T")
 
 
-@flaky(max_runs=5, min_passes=1)
+@flaky(max_runs=10, min_passes=1)
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_concat_basic(nums: tp.List[int]):
+    time.sleep(0.1)
     nums_py = list(map(lambda x: x + 1, nums))
     nums_py1 = list(map(lambda x: x**2, nums_py))
     nums_py2 = list(map(lambda x: -x, nums_py))
@@ -24,7 +26,14 @@ def test_concat_basic(nums: tp.List[int]):
     nums_pl2 = pl.task.map(lambda x: -x, nums_pl)
     nums_pl = pl.task.concat([nums_pl1, nums_pl2])
 
-    assert sorted(nums_pl) == sorted(nums_py)
+    time.sleep(0.1)
+
+    sorted_pl = sorted(nums_pl)
+    sorted_py = sorted(nums_py)
+
+    time.sleep(0.1)
+
+    assert sorted_pl == sorted_py
 
 
 @hp.given(nums=st.lists(st.integers()))

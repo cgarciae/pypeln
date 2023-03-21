@@ -162,7 +162,7 @@ class TestWorker(TestCase):
 
             def f(self: pl.thread.Worker):
                 for _ in range(1000):
-                    time.sleep(0.01)
+                    time.sleep(0.1)
 
             stage_params: pl.thread.StageParams = mock.Mock(
                 input_queue=input_queue,
@@ -188,7 +188,7 @@ class TestWorker(TestCase):
             )
             worker.start()
 
-            time.sleep(0.01)
+            time.sleep(0.1)
 
             assert worker.process.is_alive()
 

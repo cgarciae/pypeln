@@ -1,11 +1,12 @@
-import typing as tp
-from unittest import TestCase
-from unittest import mock
-import hypothesis as hp
-from hypothesis import strategies as st
-import pypeln as pl
 import time
+import typing as tp
+from unittest import TestCase, mock
+
+import hypothesis as hp
 import pytest
+from hypothesis import strategies as st
+
+import pypeln as pl
 
 MAX_EXAMPLES = 10
 T = tp.TypeVar("T")

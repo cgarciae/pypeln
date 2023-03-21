@@ -9,7 +9,6 @@ MAX_EXAMPLES = 10
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_from_to_iterable_simple(nums):
-
     nums_py = nums
 
     nums_pl = pl.sync.from_iterable(nums)
@@ -21,7 +20,6 @@ def test_from_to_iterable_simple(nums):
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_from_to_iterable_pipe(nums):
-
     nums_py = nums
 
     nums_pl = nums | pl.sync.from_iterable() | list

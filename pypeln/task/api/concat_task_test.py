@@ -15,14 +15,13 @@ T = tp.TypeVar("T")
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_concat_basic(nums: tp.List[int]):
-
     nums_py = list(map(lambda x: x + 1, nums))
-    nums_py1 = list(map(lambda x: x ** 2, nums_py))
+    nums_py1 = list(map(lambda x: x**2, nums_py))
     nums_py2 = list(map(lambda x: -x, nums_py))
     nums_py = nums_py1 + nums_py2
 
     nums_pl = pl.task.map(lambda x: x + 1, nums)
-    nums_pl1 = pl.task.map(lambda x: x ** 2, nums_pl)
+    nums_pl1 = pl.task.map(lambda x: x**2, nums_pl)
     nums_pl2 = pl.task.map(lambda x: -x, nums_pl)
     nums_pl = pl.task.concat([nums_pl1, nums_pl2])
 
@@ -33,14 +32,13 @@ def test_concat_basic(nums: tp.List[int]):
 @hp.settings(max_examples=MAX_EXAMPLES)
 @pl.task.utils.run_test_async
 async def test_concat_basic_2(nums: tp.List[int]):
-
     nums_py = list(map(lambda x: x + 1, nums))
-    nums_py1 = list(map(lambda x: x ** 2, nums_py))
+    nums_py1 = list(map(lambda x: x**2, nums_py))
     nums_py2 = list(map(lambda x: -x, nums_py))
     nums_py = nums_py1 + nums_py2
 
     nums_pl = pl.task.map(lambda x: x + 1, nums)
-    nums_pl1 = pl.task.map(lambda x: x ** 2, nums_pl)
+    nums_pl1 = pl.task.map(lambda x: x**2, nums_pl)
     nums_pl2 = pl.task.map(lambda x: -x, nums_pl)
     nums_pl = await pl.task.concat([nums_pl1, nums_pl2])
 
@@ -50,7 +48,6 @@ async def test_concat_basic_2(nums: tp.List[int]):
 # @hp.given(nums=st.lists(st.integers()))
 # @hp.settings(max_examples=MAX_EXAMPLES)
 def test_concat_multiple(nums: tp.List[int] = [1, 2, 3]):
-
     nums_py = [x + 1 for x in nums]
     nums_py1 = nums_py + nums_py
     nums_py2 = nums_py1 + nums_py
@@ -65,7 +62,6 @@ def test_concat_multiple(nums: tp.List[int] = [1, 2, 3]):
 
 @pl.task.utils.run_test_async
 async def test_concat_multiple_2(nums: tp.List[int] = [1, 2, 3]):
-
     nums_py = [x + 1 for x in nums]
     nums_py1 = nums_py + nums_py
     nums_py2 = nums_py1 + nums_py

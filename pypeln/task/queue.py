@@ -1,14 +1,12 @@
+import asyncio
 import sys
+import time
 import traceback
 import typing as tp
-import asyncio
-
 
 from pypeln import utils as pypeln_utils
 
 from . import utils
-import time
-
 
 T = tp.TypeVar("T")
 
@@ -75,9 +73,7 @@ class IterableQueue(asyncio.Queue, tp.Generic[T], tp.Iterable[T]):
             return x
 
     def __iter__(self) -> tp.Iterator[T]:
-
         while not self.is_done():
-
             try:
                 x = self._get_nowait()
             except asyncio.QueueEmpty:
@@ -87,9 +83,7 @@ class IterableQueue(asyncio.Queue, tp.Generic[T], tp.Iterable[T]):
             yield x
 
     async def __aiter__(self) -> tp.AsyncIterator[T]:
-
         while not self.is_done():
-
             x = await self.get()
 
             if isinstance(x, pypeln_utils.Continue):
@@ -128,7 +122,6 @@ class IterableQueue(asyncio.Queue, tp.Generic[T], tp.Iterable[T]):
         self.put_nowait(pypeln_utils.CONTINUE)
 
     async def raise_exception(self, exception: BaseException):
-
         pypeline_exception = self.get_pipeline_exception(exception)
 
         self.namespace.exception = True
@@ -143,7 +136,6 @@ class IterableQueue(asyncio.Queue, tp.Generic[T], tp.Iterable[T]):
         self.put_nowait(pypeln_utils.CONTINUE)
 
     def get_pipeline_exception(self, exception: BaseException) -> PipelineException:
-
         if isinstance(exception, PipelineException):
             return exception
 

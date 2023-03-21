@@ -3,13 +3,14 @@ import sys
 import time
 
 import hypothesis as hp
-from hypothesis import strategies as st
 import pytest
+from hypothesis import strategies as st
 
 import pypeln as pl
 
 MAX_EXAMPLES = 10
 SLEEP = 0.001
+
 
 #########################################################
 # process

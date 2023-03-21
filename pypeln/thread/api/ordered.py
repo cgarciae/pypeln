@@ -11,7 +11,6 @@ from .to_stage import to_stage
 
 class Ordered(tp.NamedTuple):
     def __call__(self, worker: Worker, **kwargs):
-
         elems = []
 
         for elem in worker.stage_params.input_queue:

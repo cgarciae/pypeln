@@ -1,11 +1,11 @@
 import typing as tp
+from dataclasses import dataclass
 
 from pypeln import utils as pypeln_utils
 from pypeln.utils import A
-from .to_stage import to_stage
 
-from ..stage import Stage, ApplyProcess
-from dataclasses import dataclass
+from ..stage import ApplyProcess, Stage
+from .to_stage import to_stage
 
 
 class EachFn(pypeln_utils.Protocol):
@@ -18,7 +18,6 @@ class Each(ApplyProcess):
     f: EachFn
 
     def apply(self, worker: Stage, elem: tp.Any, **kwargs) -> tp.Iterable:
-
         if "element_index" in worker.f_args:
             kwargs["element_index"] = elem.index
 

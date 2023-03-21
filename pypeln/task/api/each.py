@@ -1,13 +1,13 @@
-import typing as tp
 import functools
+import typing as tp
 from dataclasses import dataclass
 
 from pypeln import utils as pypeln_utils
 from pypeln.utils import A, B, T
 
-from .to_stage import to_stage
 from ..stage import Stage
-from ..worker import ProcessFn, Worker, ApplyProcess
+from ..worker import ApplyProcess, ProcessFn, Worker
+from .to_stage import to_stage
 
 
 class EachFn(pypeln_utils.Protocol):
@@ -20,7 +20,6 @@ class Each(ApplyProcess):
     f: EachFn
 
     async def apply(self, worker: Worker, elem: tp.Any, **kwargs):
-
         if "element_index" in worker.f_args:
             kwargs["element_index"] = elem.index
 

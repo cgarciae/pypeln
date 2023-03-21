@@ -1,10 +1,11 @@
+import time
 import typing as tp
-from unittest import TestCase
-from unittest import mock
+from unittest import TestCase, mock
+
 import hypothesis as hp
 from hypothesis import strategies as st
+
 import pypeln as pl
-import time
 
 MAX_EXAMPLES = 10
 T = tp.TypeVar("T")
@@ -90,7 +91,6 @@ def test_error():
 
 
 def test_no_timeout():
-
     queue: pl.thread.IterableQueue = mock.Mock()
 
     worker: pl.thread.Worker = mock.Mock(timeout=0)
@@ -110,7 +110,6 @@ def test_no_timeout():
 
 
 def test_context():
-
     queue: pl.thread.IterableQueue = mock.Mock()
 
     worker: pl.thread.Worker = mock.Mock(timeout=0)
@@ -129,7 +128,6 @@ def test_context():
 
 
 def test_context_gc():
-
     queue: pl.thread.IterableQueue = mock.Mock()
 
     worker: pl.thread.Worker = mock.Mock(timeout=0)
@@ -138,7 +136,6 @@ def test_context_gc():
     supervisor = pl.thread.Supervisor(workers=[worker], main_queue=queue)
 
     def generator():
-
         with supervisor:
             yield
 

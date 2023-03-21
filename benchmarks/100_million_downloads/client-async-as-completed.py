@@ -1,9 +1,10 @@
 # client-async-as-completed.py
 
-from aiohttp import ClientSession, TCPConnector
 import asyncio
-from itertools import islice
 import sys
+from itertools import islice
+
+from aiohttp import ClientSession, TCPConnector
 
 
 def limited_as_completed(coros, limit):

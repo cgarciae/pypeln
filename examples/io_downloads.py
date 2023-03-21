@@ -1,7 +1,9 @@
-from aiohttp import ClientSession
-import pypeln as pl
 import asyncio
 import sys
+
+from aiohttp import ClientSession
+
+import pypeln as pl
 
 
 async def fetch(url, session):

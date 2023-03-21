@@ -1,13 +1,11 @@
 import abc
 import asyncio
-import asyncio
-from copy import copy
-from dataclasses import dataclass, field
 import inspect
 import time
 import typing as tp
-
 from concurrent.futures import Future
+from copy import copy
+from dataclasses import dataclass, field
 
 from pypeln import utils as pypeln_utils
 
@@ -49,7 +47,6 @@ class WorkerInfo(tp.NamedTuple):
 
 @dataclass
 class Worker(tp.Generic[T]):
-
     process_fn: ProcessFn
     timeout: float
     stage_params: StageParams
@@ -92,7 +89,6 @@ class Worker(tp.Generic[T]):
         return worker
 
     async def __call__(self):
-
         worker_info = WorkerInfo(index=0)
 
         on_start_args: tp.List[str] = (
@@ -135,7 +131,6 @@ class Worker(tp.Generic[T]):
             self.stage_params.worker_done()
 
             if self.on_done is not None:
-
                 kwargs.setdefault(
                     "stage_status",
                     StageStatus(),
@@ -170,7 +165,6 @@ class Worker(tp.Generic[T]):
         [self.process] = start_workers(self)
 
     def stop(self):
-
         if self.process is None:
             return
 
@@ -189,9 +183,7 @@ class Applicable(pypeln_utils.Protocol):
 
 class ApplyProcess(ProcessFn, Applicable):
     async def __call__(self, worker: Worker, **kwargs):
-
         async for elem in worker.stage_params.input_queue:
-
             await worker.tasks.put(
                 pypeln_utils.get_callable(self.apply, worker, elem, **kwargs)
             )
@@ -239,7 +231,6 @@ class TaskPool:
         )
 
     async def put(self, coro_f: tp.Callable[[], tp.Awaitable]):
-
         if self.closed:
             raise RuntimeError("Trying put items into a closed TaskPool")
 
@@ -270,7 +261,6 @@ class TaskPool:
             self.semaphore.release()
 
     def stop(self):
-
         for task in self.tasks:
             if not task.cancelled() or not task.done():
                 utils.run_function_in_loop(task.cancel)
@@ -305,7 +295,6 @@ def start_workers(
     kwargs: tp.Optional[tp.Dict[tp.Any, tp.Any]] = None,
     use_threads: bool = False,
 ) -> tp.List[Future]:
-
     if kwargs is None:
         kwargs = {}
 

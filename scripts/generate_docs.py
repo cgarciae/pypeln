@@ -1,8 +1,8 @@
-import pypeln as pl
 import inspect
-from pathlib import Path
 import shutil
+from pathlib import Path
 
+import pypeln as pl
 
 shutil.rmtree("docs/api")
 
@@ -39,7 +39,6 @@ for module in ["process", "thread", "task", "sync"]:
             if inspect.isfunction(f) and "api" in inspect.getmodule(f).__name__
         ]
     ):
-
         structure += f"          {f}: api/{module}/{f}.md\n"
         members += "* [{f}]({f}.md)\n".format(f=f)
 

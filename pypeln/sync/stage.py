@@ -1,16 +1,16 @@
 import inspect
 import sys
 import traceback
+import typing as tp
 from collections import namedtuple
+from dataclasses import dataclass
 from queue import Queue
 from threading import Lock, Thread
-import typing as tp
 
 import stopit
 
 from pypeln import utils as pypeln_utils
-from pypeln.utils import T, Kwargs
-from dataclasses import dataclass
+from pypeln.utils import Kwargs, T
 
 from . import utils
 
@@ -34,7 +34,6 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
     f_args: tp.List[str]
 
     def iter_dependencies(self) -> tp.Iterable[pypeln_utils.Element]:
-
         iterators = [
             iter(dependency.to_iterable(maxsize=0, return_index=True))
             for dependency in self.dependencies
@@ -48,7 +47,6 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
                     iterators.remove(iterator)
 
     def run(self) -> tp.Iterable:
-
         worker_info = WorkerInfo(index=0)
 
         on_start_args: tp.List[str] = (
@@ -81,7 +79,6 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
         )
 
         if self.on_done is not None:
-
             kwargs.setdefault(
                 "stage_status",
                 StageStatus(),

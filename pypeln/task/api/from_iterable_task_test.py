@@ -1,9 +1,8 @@
 import asyncio
 import sys
 import typing as tp
-from unittest import TestCase
 import unittest
-from unittest import mock
+from unittest import TestCase, mock
 
 import cytoolz as cz
 import hypothesis as hp
@@ -18,7 +17,6 @@ T = tp.TypeVar("T")
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_from_to_iterable(nums: tp.List[int]):
-
     nums_py = nums
 
     nums_pl = pl.task.from_iterable(nums)
@@ -31,7 +29,6 @@ def test_from_to_iterable(nums: tp.List[int]):
 @hp.settings(max_examples=MAX_EXAMPLES)
 @pl.task.utils.run_test_async
 async def test_from_to_iterable_async_1(nums: tp.List[int]):
-
     nums_py = nums
 
     nums_pl = pl.task.from_iterable(nums)
@@ -43,7 +40,6 @@ async def test_from_to_iterable_async_1(nums: tp.List[int]):
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_from_to_iterable_async_iterable(nums: tp.List[int]):
-
     nums_py = nums
 
     async def iterable():
@@ -59,7 +55,6 @@ def test_from_to_iterable_async_iterable(nums: tp.List[int]):
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_from_to_iterable_pipe(nums):
-
     nums_py = nums
 
     nums_pl = nums | pl.task.from_iterable() | list
@@ -70,7 +65,6 @@ def test_from_to_iterable_pipe(nums):
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_from_to_iterable_pipe_async_iterable(nums):
-
     nums_py = nums
 
     async def iterable():

@@ -1,20 +1,18 @@
 import asyncio
-from dataclasses import dataclass
-import sys
 import sys
 import time
 import typing as tp
-from unittest import TestCase
 import unittest
-from unittest import mock
+from dataclasses import dataclass
+from unittest import TestCase, mock
 
 import cytoolz as cz
 import hypothesis as hp
-from hypothesis import strategies as st
 import pytest
+from hypothesis import strategies as st
 
-from pypeln import utils as pypeln_utils
 import pypeln as pl
+from pypeln import utils as pypeln_utils
 from pypeln.task.utils import run_test_async
 
 MAX_EXAMPLES = 10
@@ -32,7 +30,6 @@ class TestQueue(TestCase):
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
     def test_done(self, nums):
-
         queue = pl.task.IterableQueue()
 
         async def worker():
@@ -52,7 +49,6 @@ class TestQueue(TestCase):
     @hp.settings(max_examples=MAX_EXAMPLES)
     @run_test_async
     async def test_done_async(self, nums):
-
         queue = pl.task.IterableQueue()
 
         async def worker():
@@ -72,7 +68,6 @@ class TestQueue(TestCase):
     @hp.settings(max_examples=MAX_EXAMPLES)
     @run_test_async
     async def test_get(self, nums):
-
         queue = pl.task.IterableQueue()
 
         async def worker():
@@ -91,7 +86,6 @@ class TestQueue(TestCase):
     @hp.settings(max_examples=MAX_EXAMPLES)
     @run_test_async
     async def test_get_2(self, nums):
-
         queue = pl.task.IterableQueue()
 
         async def worker():
@@ -111,7 +105,6 @@ class TestQueue(TestCase):
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
     def test_done_nowait(self, nums):
-
         queue = pl.task.IterableQueue()
 
         async def worker():
@@ -171,7 +164,6 @@ class TestQueue(TestCase):
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
     def test_stop(self, nums):
-
         queue = pl.task.IterableQueue()
 
         async def worker():
@@ -191,7 +183,6 @@ class TestQueue(TestCase):
     @hp.settings(max_examples=MAX_EXAMPLES)
     @run_test_async
     async def test_stop_async(self, nums):
-
         queue = pl.task.IterableQueue()
 
         async def worker():
@@ -210,7 +201,6 @@ class TestQueue(TestCase):
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
     def test_stop_nowait(self, nums):
-
         queue = pl.task.IterableQueue()
 
         async def worker():
@@ -229,7 +219,6 @@ class TestQueue(TestCase):
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
     def test_kill(self, nums):
-
         queue = pl.task.IterableQueue()
 
         async def worker():
@@ -249,7 +238,6 @@ class TestQueue(TestCase):
     @hp.settings(max_examples=MAX_EXAMPLES)
     @run_test_async
     async def test_kill_async(self, nums):
-
         queue = pl.task.IterableQueue()
 
         async def worker():
@@ -268,7 +256,6 @@ class TestQueue(TestCase):
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
     def test_kill_nowait(self, nums):
-
         queue = pl.task.IterableQueue()
 
         async def worker():
@@ -287,7 +274,6 @@ class TestQueue(TestCase):
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
     def test_raise(self, nums):
-
         queue = pl.task.IterableQueue()
 
         async def worker():
@@ -307,7 +293,6 @@ class TestQueue(TestCase):
     @hp.settings(max_examples=MAX_EXAMPLES)
     @run_test_async
     async def test_raise_async(self, nums):
-
         queue = pl.task.IterableQueue()
 
         async def worker():
@@ -326,7 +311,6 @@ class TestQueue(TestCase):
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
     def test_raise_nowait(self, nums):
-
         queue = pl.task.IterableQueue()
 
         async def worker():
@@ -449,7 +433,6 @@ class TestOutputQueues(TestCase):
 class TestTaskPool(unittest.TestCase):
     @run_test_async
     async def test_basic(self):
-
         namespace = pl.task.Namespace(x=0)
 
         async def task():
@@ -468,7 +451,6 @@ class TestTaskPool(unittest.TestCase):
 
     @run_test_async
     async def test_context(self):
-
         namespace = pl.task.Namespace(x=0)
 
         async def task():
@@ -482,7 +464,6 @@ class TestTaskPool(unittest.TestCase):
 
     @run_test_async
     async def test_put_wait(self):
-
         timeout = 0.1
         namespace = pl.task.Namespace(x=0)
 
@@ -506,7 +487,6 @@ class TestTaskPool(unittest.TestCase):
 
     @run_test_async
     async def test_put_no_wait(self):
-
         timeout = 0.1
         namespace = pl.task.Namespace(x=0)
 

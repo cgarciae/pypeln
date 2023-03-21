@@ -1,26 +1,24 @@
 import asyncio
-from dataclasses import dataclass
 import sys
 import time
 import typing as tp
-from unittest import TestCase
 import unittest
-from unittest import mock
+from dataclasses import dataclass
+from unittest import TestCase, mock
 
 import cytoolz as cz
 import hypothesis as hp
-from hypothesis import strategies as st
 import pytest
+from hypothesis import strategies as st
 
-from pypeln import utils as pypeln_utils
 import pypeln as pl
+from pypeln import utils as pypeln_utils
 
 MAX_EXAMPLES = 10
 T = tp.TypeVar("T")
 
 
 def test_basic():
-
     queue = pl.task.IterableQueue()
 
     worker: pl.task.Worker = mock.Mock(timeout=1)
@@ -35,7 +33,6 @@ def test_basic():
 
 
 def test_stop_nowait():
-
     queue = pl.task.IterableQueue()
 
     worker: pl.task.Worker = mock.Mock(timeout=1)
@@ -51,7 +48,6 @@ def test_stop_nowait():
 
 @pl.task.utils.run_test_async
 async def test_stop():
-
     queue = pl.task.IterableQueue()
 
     worker: pl.task.Worker = mock.Mock(timeout=1)
@@ -66,7 +62,6 @@ async def test_stop():
 
 
 def test_context():
-
     queue: pl.task.IterableQueue = mock.Mock()
 
     worker: pl.task.Worker = mock.Mock(timeout=0, is_done=True)
@@ -84,7 +79,6 @@ def test_context():
 
 @pl.task.utils.run_test_async
 async def test_context_async():
-
     queue: pl.task.IterableQueue = mock.Mock()
 
     worker: pl.task.Worker = mock.Mock(timeout=0, is_done=True)
@@ -101,7 +95,6 @@ async def test_context_async():
 
 
 def test_context_gc():
-
     queue: pl.task.IterableQueue = mock.Mock()
 
     worker: pl.task.Worker = mock.Mock(timeout=0, is_done=True)
@@ -109,7 +102,6 @@ def test_context_gc():
     supervisor = pl.task.Supervisor(workers=[worker], main_queue=queue)
 
     def generator():
-
         with supervisor:
             yield
 

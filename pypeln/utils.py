@@ -1,8 +1,8 @@
-from abc import ABC, abstractmethod
+import dataclasses
 import inspect
 import sys
 import typing as tp
-import dataclasses
+from abc import ABC, abstractmethod
 
 if sys.version_info >= (3, 8):
     from typing import Protocol, runtime_checkable

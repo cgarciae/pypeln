@@ -1,19 +1,18 @@
 import asyncio
-from dataclasses import dataclass
+import sys
 import time
 import typing as tp
-from unittest import TestCase
 import unittest
-from unittest import mock
-import sys
+from dataclasses import dataclass
+from unittest import TestCase, mock
 
 import cytoolz as cz
 import hypothesis as hp
-from hypothesis import strategies as st
 import pytest
+from hypothesis import strategies as st
 
-from pypeln import utils as pypeln_utils
 import pypeln as pl
+from pypeln import utils as pypeln_utils
 
 MAX_EXAMPLES = 10
 T = tp.TypeVar("T")

@@ -1,12 +1,13 @@
 import typing as tp
 from dataclasses import dataclass
-from pypeln import utils as pypeln_utils
-from pypeln.utils import T, Kwargs
 
-from .queue import IterableQueue, OutputQueues
-from .worker import Worker, StageParams, TaskPool, ProcessFn
-from .supervisor import Supervisor
+from pypeln import utils as pypeln_utils
+from pypeln.utils import Kwargs, T
+
 from . import utils
+from .queue import IterableQueue, OutputQueues
+from .supervisor import Supervisor
+from .worker import ProcessFn, StageParams, TaskPool, Worker
 
 
 @dataclass
@@ -30,7 +31,6 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
         output_queue: IterableQueue,
         main_queue: IterableQueue,
     ) -> tp.Iterable[Worker]:
-
         if self in built:
             built[self].append(output_queue)
             return
@@ -61,7 +61,6 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
             yield from dependency.build(built, input_queue, main_queue)
 
     def to_iterable(self, maxsize: int, return_index: bool) -> tp.Iterable[T]:
-
         # create a running event loop in case it doesn't exist
         utils.get_running_loop()
 
@@ -85,7 +84,6 @@ class Stage(pypeln_utils.BaseStage[T], tp.Iterable[T]):
     async def to_async_iterable(
         self, maxsize: int, return_index: bool
     ) -> tp.AsyncIterable[T]:
-
         # build stages first to verify reuse
         main_queue: IterableQueue[pypeln_utils.Element] = IterableQueue(
             maxsize=maxsize,

@@ -1,14 +1,12 @@
 import multiprocessing
-from multiprocessing.queues import Empty, Queue
 import sys
 import traceback
 import typing as tp
-
+from multiprocessing.queues import Empty, Queue
 
 from pypeln import utils as pypeln_utils
 
 from . import utils
-
 
 T = tp.TypeVar("T")
 
@@ -29,7 +27,6 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
 
     def get(self, block: bool = True, timeout: tp.Optional[float] = None) -> T:
         while True:
-
             if self.namespace.exception:
                 exception, trace = self.exception_queue.get()
 
@@ -58,9 +55,7 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
             pass
 
     def __iter__(self) -> tp.Iterator[T]:
-
         while not self.is_done():
-
             try:
                 x = self.get(timeout=pypeln_utils.TIMEOUT)
             except Empty:
@@ -69,7 +64,6 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
             yield x
 
     def is_done(self):
-
         force_stop = self.namespace.force_stop
         remaining = self.namespace.remaining
 
@@ -97,7 +91,6 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
         self.exception_queue.put(pipeline_exception)
 
     def get_pipeline_exception(self, exception: BaseException) -> PipelineException:
-
         if isinstance(exception, PipelineException):
             return exception
 

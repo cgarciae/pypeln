@@ -1,7 +1,7 @@
-from dataclasses import dataclass, field
 import threading
 import time
 import typing as tp
+from dataclasses import dataclass, field
 
 import stopit
 
@@ -60,7 +60,6 @@ class Worker(tp.Generic[T]):
     process: tp.Optional[threading.Thread] = None
 
     def __call__(self):
-
         worker_info = WorkerInfo(index=self.index)
 
         on_start_args: tp.List[str] = (
@@ -96,7 +95,6 @@ class Worker(tp.Generic[T]):
             self.stage_params.worker_done()
 
             if self.on_done is not None:
-
                 kwargs.setdefault(
                     "stage_status",
                     StageStatus(
@@ -146,7 +144,6 @@ class Worker(tp.Generic[T]):
         self.namespace.done = True
 
     def did_timeout(self):
-
         return (
             self.timeout
             and not self.namespace.done

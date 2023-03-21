@@ -20,12 +20,12 @@ def test_flat_map_square_filter_workers(nums: tp.List[int]):
         yield x + 1
         yield x + 2
 
-    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = map(lambda x: x**2, nums)
     nums_py = cz.mapcat(_generator, nums_py)
     nums_py = cz.filter(lambda x: x > 1, nums_py)
     nums_py = list(nums_py)
 
-    nums_pl = pl.task.map(lambda x: x ** 2, nums)
+    nums_pl = pl.task.map(lambda x: x**2, nums)
     nums_pl = pl.task.flat_map(_generator, nums_pl, workers=2)
     nums_pl = pl.task.filter(lambda x: x > 1, nums_pl)
     nums_pl = list(nums_pl)
@@ -41,14 +41,14 @@ def test_flat_map_square_filter_workers_pipe(nums: tp.List[int]):
         yield x + 1
         yield x + 2
 
-    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = map(lambda x: x**2, nums)
     nums_py = cz.mapcat(_generator, nums_py)
     nums_py = cz.filter(lambda x: x > 1, nums_py)
     nums_py = list(nums_py)
 
     nums_pl = (
         nums
-        | pl.task.map(lambda x: x ** 2)
+        | pl.task.map(lambda x: x**2)
         | pl.task.flat_map(_generator, workers=3)
         | pl.task.filter(lambda x: x > 1)
         | list
@@ -65,7 +65,7 @@ def test_flat_map_square_filter_workers_pipe_2(nums: tp.List[int]):
         yield x + 1
         yield x + 2
 
-    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = map(lambda x: x**2, nums)
     nums_py = cz.mapcat(_generator, nums_py)
     nums_py = cz.filter(lambda x: x > 1, nums_py)
     nums_py = list(nums_py)
@@ -75,7 +75,7 @@ def test_flat_map_square_filter_workers_pipe_2(nums: tp.List[int]):
 
     nums_pl = (
         nums
-        | pl.task.map(lambda x: x ** 2)
+        | pl.task.map(lambda x: x**2)
         | pl.task.flat_map(_generator, workers=3)
         | pl.task.filter(gt1)
         | list
@@ -93,7 +93,7 @@ async def test_flat_map_square_filter_workers_pipe_3(nums: tp.List[int]):
         yield x + 1
         yield x + 2
 
-    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = map(lambda x: x**2, nums)
     nums_py = cz.mapcat(_generator, nums_py)
     nums_py = cz.filter(lambda x: x > 1, nums_py)
     nums_py = list(nums_py)
@@ -103,7 +103,7 @@ async def test_flat_map_square_filter_workers_pipe_3(nums: tp.List[int]):
 
     nums_pl = await (
         nums
-        | pl.task.map(lambda x: x ** 2)
+        | pl.task.map(lambda x: x**2)
         | pl.task.flat_map(_generator, workers=3)
         | pl.task.filter(gt1)
     )

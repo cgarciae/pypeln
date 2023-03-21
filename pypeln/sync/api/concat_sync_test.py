@@ -12,12 +12,12 @@ MAX_EXAMPLES = 10
 def test_concat_basic(nums):
 
     nums_py = list(map(lambda x: x + 1, nums))
-    nums_py1 = list(map(lambda x: x ** 2, nums_py))
+    nums_py1 = list(map(lambda x: x**2, nums_py))
     nums_py2 = list(map(lambda x: -x, nums_py))
     nums_py = nums_py1 + nums_py2
 
     nums_pl = pl.sync.map(lambda x: x + 1, nums)
-    nums_pl1 = pl.sync.map(lambda x: x ** 2, nums_pl)
+    nums_pl1 = pl.sync.map(lambda x: x**2, nums_pl)
     nums_pl2 = pl.sync.map(lambda x: -x, nums_pl)
     nums_pl = pl.sync.concat([nums_pl1, nums_pl2])
 

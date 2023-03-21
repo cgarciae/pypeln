@@ -31,10 +31,10 @@ def test_map_id_pipe(nums):
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_square(nums):
 
-    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = map(lambda x: x**2, nums)
     nums_py = list(nums_py)
 
-    nums_pl = pl.sync.map(lambda x: x ** 2, nums)
+    nums_pl = pl.sync.map(lambda x: x**2, nums)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums_py
@@ -44,7 +44,7 @@ def test_map_square(nums):
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_square_event_start(nums):
 
-    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = map(lambda x: x**2, nums)
     nums_py = list(nums_py)
 
     namespace = pl.sync.Namespace()
@@ -53,7 +53,7 @@ def test_map_square_event_start(nums):
     def on_start():
         namespace.x = 1
 
-    nums_pl = pl.sync.map(lambda x: x ** 2, nums, on_start=on_start)
+    nums_pl = pl.sync.map(lambda x: x**2, nums, on_start=on_start)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums_py
@@ -144,7 +144,7 @@ def test_map_square_event_end(nums):
         namespace.done = stage_status.done
 
     nums_pl = pl.sync.map(
-        lambda x: x ** 2, nums, workers=3, on_start=on_start, on_done=on_done
+        lambda x: x**2, nums, workers=3, on_start=on_start, on_done=on_done
     )
     nums_pl = list(nums_pl)
 
@@ -159,10 +159,10 @@ def test_map_square_event_end(nums):
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_square_workers(nums):
 
-    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = map(lambda x: x**2, nums)
     nums_py = list(nums_py)
 
-    nums_pl = pl.sync.map(lambda x: x ** 2, nums, workers=2)
+    nums_pl = pl.sync.map(lambda x: x**2, nums, workers=2)
     nums_pl = list(nums_pl)
 
     assert sorted(nums_pl) == sorted(nums_py)

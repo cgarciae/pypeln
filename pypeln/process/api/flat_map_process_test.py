@@ -19,11 +19,11 @@ def test_flat_map_square(nums: tp.List[int]):
         yield x + 1
         yield x + 2
 
-    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = map(lambda x: x**2, nums)
     nums_py = cz.mapcat(generator, nums_py)
     nums_py = list(nums_py)
 
-    nums_pl = pl.process.map(lambda x: x ** 2, nums)
+    nums_pl = pl.process.map(lambda x: x**2, nums)
     nums_pl = pl.process.flat_map(generator, nums_pl)
     nums_pl = list(nums_pl)
 
@@ -38,11 +38,11 @@ def test_flat_map_square_workers(nums: tp.List[int]):
         yield x + 1
         yield x + 2
 
-    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = map(lambda x: x**2, nums)
     nums_py = cz.mapcat(generator, nums_py)
     nums_py = list(nums_py)
 
-    nums_pl = pl.process.map(lambda x: x ** 2, nums)
+    nums_pl = pl.process.map(lambda x: x**2, nums)
     nums_pl = pl.process.flat_map(generator, nums_pl, workers=3)
     nums_pl = list(nums_pl)
 

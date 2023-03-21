@@ -64,10 +64,10 @@ def test_map_id_pipe(nums: tp.List[int]):
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_square(nums: tp.List[int]):
 
-    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = map(lambda x: x**2, nums)
     nums_py = list(nums_py)
 
-    nums_pl = pl.task.map(lambda x: x ** 2, nums)
+    nums_pl = pl.task.map(lambda x: x**2, nums)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums_py
@@ -77,7 +77,7 @@ def test_map_square(nums: tp.List[int]):
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_square_event_start(nums: tp.List[int]):
 
-    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = map(lambda x: x**2, nums)
     nums_py = list(nums_py)
 
     namespace = pl.task.Namespace()
@@ -86,7 +86,7 @@ def test_map_square_event_start(nums: tp.List[int]):
     def on_start():
         namespace.x = 1
 
-    nums_pl = pl.task.map(lambda x: x ** 2, nums, on_start=on_start)
+    nums_pl = pl.task.map(lambda x: x**2, nums, on_start=on_start)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums_py
@@ -97,7 +97,7 @@ def test_map_square_event_start(nums: tp.List[int]):
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_square_event_start_async_1(nums: tp.List[int]):
 
-    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = map(lambda x: x**2, nums)
     nums_py = list(nums_py)
 
     namespace = pl.task.Namespace()
@@ -106,7 +106,7 @@ def test_map_square_event_start_async_1(nums: tp.List[int]):
     async def on_start():
         namespace.x = 1
 
-    nums_pl = pl.task.map(lambda x: x ** 2, nums, on_start=on_start)
+    nums_pl = pl.task.map(lambda x: x**2, nums, on_start=on_start)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums_py
@@ -118,7 +118,7 @@ def test_map_square_event_start_async_1(nums: tp.List[int]):
 @pl.task.utils.run_test_async
 async def test_map_square_event_start_async_2(nums: tp.List[int]):
 
-    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = map(lambda x: x**2, nums)
     nums_py = list(nums_py)
 
     namespace = pl.task.Namespace()
@@ -127,7 +127,7 @@ async def test_map_square_event_start_async_2(nums: tp.List[int]):
     async def on_start():
         namespace.x = 1
 
-    nums_pl = pl.task.map(lambda x: x ** 2, nums, on_start=on_start)
+    nums_pl = pl.task.map(lambda x: x**2, nums, on_start=on_start)
     nums_pl = await nums_pl
 
     assert nums_pl == nums_py
@@ -139,7 +139,7 @@ async def test_map_square_event_start_async_2(nums: tp.List[int]):
 @pl.task.utils.run_test_async
 async def test_map_square_event_start_async_2(nums: tp.List[int]):
 
-    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = map(lambda x: x**2, nums)
     nums_py = list(nums_py)
 
     namespace = pl.task.Namespace()
@@ -149,7 +149,7 @@ async def test_map_square_event_start_async_2(nums: tp.List[int]):
         await asyncio.sleep(0.01)
         namespace.x = 1
 
-    nums_pl = pl.task.map(lambda x: x ** 2, nums, on_start=on_start)
+    nums_pl = pl.task.map(lambda x: x**2, nums, on_start=on_start)
     nums_pl = await nums_pl
 
     assert nums_pl == nums_py
@@ -161,7 +161,7 @@ async def test_map_square_event_start_async_2(nums: tp.List[int]):
 @pl.task.utils.run_test_async
 async def test_map_square_event_start_async(nums: tp.List[int]):
 
-    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = map(lambda x: x**2, nums)
     nums_py = list(nums_py)
 
     namespace = pl.task.Namespace()
@@ -170,7 +170,7 @@ async def test_map_square_event_start_async(nums: tp.List[int]):
     def on_start():
         namespace.x = 1
 
-    nums_pl = pl.task.map(lambda x: x ** 2, nums, on_start=on_start)
+    nums_pl = pl.task.map(lambda x: x**2, nums, on_start=on_start)
     nums_pl = await nums_pl
 
     assert nums_pl == nums_py
@@ -324,7 +324,7 @@ def test_map_square_event_end(nums: tp.List[int]):
         namespace.done = stage_status.done
 
     nums_pl = pl.task.map(
-        lambda x: x ** 2, nums, workers=3, on_start=on_start, on_done=on_done
+        lambda x: x**2, nums, workers=3, on_start=on_start, on_done=on_done
     )
     nums_pl = list(nums_pl)
 
@@ -354,7 +354,7 @@ async def test_map_square_event_end_async(nums: tp.List[int]):
         namespace.done = stage_status.done
 
     nums_pl = pl.task.map(
-        lambda x: x ** 2, nums, workers=3, on_start=on_start, on_done=on_done
+        lambda x: x**2, nums, workers=3, on_start=on_start, on_done=on_done
     )
     nums_pl = await nums_pl
 
@@ -370,10 +370,10 @@ async def test_map_square_event_end_async(nums: tp.List[int]):
 @pl.task.utils.run_test_async
 async def test_map_square_workers_async(nums: tp.List[int]):
 
-    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = map(lambda x: x**2, nums)
     nums_py = list(nums_py)
 
-    nums_pl = pl.task.map(lambda x: x ** 2, nums, workers=2)
+    nums_pl = pl.task.map(lambda x: x**2, nums, workers=2)
     nums_pl = await nums_pl
 
     assert sorted(nums_pl) == sorted(nums_py)

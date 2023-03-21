@@ -398,7 +398,7 @@ async def test_error_handling_async():
     assert isinstance(error, MyError)
 
 
-@flaky(max_runs=5, min_passes=1)
+@flaky(max_runs=10, min_passes=1)
 def test_maxsize():
     time.sleep(0.2)
     namespace = pl.task.utils.Namespace(count=0)

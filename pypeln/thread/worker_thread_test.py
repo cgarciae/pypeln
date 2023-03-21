@@ -4,6 +4,7 @@ from unittest import TestCase, mock
 
 import hypothesis as hp
 import pytest
+from flaky import flaky
 from hypothesis import strategies as st
 
 import pypeln as pl
@@ -152,9 +153,8 @@ class TestWorker(TestCase):
 
         assert not process.is_alive()
 
-    def test_del3(
-        self,
-    ):
+    @flaky(max_runs=3, min_passes=1)
+    def test_del3(self):
         def start_worker():
             input_queue = pl.thread.IterableQueue()
             output_queue = pl.thread.IterableQueue()

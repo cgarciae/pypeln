@@ -42,7 +42,7 @@ jobs:
         uses: actions/cache@v3.2.2
         with:
           path: '.venv'
-          key: run-tests-${{ hashFiles('poetry.lock') }}
+          key: run-tests-${{ matrix.python-version }}-${{ hashFiles('poetry.lock') }}
 
       - name: Install Dependencies
         if: steps.cache.outputs.cache-hit != 'true'
@@ -92,7 +92,7 @@ jobs:
         uses: actions/cache@v3.2.2
         with:
           path: '.venv'
-          key: test-import-${{ hashFiles('poetry.lock') }}
+          key: test-import-${{ matrix.python-version }}-${{ hashFiles('poetry.lock') }}
 
       - name: Install Dependencies
         if: steps.cache.outputs.cache-hit != 'true'

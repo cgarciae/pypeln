@@ -56,7 +56,7 @@ jobs:
 
       - name: Run Tests
         run: |
-          poetry run pytest -n auto --cov=pypeln --cov-report=xml
+          poetry run pytest --cov=pypeln --cov-report=xml
 
       - name: Upload coverage
         uses: codecov/codecov-action@v3

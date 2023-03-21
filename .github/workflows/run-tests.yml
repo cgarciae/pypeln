@@ -48,11 +48,11 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
           if [ -d ".venv" ]; then rm -rf .venv; fi
-          poetry install
+          poetry install --without docs
       
       - name: Install Package
         run: |
-          poetry install
+          poetry install --without docs
 
       - name: Run Tests
         run: |

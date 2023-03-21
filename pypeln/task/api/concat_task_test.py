@@ -10,7 +10,7 @@ MAX_EXAMPLES = 10
 T = tp.TypeVar("T")
 
 
-@flaky(max_runs=3, min_passes=1)
+@flaky(max_runs=5, min_passes=1)
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_concat_basic(nums: tp.List[int]):

@@ -1,8 +1,9 @@
 # client-async-sem.py
 
-from aiohttp import ClientSession, TCPConnector
 import asyncio
 import sys
+
+from aiohttp import ClientSession, TCPConnector
 
 limit = 1000
 

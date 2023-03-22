@@ -1,15 +1,15 @@
-import typing as tp
 import functools
+import typing as tp
 from dataclasses import dataclass
 
 from pypeln import utils as pypeln_utils
 from pypeln.utils import A, B, T
 
+from ..stage import Stage
+from ..worker import ApplyProcess, ProcessFn, Worker
+from .concat import concat
 from .to_iterable import to_iterable
 from .to_stage import to_stage
-from .concat import concat
-from ..stage import Stage
-from ..worker import ProcessFn, Worker, ApplyProcess
 
 
 def run(*stages: tp.Union[Stage[A], tp.Iterable[A]], maxsize: int = 0) -> None:

@@ -1,12 +1,12 @@
 import abc
-from copy import copy
-from dataclasses import dataclass, field
 import functools
 import multiprocessing
-from multiprocessing import synchronize
 import threading
 import time
 import typing as tp
+from copy import copy
+from dataclasses import dataclass, field
+from multiprocessing import synchronize
 
 import stopit
 
@@ -66,7 +66,6 @@ class Worker(tp.Generic[T]):
     process: tp.Optional[tp.Union[multiprocessing.Process, threading.Thread]] = None
 
     def __call__(self):
-
         worker_info = WorkerInfo(index=self.index)
 
         on_start_args: tp.List[str] = (
@@ -102,7 +101,6 @@ class Worker(tp.Generic[T]):
             self.stage_params.worker_done()
 
             if self.on_done is not None:
-
                 kwargs.setdefault(
                     "stage_status",
                     StageStatus(

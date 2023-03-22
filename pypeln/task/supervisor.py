@@ -1,13 +1,13 @@
-from dataclasses import dataclass
+import asyncio
 import threading
 import time
 import typing as tp
+from dataclasses import dataclass
 
 from pypeln import utils as pypeln_utils
 
-from .worker import Worker
 from .queue import IterableQueue
-import asyncio
+from .worker import Worker
 
 
 @dataclass

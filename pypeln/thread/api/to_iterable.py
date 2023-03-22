@@ -1,9 +1,9 @@
 import typing as tp
 
+from pypeln import utils as pypeln_utils
 from pypeln.utils import A
 
 from ..stage import Stage
-from pypeln import utils as pypeln_utils
 
 
 @tp.overload

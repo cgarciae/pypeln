@@ -12,9 +12,7 @@ class FromIterable(tp.NamedTuple):
     maxsize: int
 
     def __call__(self, worker: Worker, **kwargs):
-
         if isinstance(self.iterable, pypeln_utils.BaseStage):
-
             for x in self.iterable.to_iterable(maxsize=self.maxsize, return_index=True):
                 worker.stage_params.output_queues.put(x)
         else:

@@ -1,11 +1,11 @@
 import typing as tp
+from copy import copy
 
 from pypeln import utils as pypeln_utils
 from pypeln.utils import A, B, T
 
 from ..stage import Stage
 from ..worker import ProcessFn, Worker
-from copy import copy
 
 
 class FromIterable(tp.NamedTuple):
@@ -13,11 +13,9 @@ class FromIterable(tp.NamedTuple):
     maxsize: int
 
     def __call__(self, worker: Worker, **kwargs):
-
         iterable = self.iterable
 
         if isinstance(iterable, pypeln_utils.BaseStage):
-
             for x in iterable.to_iterable(maxsize=self.maxsize, return_index=True):
                 worker.stage_params.output_queues.put(x)
         else:

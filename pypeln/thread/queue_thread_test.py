@@ -1,11 +1,12 @@
-import typing as tp
-from unittest import TestCase
-from unittest import mock
-import hypothesis as hp
-from hypothesis import strategies as st
-import pypeln as pl
 import time
+import typing as tp
+from unittest import TestCase, mock
+
+import hypothesis as hp
 import pytest
+from hypothesis import strategies as st
+
+import pypeln as pl
 from pypeln import utils as pypeln_utils
 
 MAX_EXAMPLES = 10
@@ -20,7 +21,6 @@ class TestQueue(TestCase):
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
     def test_done(self, nums):
-
         queue = pl.thread.IterableQueue()
 
         def worker():
@@ -59,7 +59,6 @@ class TestQueue(TestCase):
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
     def test_stop(self, nums):
-
         queue = pl.thread.IterableQueue()
 
         def worker():
@@ -79,7 +78,6 @@ class TestQueue(TestCase):
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
     def test_kill(self, nums):
-
         queue = pl.thread.IterableQueue()
 
         def worker():
@@ -98,7 +96,6 @@ class TestQueue(TestCase):
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
     def test_raise(self, nums):
-
         queue = pl.thread.IterableQueue()
 
         def worker():

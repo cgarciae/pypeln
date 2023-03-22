@@ -15,7 +15,6 @@ T = tp.TypeVar("T")
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_from_to_iterable(nums: tp.List[int]):
-
     nums_pl = nums
     nums_pl = pl.task.from_iterable(nums_pl)
     nums_pl = cz.partition_all(10, nums_pl)
@@ -35,7 +34,6 @@ def test_from_to_iterable(nums: tp.List[int]):
 @hp.settings(max_examples=MAX_EXAMPLES)
 @pl.task.utils.run_test_async
 async def test_from_to_iterable_2(nums: tp.List[int]):
-
     nums_pl = nums
     nums_pl = pl.task.from_iterable(nums_pl)
     nums_pl = cz.partition_all(10, nums_pl)

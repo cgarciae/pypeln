@@ -37,8 +37,8 @@ from .api.filter import filter
 from .api.flat_map import flat_map
 from .api.from_iterable import from_iterable
 from .api.map import map
+from .api.ordered import ordered
 from .api.run import run
 from .api.to_iterable import to_iterable
-from .api.ordered import ordered
 from .stage import Stage
 from .utils import Namespace

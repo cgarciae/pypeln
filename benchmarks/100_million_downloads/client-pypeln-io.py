@@ -1,10 +1,11 @@
 # client-pypeln-pl.task.py
 
-from aiohttp import ClientSession, TCPConnector
 import asyncio
 import sys
-import pypeln as pl
 
+from aiohttp import ClientSession, TCPConnector
+
+import pypeln as pl
 
 limit = 1000
 urls = ("http://localhost:8080/{}".format(i) for i in range(int(sys.argv[1])))

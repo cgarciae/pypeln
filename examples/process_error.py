@@ -1,6 +1,8 @@
-import pypeln as pl
-from tqdm import tqdm
 import time
+
+from tqdm import tqdm
+
+import pypeln as pl
 
 total = 300_000
 

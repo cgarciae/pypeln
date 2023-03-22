@@ -1,0 +1,108 @@
+# Checks that we can build and validate the Unittest
+name: Run Tests
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+    - uses: pre-commit/action@v3.0.0
+  test:
+    name: Run Tests 
+    runs-on: ubuntu-latest 
+    strategy:
+      matrix:
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1.3.3
+        with:
+          version: 1.4.0
+
+      - name: Setup Poetry
+        run: |
+          poetry config virtualenvs.in-project true
+
+      - name: Cache
+        id: cache
+        uses: actions/cache@v3.2.2
+        with:
+          path: '.venv'
+          key: run-tests-${{ matrix.python-version }}-${{ hashFiles('poetry.lock') }}
+
+      - name: Install Dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          if [ -d ".venv" ]; then rm -rf .venv; fi
+          poetry install --without docs
+      
+      - name: Install Package
+        run: |
+          poetry install --without docs
+
+      - name: Run Tests
+        run: |
+          poetry run pytest --cov=pypeln --cov-report=xml
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+
+  test-import:
+    name: Test Import without Dev Dependencies
+    if: ${{ !contains(github.event.pull_request.title, 'WIP') }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1.3.3
+        with:
+          version: 1.4.0
+      
+      - name: Setup Poetry
+        run: |
+          poetry config virtualenvs.in-project true
+
+      - name: Cache
+        id: cache
+        uses: actions/cache@v3.2.2
+        with:
+          path: '.venv'
+          key: test-import-${{ matrix.python-version }}-${{ hashFiles('poetry.lock') }}
+
+      - name: Install Dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          poetry install --only main
+
+      - name: Install Package
+        run: |
+          poetry install --only main
+        
+      - name: Test Import
+        run: |
+          poetry run python -c "import pypeln"

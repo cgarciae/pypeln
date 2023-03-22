@@ -1,8 +1,10 @@
-from pypeln import utils as pypeln_utils
-from pypeln.utils import A, B, function_args
-from ..stage import Stage, ApplyProcess
 import typing as tp
 from dataclasses import dataclass
+
+from pypeln import utils as pypeln_utils
+from pypeln.utils import A, B, function_args
+
+from ..stage import ApplyProcess, Stage
 from .to_stage import to_stage
 
 

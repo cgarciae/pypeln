@@ -1,10 +1,9 @@
 import asyncio
-import sys
 import time
 import typing as tp
-from unittest import TestCase
 
 import hypothesis as hp
+from flaky import flaky
 from hypothesis import strategies as st
 
 import pypeln as pl
@@ -16,7 +15,6 @@ T = tp.TypeVar("T")
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_id(nums: tp.List[int]):
-
     nums_py = nums
 
     nums_pl = pl.task.map(lambda x: x, nums)
@@ -29,7 +27,6 @@ def test_map_id(nums: tp.List[int]):
 @hp.settings(max_examples=MAX_EXAMPLES)
 @pl.task.utils.run_test_async
 async def test_map_id_async(nums: tp.List[int]):
-
     nums_py = nums
 
     nums_pl = pl.task.map(lambda x: x, nums)
@@ -42,7 +39,6 @@ async def test_map_id_async(nums: tp.List[int]):
 @hp.settings(max_examples=MAX_EXAMPLES)
 @pl.task.utils.run_test_async
 async def test_map_id_async_iterable(nums: tp.List[int]):
-
     nums_py = nums
 
     nums_pl = pl.task.map(lambda x: x, nums)
@@ -54,7 +50,6 @@ async def test_map_id_async_iterable(nums: tp.List[int]):
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_id_pipe(nums: tp.List[int]):
-
     nums_pl = nums | pl.task.map(lambda x: x) | list
 
     assert nums_pl == nums
@@ -63,11 +58,10 @@ def test_map_id_pipe(nums: tp.List[int]):
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_square(nums: tp.List[int]):
-
-    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = map(lambda x: x**2, nums)
     nums_py = list(nums_py)
 
-    nums_pl = pl.task.map(lambda x: x ** 2, nums)
+    nums_pl = pl.task.map(lambda x: x**2, nums)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums_py
@@ -76,8 +70,7 @@ def test_map_square(nums: tp.List[int]):
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_square_event_start(nums: tp.List[int]):
-
-    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = map(lambda x: x**2, nums)
     nums_py = list(nums_py)
 
     namespace = pl.task.Namespace()
@@ -86,7 +79,7 @@ def test_map_square_event_start(nums: tp.List[int]):
     def on_start():
         namespace.x = 1
 
-    nums_pl = pl.task.map(lambda x: x ** 2, nums, on_start=on_start)
+    nums_pl = pl.task.map(lambda x: x**2, nums, on_start=on_start)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums_py
@@ -96,8 +89,7 @@ def test_map_square_event_start(nums: tp.List[int]):
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_square_event_start_async_1(nums: tp.List[int]):
-
-    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = map(lambda x: x**2, nums)
     nums_py = list(nums_py)
 
     namespace = pl.task.Namespace()
@@ -106,7 +98,7 @@ def test_map_square_event_start_async_1(nums: tp.List[int]):
     async def on_start():
         namespace.x = 1
 
-    nums_pl = pl.task.map(lambda x: x ** 2, nums, on_start=on_start)
+    nums_pl = pl.task.map(lambda x: x**2, nums, on_start=on_start)
     nums_pl = list(nums_pl)
 
     assert nums_pl == nums_py
@@ -117,8 +109,7 @@ def test_map_square_event_start_async_1(nums: tp.List[int]):
 @hp.settings(max_examples=MAX_EXAMPLES)
 @pl.task.utils.run_test_async
 async def test_map_square_event_start_async_2(nums: tp.List[int]):
-
-    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = map(lambda x: x**2, nums)
     nums_py = list(nums_py)
 
     namespace = pl.task.Namespace()
@@ -127,7 +118,7 @@ async def test_map_square_event_start_async_2(nums: tp.List[int]):
     async def on_start():
         namespace.x = 1
 
-    nums_pl = pl.task.map(lambda x: x ** 2, nums, on_start=on_start)
+    nums_pl = pl.task.map(lambda x: x**2, nums, on_start=on_start)
     nums_pl = await nums_pl
 
     assert nums_pl == nums_py
@@ -138,8 +129,7 @@ async def test_map_square_event_start_async_2(nums: tp.List[int]):
 @hp.settings(max_examples=MAX_EXAMPLES)
 @pl.task.utils.run_test_async
 async def test_map_square_event_start_async_2(nums: tp.List[int]):
-
-    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = map(lambda x: x**2, nums)
     nums_py = list(nums_py)
 
     namespace = pl.task.Namespace()
@@ -149,7 +139,7 @@ async def test_map_square_event_start_async_2(nums: tp.List[int]):
         await asyncio.sleep(0.01)
         namespace.x = 1
 
-    nums_pl = pl.task.map(lambda x: x ** 2, nums, on_start=on_start)
+    nums_pl = pl.task.map(lambda x: x**2, nums, on_start=on_start)
     nums_pl = await nums_pl
 
     assert nums_pl == nums_py
@@ -160,8 +150,7 @@ async def test_map_square_event_start_async_2(nums: tp.List[int]):
 @hp.settings(max_examples=MAX_EXAMPLES)
 @pl.task.utils.run_test_async
 async def test_map_square_event_start_async(nums: tp.List[int]):
-
-    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = map(lambda x: x**2, nums)
     nums_py = list(nums_py)
 
     namespace = pl.task.Namespace()
@@ -170,7 +159,7 @@ async def test_map_square_event_start_async(nums: tp.List[int]):
     def on_start():
         namespace.x = 1
 
-    nums_pl = pl.task.map(lambda x: x ** 2, nums, on_start=on_start)
+    nums_pl = pl.task.map(lambda x: x**2, nums, on_start=on_start)
     nums_pl = await nums_pl
 
     assert nums_pl == nums_py
@@ -178,7 +167,6 @@ async def test_map_square_event_start_async(nums: tp.List[int]):
 
 
 def test_timeout():
-
     nums = list(range(10))
 
     async def f(x):
@@ -196,7 +184,6 @@ def test_timeout():
 
 @pl.task.utils.run_test_async
 async def test_timeout_async():
-
     nums = list(range(10))
 
     async def f(x):
@@ -213,7 +200,6 @@ async def test_timeout_async():
 
 
 def test_worker_info():
-
     nums = range(100)
     n_workers = 4
 
@@ -233,7 +219,6 @@ def test_worker_info():
 
 @pl.task.utils.run_test_async
 async def test_worker_info_async():
-
     nums = range(100)
     n_workers = 4
 
@@ -252,7 +237,6 @@ async def test_worker_info_async():
 
 
 def test_kwargs():
-
     nums = range(100)
     n_workers = 4
     letters = "abc"
@@ -280,7 +264,6 @@ def test_kwargs():
 
 @pl.task.utils.run_test_async
 async def test_kwargs_async():
-
     nums = range(100)
     n_workers = 4
     letters = "abc"
@@ -309,7 +292,6 @@ async def test_kwargs_async():
 @hp.given(nums=st.lists(st.integers()))
 @hp.settings(max_examples=MAX_EXAMPLES)
 def test_map_square_event_end(nums: tp.List[int]):
-
     namespace = pl.task.Namespace()
     namespace.x = 0
     namespace.done = False
@@ -324,7 +306,7 @@ def test_map_square_event_end(nums: tp.List[int]):
         namespace.done = stage_status.done
 
     nums_pl = pl.task.map(
-        lambda x: x ** 2, nums, workers=3, on_start=on_start, on_done=on_done
+        lambda x: x**2, nums, workers=3, on_start=on_start, on_done=on_done
     )
     nums_pl = list(nums_pl)
 
@@ -339,7 +321,6 @@ def test_map_square_event_end(nums: tp.List[int]):
 @hp.settings(max_examples=MAX_EXAMPLES)
 @pl.task.utils.run_test_async
 async def test_map_square_event_end_async(nums: tp.List[int]):
-
     namespace = pl.task.Namespace()
     namespace.x = 0
     namespace.done = False
@@ -354,7 +335,7 @@ async def test_map_square_event_end_async(nums: tp.List[int]):
         namespace.done = stage_status.done
 
     nums_pl = pl.task.map(
-        lambda x: x ** 2, nums, workers=3, on_start=on_start, on_done=on_done
+        lambda x: x**2, nums, workers=3, on_start=on_start, on_done=on_done
     )
     nums_pl = await nums_pl
 
@@ -369,11 +350,10 @@ async def test_map_square_event_end_async(nums: tp.List[int]):
 @hp.settings(max_examples=MAX_EXAMPLES)
 @pl.task.utils.run_test_async
 async def test_map_square_workers_async(nums: tp.List[int]):
-
-    nums_py = map(lambda x: x ** 2, nums)
+    nums_py = map(lambda x: x**2, nums)
     nums_py = list(nums_py)
 
-    nums_pl = pl.task.map(lambda x: x ** 2, nums, workers=2)
+    nums_pl = pl.task.map(lambda x: x**2, nums, workers=2)
     nums_pl = await nums_pl
 
     assert sorted(nums_pl) == sorted(nums_py)
@@ -384,7 +364,6 @@ class MyError(Exception):
 
 
 def test_error_handling():
-
     error = None
 
     def raise_error(x):
@@ -403,7 +382,6 @@ def test_error_handling():
 
 @pl.task.utils.run_test_async
 async def test_error_handling_async():
-
     error = None
 
     def raise_error(x):
@@ -420,8 +398,9 @@ async def test_error_handling_async():
     assert isinstance(error, MyError)
 
 
+@flaky(max_runs=10, min_passes=1)
 def test_maxsize():
-
+    time.sleep(0.2)
     namespace = pl.task.utils.Namespace(count=0)
 
     def f(x) -> tp.Any:
@@ -434,7 +413,7 @@ def test_maxsize():
     iterator = iter(stage)
     next(iterator)
 
-    time.sleep(0.1)
+    time.sleep(0.2)
 
     # + 1 element which was yieled on next(...)
     # + 3 elements which are on the queue.

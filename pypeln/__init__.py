@@ -1,10 +1,6 @@
 import sys
 
-from . import sync
-from . import thread
-from . import process
-from . import task
-from .utils import Element
-from .utils import BaseStage
+from . import process, sync, task, thread
+from .utils import BaseStage, Element
 
 __version__ = "0.4.9"

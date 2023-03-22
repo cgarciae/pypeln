@@ -1,10 +1,11 @@
 import typing as tp
+from dataclasses import dataclass
 
 from pypeln import utils as pypeln_utils
-from pypeln.utils import T, A
+from pypeln.utils import A, T
+
+from ..stage import ProcessFn, Stage
 from .to_stage import to_stage
-from ..stage import Stage, ProcessFn
-from dataclasses import dataclass
 
 
 @dataclass

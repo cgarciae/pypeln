@@ -1,7 +1,7 @@
 import sys
 import traceback
 import typing as tp
-from queue import Queue, Empty, Full
+from queue import Empty, Full, Queue
 
 from pypeln import utils as pypeln_utils
 
@@ -24,7 +24,6 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
 
     def get(self, block: bool = True, timeout: tp.Optional[float] = None) -> T:
         while True:
-
             if self.namespace.exception:
                 exception, trace = self.exception_queue.get()
 
@@ -80,9 +79,7 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
             pass
 
     def __iter__(self) -> tp.Iterator[T]:
-
         while not self.is_done():
-
             try:
                 x = self.get(timeout=pypeln_utils.TIMEOUT)
             except Empty:
@@ -118,7 +115,6 @@ class IterableQueue(Queue, tp.Generic[T], tp.Iterable[T]):
         self.exception_queue.put(pipeline_exception)
 
     def get_pipeline_exception(self, exception: BaseException) -> PipelineException:
-
         if isinstance(exception, PipelineException):
             return exception
 

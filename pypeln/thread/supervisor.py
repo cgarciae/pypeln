@@ -1,13 +1,13 @@
-from dataclasses import dataclass
 import multiprocessing
 import threading
 import time
 import typing as tp
+from dataclasses import dataclass
 
 from pypeln import utils as pypeln_utils
 
-from .worker import Worker
 from .queue import IterableQueue
+from .worker import Worker
 
 
 @dataclass
@@ -17,7 +17,6 @@ class Supervisor:
     done: bool = False
 
     def __call__(self):
-
         try:
             workers = [worker for worker in self.workers if worker.timeout > 0]
 
@@ -25,7 +24,6 @@ class Supervisor:
                 return
 
             while not self.done:
-
                 for worker in workers:
                     if worker.did_timeout():
                         worker.stop()
@@ -49,7 +47,6 @@ class Supervisor:
             time.sleep(pypeln_utils.TIMEOUT)
 
     def start(self):
-
         for worker in self.workers:
             worker.start()
 

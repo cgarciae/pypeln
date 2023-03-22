@@ -1,7 +1,7 @@
+import typing as tp
 from collections import namedtuple
 from queue import Empty, Full, Queue
 from threading import Lock
-import typing as tp
 
 from pypeln import utils as pypeln_utils
 

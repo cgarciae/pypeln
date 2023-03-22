@@ -1,8 +1,9 @@
 # server.py
 
-from aiohttp import web
 import asyncio
 import random
+
+from aiohttp import web
 
 
 async def handle(request):

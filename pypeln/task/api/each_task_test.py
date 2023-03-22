@@ -16,7 +16,6 @@ class TestEach(TestCase):
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
     def test_each(self, nums: tp.List[int]):
-
         nums_pl = pl.task.each(lambda x: x, nums)
 
         assert nums is not None
@@ -27,13 +26,11 @@ class TestEach(TestCase):
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
     def test_each_list(self, nums: tp.List[int]):
-
         nums_pl = pl.task.each(lambda x: x, nums)
 
         assert nums is not None
 
         if nums_pl is not None:
-
             nums_pl = list(nums_pl)
 
             if nums:
@@ -46,7 +43,6 @@ class TestEach(TestCase):
     @hp.given(nums=st.lists(st.integers()))
     @hp.settings(max_examples=MAX_EXAMPLES)
     def test_each_run(self, nums: tp.List[int]):
-
         nums_pl = pl.task.each(lambda x: x, nums, run=True)
 
         assert nums_pl is None
@@ -55,13 +51,11 @@ class TestEach(TestCase):
     @hp.settings(max_examples=MAX_EXAMPLES)
     @pl.task.utils.run_test_async
     async def test_each_list_2(self, nums: tp.List[int]):
-
         nums_pl = pl.task.each(lambda x: x, nums)
 
         assert nums is not None
 
         if nums_pl is not None:
-
             nums_pl = await nums_pl
 
             if nums:
@@ -75,7 +69,6 @@ class TestEach(TestCase):
     @hp.settings(max_examples=MAX_EXAMPLES)
     @pl.task.utils.run_test_async
     async def test_each_list_3(self, nums: tp.List[int]):
-
         nums_pl = await pl.task.each(lambda x: x, nums)
 
         assert nums_pl == []
@@ -84,7 +77,6 @@ class TestEach(TestCase):
     @hp.settings(max_examples=MAX_EXAMPLES)
     @pl.task.utils.run_test_async
     async def test_each_list_4(self, nums: tp.List[int]):
-
-        nums_pl = await (pl.task.each(lambda x: x, nums))
+        nums_pl = await pl.task.each(lambda x: x, nums)
 
         assert nums_pl == []

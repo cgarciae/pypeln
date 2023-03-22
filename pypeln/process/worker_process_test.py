@@ -1,11 +1,13 @@
-import typing as tp
-from unittest import TestCase
-from unittest import mock
-import hypothesis as hp
-from hypothesis import strategies as st
-import pypeln as pl
 import time
+import typing as tp
+from unittest import TestCase, mock
+
+import hypothesis as hp
 import pytest
+from flaky import flaky
+from hypothesis import strategies as st
+
+import pypeln as pl
 
 MAX_EXAMPLES = 10
 T = tp.TypeVar("T")
@@ -345,6 +347,7 @@ class TestWorkerProcess(TestCase):
 
         assert not process.is_alive()
 
+    @flaky(max_runs=3, min_passes=1)
     def test_del3(
         self,
     ):

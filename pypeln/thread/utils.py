@@ -1,5 +1,5 @@
-import typing as tp
 import threading
+import typing as tp
 
 from pypeln import utils as pypeln_utils
 
